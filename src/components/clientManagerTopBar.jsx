@@ -57,9 +57,6 @@ const ClientManagerTopBar = () => {
                     variant="contained"
                     color="primary"
                     sx={{
-                        textTransform: "none",
-                        borderRadius: "8px",
-                        fontWeight: "bold",
                         fontSize: isMobile ? "0.8rem" : "1rem",
                     }}
                     startIcon={isMobile ? null : <AddCircleOutlineIcon />}

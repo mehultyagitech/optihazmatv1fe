@@ -5,6 +5,7 @@ import FilterBar from './filterBar';
 import { useState } from 'react';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { Button } from '@mui/material';
+import OPPageContainer from '../../components/OPPageContainer';
 
 const Dashboard = () => {
     const cardData = [
@@ -128,7 +129,7 @@ const Dashboard = () => {
     ];
 
     return (
-        <PageContainer>
+        <OPPageContainer sx={{ px: 4, pt: 2 }}>
             <FilterBar filters={filters} onFilterChange={handleFilterChange} onSearch={handleSearch} />
             <Divider sx={{ my: 2, mb: 4 }} />
             <Grid container spacing={3}>
@@ -196,7 +197,7 @@ const Dashboard = () => {
                     onRowClick={(params) => handleOpenDrawer(params.row)}
                 />
             </Box>
-        </PageContainer>
+        </OPPageContainer>
     );
 };
 
