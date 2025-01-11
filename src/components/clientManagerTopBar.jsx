@@ -32,7 +32,7 @@ const ClientManagerTopBar = () => {
                 sx={{ fontWeight: 500, textAlign: isMobile ? "center" : "left" }}
             >
                 <ContactPageIcon sx={{ mr: 1 }} />
-                Records Count: 267
+                Records Count: 4
             </Typography>
 
             {/* Right Section */}

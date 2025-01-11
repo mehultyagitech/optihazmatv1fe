@@ -74,31 +74,31 @@ const ClientCard = ({ avatarSrc, vid, clientName, address }) => (
 const VesselClientManager = () => {
     const [clients, setClients] = useState([
         {
-            avatarSrc: "https://via.placeholder.com/60",
+            avatarSrc: "https://avatar.iran.liara.run/public/33",
             vid: "VID: 412",
             clientName: "ACECHEM",
             address: "Guzin Sokak 9/1, Aydintepe Mah, Tuzla, 34947 Island, Turkey.",
         },
         {
-            avatarSrc: "https://via.placeholder.com/60",
+            avatarSrc: "https://avatar.iran.liara.run/public/5",
             vid: "VID: 413",
             clientName: "BETA LTD",
             address: "Street 45, Industrial Area, Istanbul, Turkey.",
         },
         {
-            avatarSrc: "https://via.placeholder.com/60",
+            avatarSrc: "https://avatar.iran.liara.run/public/31",
             vid: "VID: 414",
             clientName: "OMEGA INC",
             address: "Central Plaza, Ankara, Turkey.",
         },
         {
-            avatarSrc: "https://via.placeholder.com/60",
+            avatarSrc: "https://avatar.iran.liara.run/public/24",
             vid: "VID: 415",
             clientName: "DELTA CORP",
             address: "Highway 12, Izmir, Turkey.",
         },
         {
-            avatarSrc: "https://via.placeholder.com/60",
+            avatarSrc: "https://avatar.iran.liara.run/public/9",
             vid: "VID: 416",
             clientName: "ZETA LTD",
             address: "Park Avenue, Bursa, Turkey.",
@@ -148,6 +148,7 @@ const VesselClientManager = () => {
                         gap={2}
                         flexWrap="wrap"
                         justifyContent={{ xs: "center", sm: "flex-end" }}
+                        
                     >
                         <TextField
                             variant="outlined"
