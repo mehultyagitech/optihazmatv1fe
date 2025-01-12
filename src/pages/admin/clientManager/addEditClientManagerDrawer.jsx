@@ -13,6 +13,8 @@ import {
 } from "@mui/material";
 import OPPageContainer from "../../../components/OPPageContainer";
 import {FormControlLabel} from "@mui/material";
+import OPDivider from "../../../components/OPDivider";
+import { Margin } from "@mui/icons-material";
 
 const AddEditClientManagerDrawer = ({ open, onClose }) => {
   const [role, setRole] = useState("manager");
@@ -62,6 +64,7 @@ const AddEditClientManagerDrawer = ({ open, onClose }) => {
               </ToggleButton>
             </ToggleButtonGroup>
           </Box>
+          <OPDivider />
 
           {/* Dynamic Fields */}
           <Box
