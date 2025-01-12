@@ -13,7 +13,7 @@ import EditSubLocations from './pages/admin/editSubLocations.jsx';
 import EditEquipmentName from './pages/admin/editEquipmentName.jsx';
 import EditCompartment from './pages/admin/editCompartment.jsx';
 import OverviewCard from './pages/admin/dashboard.jsx';
-import VesselClientManager from './pages/admin/vesselClientManager.jsx';
+import VesselClientManager from './pages/admin/clientManager/vesselClientManager.jsx';
 
 const router = createBrowserRouter([
   {

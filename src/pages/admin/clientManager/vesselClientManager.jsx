@@ -13,10 +13,11 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
-import ClientManagerTopBar from "../../components/clientManagerTopBar";
-import OPDivider from "../../components/OPDivider";
-import OPPageContainer from "../../components/OPPageContainer";
-import OPCard from "../../components/OPCard";
+import ClientManagerTopBar from "../../../components/clientManagerTopBar";
+import OPDivider from "../../../components/OPDivider";
+import OPPageContainer from "../../../components/OPPageContainer";
+import OPCard from "../../../components/OPCard";
+import AddEditClientManagerDrawer from "./addEditClientManagerDrawer";
 
 const ClientCard = ({ avatarSrc, vid, clientName, address }) => (
     <OPCard sx={{ width: "100%" }}>
@@ -39,6 +40,7 @@ const ClientCard = ({ avatarSrc, vid, clientName, address }) => (
                 size="small"
                 startIcon={<EditIcon />}
                 sx={{ textTransform: "none", marginLeft: "auto" }}
+                onClick={() => onEdit({ vid, clientName, address })}
             >
                 Edit
             </Button>
@@ -107,10 +109,15 @@ const VesselClientManager = () => {
 
     const [searchQuery, setSearchQuery] = useState("");
     const [view, setView] = useState("clients");
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
     const handleSearchChange = (event) => {
         setSearchQuery(event.target.value);
     };
+
+    const handleDrawerToggle = () => {
+        setDrawerOpen(!drawerOpen);
+      };
 
     const handleToggleChange = (event, newView) => {
         if (newView !== null) {
