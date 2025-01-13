@@ -15,6 +15,7 @@ import 'toastr/build/toastr.min.css';
 import toastr from 'toastr';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import OPPageContainer from '../../components/OPPageContainer';
 
 const columns = [
     { field: 'role', headerName: 'User Role', width: 200 },
@@ -155,9 +156,9 @@ export default function Users() {
     const title = 'Users';
 
     return (
-        <PageContainer>
+        <OPPageContainer sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
                     {title}
                 </Typography>
                 <Button variant="contained" color="primary" startIcon={<AddCircleOutlineIcon />}>
@@ -251,6 +252,6 @@ export default function Users() {
                     User updated successfully!
                 </Alert>
             </Snackbar>
-        </PageContainer>
+        </OPPageContainer>
     );
 }

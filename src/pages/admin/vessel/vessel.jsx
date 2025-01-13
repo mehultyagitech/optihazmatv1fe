@@ -3,21 +3,19 @@ import {
     Box,
     Typography,
     Button,
-    Card,
     Avatar,
     TextField,
     IconButton,
-    InputAdornment,
     ToggleButton,
     ToggleButtonGroup,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
-import ClientManagerTopBar from "../../../components/clientManagerTopBar";
+import VesselTopBar from "../../../components/vesselTopBar";
 import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
-import AddEditClientManagerDrawer from "./addEditClientManagerDrawer";
+// import AddEditVesselDrawer from "./addEditVesselDrawer";
 
 const ClientCard = ({ avatarSrc, vid, clientName, address }) => (
     <OPCard sx={{ width: "100%" }}>
@@ -73,7 +71,7 @@ const ClientCard = ({ avatarSrc, vid, clientName, address }) => (
     </OPCard>
 );
 
-const VesselClientManager = () => {
+const Vessel = () => {
     const [clients, setClients] = useState([
         {
             avatarSrc: "https://avatar.iran.liara.run/public/33",
@@ -133,7 +131,7 @@ const VesselClientManager = () => {
     return (
         <OPPageContainer>
             <Box>
-                <ClientManagerTopBar />
+                <VesselTopBar />
                 <Box
                     display="flex"
                     alignItems="center"
@@ -147,7 +145,7 @@ const VesselClientManager = () => {
                         mb={{ xs: 2, sm: 0 }}
                         flexGrow={{ xs: 1, sm: 0 }}
                     >
-                        Client/Manager
+                        Vessels
                     </Typography>
                     <Box
                         display="flex"
@@ -175,16 +173,6 @@ const VesselClientManager = () => {
                                 },
                             }}
                         />
-                        <ToggleButtonGroup
-                            color="primary"
-                            value={view}
-                            exclusive
-                            onChange={handleToggleChange}
-                            size="small"
-                        >
-                            <ToggleButton value="clients">Clients</ToggleButton>
-                            <ToggleButton value="managers">Managers</ToggleButton>
-                        </ToggleButtonGroup>
                     </Box>
                 </Box>
                 <OPDivider />
@@ -209,4 +197,4 @@ const VesselClientManager = () => {
     );
 };
 
-export default VesselClientManager;
+export default Vessel;

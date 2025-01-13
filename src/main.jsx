@@ -14,6 +14,7 @@ import EditEquipmentName from './pages/admin/editEquipmentName.jsx';
 import EditCompartment from './pages/admin/editCompartment.jsx';
 import OverviewCard from './pages/admin/dashboard.jsx';
 import VesselClientManager from './pages/admin/clientManager/vesselClientManager.jsx';
+import Vessel from './pages/admin/vessel/vessel.jsx';
 
 const router = createBrowserRouter([
   {
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
           {
             path: "/client-manager",
             element: <VesselClientManager />,
+          },
+          {
+            path: "/vessels",
+            element: <Vessel />,
           },
         ]
       },

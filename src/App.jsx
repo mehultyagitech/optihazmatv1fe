@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.css'
 import { Outlet } from "react-router-dom";
-import { AppProvider } from '@toolpad/core';
+import { AppProvider } from '@toolpad/core/react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -9,9 +9,6 @@ import EquipmentIcon from '@mui/icons-material/Build';
 import PeopleIcon from '@mui/icons-material/People';
 import StorageIcon from '@mui/icons-material/Storage';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import IconButton from '@mui/material/IconButton';
-import Button from '@mui/material/Button';
 
 const NAVIGATION = [
   {
@@ -100,11 +97,6 @@ function App() {
     },
   });
 
-  const navigator = React.useMemo(() => {
-    return (path) => {
-      window.location.href = path;
-    };
-  })
 
   const authentication = React.useMemo(() => {
     return {
