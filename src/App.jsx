@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css'
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { AppProvider } from '@toolpad/core/react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -89,6 +89,8 @@ const NAVIGATION = [
 
 function App() {
 
+  const navigate = useNavigate();
+
   const [session, setSession] = React.useState({
     user: {
       name: 'Mehul Tyagi',
@@ -110,7 +112,7 @@ function App() {
         });
       },
       signOut: () => {
-        navigator('/login');
+        navigate('/login');
         setSession(null);
       },
     };
@@ -119,11 +121,6 @@ function App() {
   return (
     <AppProvider
       navigation={NAVIGATION}
-      branding={{
-        logo: <img src="https://mui.com/static/logo.png" alt="MUI logo" />,
-        title: 'MUI',
-        homeUrl: '/toolpad/core/introduction',
-      }}
       session={session}
       authentication={authentication}
       

@@ -8,6 +8,7 @@ import {
     IconButton,
     ToggleButton,
     ToggleButtonGroup,
+    Grid
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
@@ -17,7 +18,7 @@ import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
 // import AddEditVesselDrawer from "./addEditVesselDrawer";
 
-const ClientCard = ({ avatarSrc, vid, clientName, address }) => (
+const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, vesselType, onEdit }) => (
     <OPCard sx={{ width: "100%" }}>
         <Box display="flex" alignItems="center" gap={2}>
             <Avatar src={avatarSrc} sx={{ width: 60, height: 60 }} />
@@ -27,10 +28,10 @@ const ClientCard = ({ avatarSrc, vid, clientName, address }) => (
                     fontWeight="bold"
                     sx={{ color: "#1976d2" }}
                 >
-                    {vid}
+                    {vessel}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Vessel Client
+                    Vessel
                 </Typography>
             </Box>
             <Button
@@ -38,70 +39,107 @@ const ClientCard = ({ avatarSrc, vid, clientName, address }) => (
                 size="small"
                 startIcon={<EditIcon />}
                 sx={{ textTransform: "none", marginLeft: "auto" }}
-                onClick={() => onEdit({ vid, clientName, address })}
+                onClick={() => onEdit({ vessel, clientName, vesselType })}
             >
                 Edit
             </Button>
         </Box>
         <OPDivider />
-        <Box>
-            <Typography
-                variant="body2"
-                fontWeight="bold"
-                color="text.primary"
-                mb={0.5}
-            >
-                Client Name
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2}>
-                {clientName}
-            </Typography>
-            <Typography
-                variant="body2"
-                fontWeight="bold"
-                color="text.primary"
-                mb={0.5}
-            >
-                Address
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-                {address}
-            </Typography>
-        </Box>
+        <Grid container spacing={2} mt={2}>
+            <Grid item xs={6}>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    mb={0.5}
+                >
+                    IMO Number
+                </Typography>
+                <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
+                    {imoNumber}
+                </Typography>
+            </Grid>
+            <Grid item xs={6}>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    mb={0.5}
+                >
+                    Client Name
+                </Typography>
+                <Typography fontWeight="bold"  variant="body2" color="text.primary" mb={2}>
+                    {clientName}
+                </Typography>
+            </Grid>
+            <Grid item xs={6}>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    mb={0.5}
+                >
+                    Manager Name
+                </Typography>
+                <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
+                    {managerName}
+                </Typography>
+            </Grid>
+            <Grid item xs={6}>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    mb={0.5}
+                >
+                    Vessel Type
+                </Typography>
+                <Typography fontWeight="bold" variant="body2" color="text.primary">
+                    {vesselType}
+                </Typography>
+            </Grid>
+        </Grid>
     </OPCard>
 );
+
 
 const Vessel = () => {
     const [clients, setClients] = useState([
         {
             avatarSrc: "https://avatar.iran.liara.run/public/33",
-            vid: "VID: 412",
+            vessel: "A LA MARINE",
+            imoNumber: "123456789",
             clientName: "ACECHEM",
-            address: "Guzin Sokak 9/1, Aydintepe Mah, Tuzla, 34947 Island, Turkey.",
+            managerName: "John Doe",
+            vesselType: "Crude Oil Tanker",
         },
         {
             avatarSrc: "https://avatar.iran.liara.run/public/5",
-            vid: "VID: 413",
+            vessel: "ADIYAMAN SCHGE",
+            imoNumber: "123456789",
             clientName: "BETA LTD",
-            address: "Street 45, Industrial Area, Istanbul, Turkey.",
+            managerName: "John Doe",
+            vesselType: "Crude Oil Tanker",
         },
         {
             avatarSrc: "https://avatar.iran.liara.run/public/31",
-            vid: "VID: 414",
+            vessel: "ADAM SCHULTE",
+            imoNumber: "123456789",
             clientName: "OMEGA INC",
-            address: "Central Plaza, Ankara, Turkey.",
+            managerName: "John Doe",
+            vesselType: "Crude Oil Tanker",
         },
         {
             avatarSrc: "https://avatar.iran.liara.run/public/24",
-            vid: "VID: 415",
+            vessel: "A LA MARINE",
+            imoNumber: "123456789",
             clientName: "DELTA CORP",
-            address: "Highway 12, Izmir, Turkey.",
+            managerName: "John Doe",
+            vesselType: "General Cargo Ship",
         },
         {
             avatarSrc: "https://avatar.iran.liara.run/public/9",
-            vid: "VID: 416",
+            vessel: "ACER ARROW",
+            imoNumber: "123456789",
             clientName: "ZETA LTD",
-            address: "Park Avenue, Bursa, Turkey.",
+            managerName: "John Doe",
+            vesselType: "Crude Oil Tanker",
         },
     ]);
 
@@ -125,7 +163,7 @@ const Vessel = () => {
 
     const filteredClients = clients.filter((client) =>
         client.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.vid.toLowerCase().includes(searchQuery.toLowerCase())
+        client.vessel.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -157,7 +195,7 @@ const Vessel = () => {
                     >
                         <TextField
                             variant="outlined"
-                            label="VID or Client Name"
+                            label="Vessel or Client Name"
                             value={searchQuery}
                             onChange={handleSearchChange}
                             size="small"
@@ -186,9 +224,11 @@ const Vessel = () => {
                         <ClientCard
                             key={index}
                             avatarSrc={client.avatarSrc}
-                            vid={client.vid}
+                            imoNumber={client.imoNumber}
+                            vessel={client.vessel}
                             clientName={client.clientName}
-                            address={client.address}
+                            managerName={client.managerName}
+                            vesselType={client.vesselType}
                         />
                     ))}
                 </Box>
