@@ -12,7 +12,7 @@ import ContactPageIcon from "@mui/icons-material/ContactPage";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AddEditClientManagerDrawer from "../pages/admin/clientManager/addEditClientManagerDrawer";
 
-const ClientManagerTopBar = () => {
+const ClientManagerTopBar = ({ recordCount }) => {
   const isMobile = useMediaQuery("(max-width:600px)");
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -41,7 +41,7 @@ const ClientManagerTopBar = () => {
           sx={{ fontWeight: 500, textAlign: isMobile ? "center" : "left" }}
         >
           <ContactPageIcon sx={{ mr: 1 }} />
-          Records Count: 4
+          Records Count: {recordCount}
         </Typography>
 
         {/* Right Section */}

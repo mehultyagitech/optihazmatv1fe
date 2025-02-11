@@ -5,129 +5,300 @@ import {
   TextField,
   Box,
   Button,
-  Checkbox,
-  ToggleButton,
-  ToggleButtonGroup,
   useMediaQuery,
   useTheme,
+  FormControlLabel,
+  Checkbox,
+  MenuItem,
+  Select,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Paper
 } from "@mui/material";
 import OPPageContainer from "../../../components/OPPageContainer";
-import {FormControlLabel} from "@mui/material";
 import OPDivider from "../../../components/OPDivider";
-import { Margin } from "@mui/icons-material";
 
 const AddEditVesselDrawer = ({ open, onClose }) => {
-  const [role, setRole] = useState("manager");
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const [tabIndex, setTabIndex] = useState(0);
+  const [ihmClass, setIhmClass] = useState("");
+  const [surveySameAsStart, setSurveySameAsStart] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [image, setImage] = useState(null);
 
-  const handleRoleChange = (event, newRole) => {
-    if (newRole !== null) {
-      setRole(newRole);
+  const tabSections = [
+    "Vessel Details",
+    "Attachments / Image",
+    "DP Details",
+    "Common Settings",
+    "Other Details",
+  ];
+
+  const handleTabChange = (index) => {
+    setTabIndex(index);
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setImage(URL.createObjectURL(file));
     }
   };
 
   return (
     <OPPageContainer>
       <Drawer anchor="right" open={open} onClose={onClose}>
-        <Box
-          sx={{
-            width: isSmallScreen ? "100vw" : 400,
-            padding:7,
-          }}
-        >
-          {/* Header with Toggle */}
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-            marginBottom={2}
-            flexDirection={isSmallScreen ? "column" : "row"}
-          >
-            <Typography sx={{ fontWeight: "bold" }} marginTop={isSmallScreen ? 2 : 2} variant="h5" marginBottom={isSmallScreen ? 2 : 0}>
-              Add Client/Manager
-            </Typography>
-            <ToggleButtonGroup
-              value={role}
-              exclusive
-              onChange={handleRoleChange}
-              aria-label="role selection"
-              size="small"
-              sx={{marginLeft: isSmallScreen ? 0 : 2}}
-              color="primary"
-            >
-              <ToggleButton value="client" aria-label="client">
-                Client
-              </ToggleButton>
-              <ToggleButton value="manager" aria-label="manager">
-                Manager
-              </ToggleButton>
-            </ToggleButtonGroup>
+        <Box sx={{ width: isSmallScreen ? "100vw" : 900, padding: isSmallScreen ? 3 : 4 }}>
+          <Typography sx={{ fontWeight: "bold" }} variant="h5" gutterBottom>
+            Vessel Details
+          </Typography>
+          {/* Tabs */}
+          <Box display="flex" gap={1} mb={2} flexWrap="wrap" justifyContent="center">
+            {tabSections.map((label, index) => (
+              <Button
+                key={index}
+                variant={tabIndex === index ? "contained" : "outlined"}
+                onClick={() => handleTabChange(index)}
+                color="secondary"
+                sx={{
+                  backgroundColor: tabIndex === index ? "#EDE7F6" : "transparent",
+                  color: tabIndex === index ? "#4A148C" : "#7B1FA2",
+                  fontSize: isSmallScreen ? "12px" : "14px",
+                  fontWeight: "",
+                  padding: isSmallScreen ? "6px 10px" : "8px 14px",
+                  minWidth: isSmallScreen ? "75px" : "100px",
+                  borderRadius: "16px",
+                  border: tabIndex === index ? "2px solid #7B1FA2" : "2px solid transparent",
+                  boxShadow: tabIndex === index 
+                    ? "0px 4px 8px rgba(123, 31, 162, 0.3)" 
+                    : "0px 2px 4px rgba(123, 31, 162, 0.1)",
+                  transition: "all 0.3s ease-in-out",
+                  "&:hover": { 
+                    backgroundColor: "#D1C4E9",
+                    boxShadow: "0px 6px 12px rgba(123, 31, 162, 0.4)",
+                    transform: "translateY(-2px)"
+                  },
+                }}
+                
+              >
+                {label}
+              </Button>
+            ))}
           </Box>
+
           <OPDivider />
 
-          {/* Dynamic Fields */}
-          <Box
-            component="form"
-            display="flex"
-            flexDirection="column"
-            gap={2}
-            marginBottom={2}
-          >
-            <Typography sx={{ fontWeight: "bold" }} variant="subtitle1">
-              {role === "client" ? "Client Details" : "Fleet Manager Details"}
-            </Typography>
-            <TextField
-              required
-              label="Company Name"
-              variant="outlined"
-              fullWidth
-            />
-            <TextField label="Address" variant="outlined" fullWidth />
-            <TextField label="Contact Details" variant="outlined" fullWidth />
-            <TextField
-              required
-              label="Verifavia ID"
-              variant="outlined"
-              fullWidth
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={role === "client"}
-                  disabled
-                  color="primary"
-                />
-              }
-              label="Is Client"
-            />
+          {/* Vessel Details Form */}
+          {tabIndex === 0 && (
+            <Box display="flex" flexDirection="column" gap={3} p={3}>
+              {/* Vessel Info */}
+              <Box border={1} borderColor="green" p={2} borderRadius={2}>
+                <h3>Vessel Info</h3>
+                <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
+                  <TextField required label="Vessel Name" fullWidth />
+                  <TextField required label="IMO Number" fullWidth />
+                  <TextField label="Vessel Type" fullWidth />
+                  <TextField label="Flag" fullWidth />
+                  <TextField label="Class Society" fullWidth />
+                  <TextField label="Port of Registry" fullWidth />
+                  <TextField label="Gross Tonnage MT" fullWidth />
+                  <TextField label="L*B*D" fullWidth />
+                  <TextField label="Registered Owner" fullWidth />
+                  <TextField label="Registered Owner Address" fullWidth multiline rows={2} />
+                  <TextField label="Vessel Manager" fullWidth />
+                  <TextField label="Client Name" fullWidth />
+                </Box>
+              </Box>
+
+              {/* Vessel Built Details */}
+              <Box border={1} borderColor="green" p={2} borderRadius={2}>
+                <h3>Vessel Built Details</h3>
+                <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
+                  <TextField label="Delivery Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
+                  <TextField label="Keel Laid Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
+                  <TextField label="Ship Yard Name" fullWidth />
+                  <TextField label="Ship Yard Address" fullWidth multiline rows={2} />
+                </Box>
+              </Box>
+
+              {/* Survey / Maintenance Details */}
+              <Box border={1} borderColor="green" p={2} borderRadius={2}>
+                <h3>Survey / Maintenance Details</h3>
+                <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
+                  <Select value={ihmClass} onChange={(e) => setIhmClass(e.target.value)} displayEmpty fullWidth>
+                    <MenuItem value="" disabled>IHM Class</MenuItem>
+                    <MenuItem value="Class A">Class A</MenuItem>
+                    <MenuItem value="Class B">Class B</MenuItem>
+                  </Select>
+                  <TextField label="IHM Survey Start Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
+                  <FormControlLabel control={<Checkbox checked={surveySameAsStart} onChange={(e) => setSurveySameAsStart(e.target.checked)} />} label="Survey End Dt same as Start Dt" />
+                  <TextField label="IHM Survey End Date" type="date" InputLabelProps={{ shrink: true }} fullWidth disabled={surveySameAsStart} />
+                  <TextField label="SOC Issue Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
+                  <FormControlLabel control={<Checkbox />} label="Ready For Maintenance" />
+                  <TextField label="Maintenance Start Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
+                </Box>
+              </Box>
+            </Box>
+
+          )}
+
+{tabIndex === 1 && (
+        <Box display="flex" flexDirection="column" gap={3} p={2}>
+          {/* Vessel Attachments */}
+          <Box border={1} borderColor="green" p={2} borderRadius={2} overflow="auto">
+            <h3>Vessel Attachments</h3>
+            <Box sx={{ overflowX: "auto" }}>
+              <Table sx={{ minWidth: isSmallScreen ? "600px" : "100%" }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell><b>Document Name</b></TableCell>
+                    <TableCell><b>Document Type</b></TableCell>
+                    <TableCell><b>File Name</b></TableCell>
+                    <TableCell><b>Status</b></TableCell>
+                    <TableCell><b>Del</b></TableCell>
+                    <TableCell><b>Down</b></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {attachments.map((att, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{att.name}</TableCell>
+                      <TableCell>{att.type}</TableCell>
+                      <TableCell>{att.filename}</TableCell>
+                      <TableCell>{att.status}</TableCell>
+                      <TableCell>
+                        <Button variant="outlined" color="error" size="small">Delete</Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outlined" color="primary" size="small">Download</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+            <Button variant="contained" color="primary" size="small" sx={{ mt: 1 }}>+ Add</Button>
           </Box>
 
-          {/* Footer */}
+          {/* Vessel Image Upload */}
           <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            marginTop={2}
-            flexDirection={isSmallScreen ? "column" : "row"}
+            border={1} borderColor="green" p={2} borderRadius={2}
+            width={isSmallScreen ? "100%" : "fit-content"}
           >
-            <Box
-              display="flex"
-              gap={1}
-              flexDirection={isSmallScreen ? "column" : "row"}
-              marginTop={isSmallScreen ? 2 : 0}
-            >
-              <Button variant="contained" color="primary">
-                Submit
-              </Button>
-              <Button variant="outlined" color="secondary" onClick={onClose}>
-                Cancel
+            <h3>Vessel Image</h3>
+            <Box display="flex" flexDirection={isSmallScreen ? "column" : "row"} alignItems="center" gap={2}>
+              <Box
+                width={isSmallScreen ? "100%" : 150} height={100} border={1}
+                display="flex" alignItems="center" justifyContent="center"
+              >
+                {image ? <img src={image} alt="Vessel" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "No Image"}
+              </Box>
+              <Button variant="contained" component="label" fullWidth={isSmallScreen}>
+                Upload Image
+                <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
               </Button>
             </Box>
           </Box>
         </Box>
+      )}
+
+          {tabIndex === 2 && (
+            <Box display="flex" flexDirection="column" gap={2} p={2}>
+              <Button variant="outlined" sx={{ alignSelf: "start" }}>Assign New DP</Button>
+              <Paper sx={{ overflow: "auto" }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>DP Info</TableCell>
+                      <TableCell>Position</TableCell>
+                      <TableCell>Effective Period</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">No records to display</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </Paper>
+            </Box>
+          )}
+
+          {tabIndex === 3 && (
+            <Box display="flex" flexDirection="column" gap={2} p={2}>
+              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                IHM Report Fixed Text Fields
+              </Typography>
+              <Paper sx={{ padding: 2, border: "1px solid #008000" }}>
+                <TextField label="Header FreeText Caption (20 Chars)" fullWidth />
+                <TextField label="Header FreeText Value (40 Chars)" fullWidth sx={{ mt: 2 }} />
+                <TextField label="PO Data Gap FreeText Disclaimer (500 Chars)" fullWidth multiline rows={3} sx={{ mt: 2 }} />
+              </Paper>
+
+              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                Common Inventory Pt Image
+              </Typography>
+              <Paper sx={{ padding: 2, border: "1px solid #008000" }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box sx={{ width: 120, height: 120, border: "1px solid #000" }}></Box>
+                  <Button variant="outlined">Upload Image</Button>
+                </Box>
+                <Button variant="outlined" sx={{ mt: 2 }}>
+                  Update All Inventory Pts to Use Common Image
+                </Button>
+              </Paper>
+
+              <TextField
+                label="Common Reference No/ Drawing No"
+                required
+                fullWidth
+                sx={{ mt: 2 }}
+              />
+              <Button variant="outlined" sx={{ mt: 2 }}>
+                Update Reference/Drawing No for All Inventory Pts
+              </Button>
+            </Box>
+          )}
+
+          {tabIndex === 4 && (
+            <Box display="flex" flexDirection="column" gap={2} p={2}>
+              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                Vessel Other Info
+              </Typography>
+              <Paper sx={{ padding: 2, border: "1px solid #008000" }}>
+                <TextField label="Vessel Email ID" fullWidth />
+              </Paper>
+            </Box>
+          )}
+
+
+
+          {/* Navigation Buttons */}
+          <Box display="flex" justifyContent="space-between" mt={3} flexWrap="wrap">
+            <Button variant="outlined" disabled={tabIndex === 0} onClick={() => setTabIndex(tabIndex - 1)}>
+              Previous
+            </Button>
+            {tabIndex < tabSections.length - 1 ? (
+              <Button variant="contained" onClick={() => setTabIndex(tabIndex + 1)}>
+                Next
+              </Button>
+            ) : (
+              <Button variant="contained" color="primary">
+                Save
+              </Button>
+            )}
+            <Button variant="outlined" color="secondary" onClick={onClose}>
+              Close
+            </Button>
+          </Box>
+        </Box>
       </Drawer>
-    </OPPageContainer>
+    </OPPageContainer >
   );
 };
 
