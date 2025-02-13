@@ -99,18 +99,18 @@ const AddEditVesselDrawer = ({ open, onClose }) => {
               <Box border={1} borderColor="green" p={2} borderRadius={2}>
                 <h3>Vessel Info</h3>
                 <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-                  <TextField required label="Vessel Name" fullWidth />
-                  <TextField required label="IMO Number" fullWidth />
-                  <TextField label="Vessel Type" fullWidth />
-                  <TextField label="Flag" fullWidth />
-                  <TextField label="Class Society" fullWidth />
-                  <TextField label="Port of Registry" fullWidth />
-                  <TextField label="Gross Tonnage MT" fullWidth />
-                  <TextField label="L*B*D" fullWidth />
-                  <TextField label="Registered Owner" fullWidth />
-                  <TextField label="Registered Owner Address" fullWidth multiline rows={2} />
-                  <TextField label="Vessel Manager" fullWidth />
-                  <TextField label="Client Name" fullWidth />
+                  <TextField required label="Vessel Name" fullWidth name="vesselName" />
+                  <TextField required label="IMO Number" fullWidth name="imoNumber" />
+                  <TextField label="Vessel Type" fullWidth name="vesselType" />
+                  <TextField label="Flag" fullWidth name="flag" />
+                  <TextField label="Class Society" fullWidth name="classSociety" />
+                  <TextField label="Port of Registry" fullWidth name="portOfRegistry" />
+                  <TextField label="Gross Tonnage MT" fullWidth name="grossTonnageMT" />
+                  <TextField label="L*B*D" fullWidth name="lbd" />
+                  <TextField label="Registered Owner" fullWidth name="registeredOwner" />
+                  <TextField label="Registered Owner Address" fullWidth multiline rows={2} name="registeredOwnerAddress" />
+                  <TextField label="Vessel Manager" fullWidth name="vesselManager" />
+                  <TextField label="Client Name" fullWidth name="clientName" />
                 </Box>
               </Box>
 
@@ -118,10 +118,10 @@ const AddEditVesselDrawer = ({ open, onClose }) => {
               <Box border={1} borderColor="green" p={2} borderRadius={2}>
                 <h3>Vessel Built Details</h3>
                 <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-                  <TextField label="Delivery Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
-                  <TextField label="Keel Laid Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
-                  <TextField label="Ship Yard Name" fullWidth />
-                  <TextField label="Ship Yard Address" fullWidth multiline rows={2} />
+                  <TextField label="Delivery Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="deliveryDate" />
+                  <TextField label="Keel Laid Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="keelLaidDate" />
+                  <TextField label="Ship Yard Name" fullWidth name="shipYardName" />
+                  <TextField label="Ship Yard Address" fullWidth multiline rows={2} name="shipYardAddress" />
                 </Box>
               </Box>
 
@@ -129,17 +129,17 @@ const AddEditVesselDrawer = ({ open, onClose }) => {
               <Box border={1} borderColor="green" p={2} borderRadius={2}>
                 <h3>Survey / Maintenance Details</h3>
                 <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-                  <Select value={ihmClass} onChange={(e) => setIhmClass(e.target.value)} displayEmpty fullWidth>
+                  <Select value={ihmClass} onChange={(e) => setIhmClass(e.target.value)} name="ihmClass" displayEmpty fullWidth>
                     <MenuItem value="" disabled>IHM Class</MenuItem>
                     <MenuItem value="Class A">Class A</MenuItem>
                     <MenuItem value="Class B">Class B</MenuItem>
                   </Select>
-                  <TextField label="IHM Survey Start Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
-                  <FormControlLabel control={<Checkbox checked={surveySameAsStart} onChange={(e) => setSurveySameAsStart(e.target.checked)} />} label="Survey End Dt same as Start Dt" />
-                  <TextField label="IHM Survey End Date" type="date" InputLabelProps={{ shrink: true }} fullWidth disabled={surveySameAsStart} />
-                  <TextField label="SOC Issue Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
-                  <FormControlLabel control={<Checkbox />} label="Ready For Maintenance" />
-                  <TextField label="Maintenance Start Date" type="date" InputLabelProps={{ shrink: true }} fullWidth />
+                  <TextField label="IHM Survey Start Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="ihmSurveyStartDate" />
+                  <FormControlLabel control={<Checkbox name="ihmSurveyEndDateIsSame" checked={surveySameAsStart} onChange={(e) => setSurveySameAsStart(e.target.checked)} />} label="Survey End Dt same as Start Dt" />
+                  <TextField label="IHM Survey End Date" type="date" InputLabelProps={{ shrink: true }} fullWidth disabled={surveySameAsStart} name="ihmSurveyEndDate" />
+                  <TextField label="SOC Issue Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="socIssueDate" />
+                  <FormControlLabel control={<Checkbox name="readyForMaintenance" />} label="Ready For Maintenance" />
+                  <TextField label="Maintenance Start Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="maintenanceStartDate" />
                 </Box>
               </Box>
             </Box>
@@ -271,7 +271,7 @@ const AddEditVesselDrawer = ({ open, onClose }) => {
                 Vessel Other Info
               </Typography>
               <Paper sx={{ padding: 2, border: "1px solid #008000" }}>
-                <TextField label="Vessel Email ID" fullWidth />
+                <TextField label="Vessel Email ID" fullWidth name="vesselEmailId" />
               </Paper>
             </Box>
           )}
