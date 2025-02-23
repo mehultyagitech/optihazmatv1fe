@@ -6,22 +6,38 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import { useTheme } from '@mui/material/styles';
-import OPPageContainer from '../../components/OPPageContainer';
+import OPPageContainer from "../../../components/OPPageContainer";
+import Checkbox from '@mui/material/Checkbox';
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const columns = [
-    { field: 'compartmentName', headerName: 'Compartment Name', width: 600 },
-    { field: 'disabled', headerName: 'Disabled', width: 250 },
+    { field: 'lrReport', headerName: 'LR Reports', width: 200 },
+    { field: 'reportDownload', headerName: 'Report Download', width: 200 },
+    {
+        field: 'approval',
+        headerName: 'Approved',
+        width: 200,
+        renderCell: (params) => (
+            <Checkbox
+                checked={params.row.approval}
+                onChange={() => handleApprovalChange(params.row.id)}
+                color="primary"
+            />
+        )
+    },
     {
         field: 'action',
         headerName: 'Action',
-        width: 120,
+        width: 200,
         renderCell: (params) => (
             <Button
                 variant="outlined"
                 size="small"
                 onClick={() => params.api.publishEvent('rowEdit', params.row)}
+                startIcon={<DeleteIcon />}
+                color="error"
             >
-                Edit
+                Delete
             </Button>
         ),
     },
@@ -33,25 +49,15 @@ const rows = [
     { id: 3, compartmentName: 'Battery- Auxiliary Engine 1', disabled: false },
 ];
 
-export default function EditCompartment() {
+export default function GenerateLR() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedRow, setSelectedRow] = useState(null);
     const theme = useTheme();
 
-    const handleOpenDrawer = (row) => {
-        setSelectedRow(row);
-        setDrawerOpen(true);
-    };
-
-    const handleCloseDrawer = () => {
-        setDrawerOpen(false);
-        setSelectedRow(null);
-    };
-
-    const title = 'Edit Compartments List';
+    const title = 'Generate LR Report';
 
     return (
-        <OPPageContainer sx={{ px: 4, pt: 2 }}>
+        <OPPageContainer sx={{ px: 2, pt: 2 }}>
             <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
                 {title}
             </Typography>
@@ -70,32 +76,8 @@ export default function EditCompartment() {
                     rowsPerPageOptions={[5]}
                     checkboxSelection
                     disableSelectionOnClick
-                    onRowClick={(params) => handleOpenDrawer(params.row)}
                 />
             </Box>
-            <Drawer
-                anchor="right"
-                open={drawerOpen}
-                onClose={handleCloseDrawer}
-                sx={{
-                    '& .MuiDrawer-paper': {
-                        width: 300,
-                        marginTop: `${theme.mixins.toolbar.minHeight}px`,
-                        height: `calc(100% - ${theme.mixins.toolbar.minHeight}px)`,
-                    },
-                }}
-            >
-                <Box sx={{ padding: 2 }}>
-                    <Typography variant="h5" gutterBottom>Edit Location</Typography>
-                    <Divider sx={{ my: 2 }} />
-                    {selectedRow && (
-                        <Box>
-                            <Typography>Sub-Location Name: {selectedRow.role}</Typography>
-                            <Typography>Disabled: {selectedRow.userName}</Typography>
-                        </Box>
-                    )}
-                </Box>
-            </Drawer>
         </OPPageContainer>
     );
 }

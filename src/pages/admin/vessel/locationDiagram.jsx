@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
-import VesselTopBar from "../../../components/vesselTopBar";
+import LocationDiagramTopBar from "../../../components/locationDiagramTopBar";
 import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
@@ -98,6 +98,49 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
 
 
 const Vessel = () => {
+    const handleSearch = () => {
+        const selectedFilters = filters.reduce((acc, filter) => {
+            acc[filter.name] = filter.value;
+            return acc;
+        }, {});
+        console.log("Selected Filters:", selectedFilters);
+    };
+    const [filters, setFilters] = useState([
+        {
+            name: "client",
+            value: "",
+            placeholder: "Client",
+            options: [
+                { label: "Client 1", value: "client1" },
+                { label: "Client 2", value: "client2" },
+            ],
+        },
+        {
+            name: "fleetManager",
+            value: "",
+            placeholder: "Fleet Manager",
+            options: [
+                { label: "Manager 1", value: "manager1" },
+                { label: "Manager 2", value: "manager2" },
+            ],
+        },
+        {
+            name: "vessel",
+            value: "",
+            placeholder: "Vessel",
+            options: [
+                { label: "Vessel 1", value: "vessel1" },
+                { label: "Vessel 2", value: "vessel2" },
+            ],
+        },
+    ]);
+    const handleFilterChange = (name, value) => {
+        setFilters((prevFilters) =>
+            prevFilters.map((filter) =>
+                filter.name === name ? { ...filter, value } : filter
+            )
+        );
+    };
     const [clients, setClients] = useState([
         {
             avatarSrc: "https://avatar.iran.liara.run/public/33",
@@ -165,9 +208,9 @@ const Vessel = () => {
     );
 
     return (
-        <OPPageContainer>
+        <OPPageContainer sx={{ px: 2, pt: 2 }}>
             <Box>
-                <VesselTopBar />
+                <LocationDiagramTopBar filters={filters} onFilterChange={handleFilterChange} onSearch={handleSearch} />
                 <Box
                     display="flex"
                     alignItems="center"
@@ -181,7 +224,7 @@ const Vessel = () => {
                         mb={{ xs: 2, sm: 0 }}
                         flexGrow={{ xs: 1, sm: 0 }}
                     >
-                        Vessels
+                        Location Diagram
                     </Typography>
                     <Box
                         display="flex"
@@ -193,7 +236,7 @@ const Vessel = () => {
                     >
                         <TextField
                             variant="outlined"
-                            label="Vessel or Client Name"
+                            label="Location Name"
                             value={searchQuery}
                             onChange={handleSearchChange}
                             size="small"

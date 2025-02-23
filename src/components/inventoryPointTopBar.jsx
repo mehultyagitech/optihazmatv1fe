@@ -1,30 +1,13 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { Button, MenuItem, Select, FormControl, InputLabel, Box, Grid } from "@mui/material";
-import "../../App.css";
-import DownloadIcon from '@mui/icons-material/Download';
+import "../App.css";
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import FilterListIcon from '@mui/icons-material/FilterList';
 
-const FilterBar = ({ filters, onFilterChange, onSearch }) => {
+const InventoryPointTopBar = ({ filters, onFilterChange, onSearch }) => {
     return (
         <Box className="filter-bar" display="flex" justifyContent="space-between" alignItems="center" gap={2} flexDirection={{ xs: 'column', sm: 'row' }} sx={{  }}>
-            {/* Left-aligned Vessel List button */}
-            <Button
-                variant="outlined"
-                color="primary"
-                className="vessel-list-btn"
-                startIcon={<DownloadIcon />}
-                sx={{
-                    width: { xs: '100%', sm: 'auto' },
-                    maxWidth: { xs: '96%', sm: 'auto' },
-                    whiteSpace: 'nowrap'
-                }}
-            >
-                Vessel List
-            </Button>
-
-
             {/* Right-aligned filters and search button */}
             <Grid container spacing={2} alignItems="center" justifyContent="flex-end" sx={{ width: '100%' }}>
                 {filters.map((filter, index) => (
@@ -60,7 +43,7 @@ const FilterBar = ({ filters, onFilterChange, onSearch }) => {
     );
 };
 
-FilterBar.propTypes = {
+InventoryPointTopBar.propTypes = {
     filters: PropTypes.arrayOf(
         PropTypes.shape({
             name: PropTypes.string.isRequired,
@@ -78,4 +61,4 @@ FilterBar.propTypes = {
     onSearch: PropTypes.func.isRequired,
 };
 
-export default FilterBar;
+export default InventoryPointTopBar;

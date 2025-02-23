@@ -1,12 +1,13 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { Button, MenuItem, Select, FormControl, InputLabel, Box, Grid } from "@mui/material";
-import "../../App.css";
+import "../App.css";
 import DownloadIcon from '@mui/icons-material/Download';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import CropIcon from '@mui/icons-material/Crop';
 
-const FilterBar = ({ filters, onFilterChange, onSearch }) => {
+const LocationDiagramTopBar = ({ filters, onFilterChange, onSearch }) => {
     return (
         <Box className="filter-bar" display="flex" justifyContent="space-between" alignItems="center" gap={2} flexDirection={{ xs: 'column', sm: 'row' }} sx={{  }}>
             {/* Left-aligned Vessel List button */}
@@ -14,14 +15,14 @@ const FilterBar = ({ filters, onFilterChange, onSearch }) => {
                 variant="outlined"
                 color="primary"
                 className="vessel-list-btn"
-                startIcon={<DownloadIcon />}
+                startIcon = {<CropIcon/>}
                 sx={{
                     width: { xs: '100%', sm: 'auto' },
                     maxWidth: { xs: '96%', sm: 'auto' },
                     whiteSpace: 'nowrap'
                 }}
             >
-                Vessel List
+                Mark New Area
             </Button>
 
 
@@ -60,7 +61,7 @@ const FilterBar = ({ filters, onFilterChange, onSearch }) => {
     );
 };
 
-FilterBar.propTypes = {
+LocationDiagramTopBar.propTypes = {
     filters: PropTypes.arrayOf(
         PropTypes.shape({
             name: PropTypes.string.isRequired,
@@ -78,4 +79,4 @@ FilterBar.propTypes = {
     onSearch: PropTypes.func.isRequired,
 };
 
-export default FilterBar;
+export default LocationDiagramTopBar;

@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import { useTheme } from '@mui/material/styles';
-import { PageContainer } from '@toolpad/core';
+import OPPageContainer from "../../components/OPPageContainer";
 
 const columns = [
     { field: 'subLocationName', headerName: 'Sub-Location Name', width: 250 },
@@ -51,7 +51,7 @@ export default function EditSubLocations() {
     const title = 'Edit Sub Locations List';
 
     return (
-        <PageContainer>
+        <OPPageContainer sx={{ px: 4, pt: 2 }}>
             <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
                 {title}
             </Typography>
@@ -96,6 +96,6 @@ export default function EditSubLocations() {
                     )}
                 </Box>
             </Drawer>
-        </PageContainer>
+        </OPPageContainer>
     );
 }

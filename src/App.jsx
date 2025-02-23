@@ -9,6 +9,12 @@ import EquipmentIcon from '@mui/icons-material/Build';
 import PeopleIcon from '@mui/icons-material/People';
 import StorageIcon from '@mui/icons-material/Storage';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import AddLocationIcon from '@mui/icons-material/AddLocation';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import SummarizeIcon from '@mui/icons-material/Summarize';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 const NAVIGATION = [
   {
@@ -22,8 +28,40 @@ const NAVIGATION = [
   },  
   {
     segment: 'vessels',
-    title: 'Vessels',
+    title: 'Vessels Info',
     icon: <StorageIcon />,
+    children:[  
+      {
+        segment: 'vesselDashboard',
+        title: 'Vesssel Dashboard',
+        icon: <DashboardCustomizeIcon />,
+      },
+      {
+        segment: 'vessels',
+        title: 'Vessels',
+        icon: <HandshakeIcon />,
+      },
+      {
+        segment: 'location-diagram',
+        title: 'Location Diagram',
+        icon: <AddLocationIcon />,
+      },
+      {
+        segment: 'inventory-points',
+        title: 'Inventory Points',
+        icon: <InventoryIcon />,
+      },
+      {
+        segment: 'generate-ihm',
+        title: 'Generate IHM',
+        icon: <SummarizeIcon />,
+      },
+      {
+        segment: 'generate-lr',
+        title: 'Generate LR',
+        icon: <AssessmentIcon />,
+      },
+    ]
   },
   {
     segment: 'client-manager',

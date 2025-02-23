@@ -15,7 +15,11 @@ import EditCompartment from './pages/admin/editCompartment.jsx';
 import OverviewCard from './pages/admin/dashboard.jsx';
 import VesselClientManager from './pages/admin/clientManager/vesselClientManager.jsx';
 import Vessel from './pages/admin/vessel/vessel.jsx';
-
+import VesselDashboard from './pages/admin/vessel/vesselDashboard.jsx';
+import LocationDiagram from './pages/admin/vessel/locationDiagram.jsx';
+import InventoryPoint from './pages/admin/vessel/inventoryPoints.jsx'
+import GenerateIHM from './pages/admin/vessel/generateIHM.jsx'
+import GenerateLR from './pages/admin/vessel/generateLR.jsx'
 const router = createBrowserRouter([
   {
     Component: App,
@@ -57,8 +61,28 @@ const router = createBrowserRouter([
             element: <VesselClientManager />,
           },
           {
-            path: "/vessels",
+            path: "/vessels/vessels",
             element: <Vessel />,
+          },
+          {
+            path: "/vessels/vesselDashboard",
+            element: <VesselDashboard />,
+          },
+          {
+            path: "/vessels/location-diagram",
+            element: <LocationDiagram />,
+          },
+          {
+            path: "/vessels/inventory-points",
+            element: <InventoryPoint />,
+          },
+          {
+            path: "/vessels/generate-ihm",
+            element: <GenerateIHM />,
+          },
+          {
+            path: "/vessels/generate-lr",
+            element: <GenerateLR />,
           },
         ]
       },

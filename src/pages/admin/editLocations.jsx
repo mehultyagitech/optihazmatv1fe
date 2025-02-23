@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import { useTheme } from '@mui/material/styles';
-import { PageContainer } from '@toolpad/core';
+import OPPageContainer from '../../components/OPPageContainer';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 const columns = [
@@ -52,7 +52,7 @@ export default function EditLocations() {
     const title = 'Edit Locations List';
 
     return (
-        <PageContainer>
+        <OPPageContainer sx={{ px: 4, pt: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
                     {title}
@@ -102,6 +102,6 @@ export default function EditLocations() {
                     )}
                 </Box>
             </Drawer>
-        </PageContainer>
+        </OPPageContainer>
     );
 }
