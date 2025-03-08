@@ -1,25 +1,33 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import Layout from './layout/layout.jsx';
-import { PageContainer } from '@toolpad/core';
-import CredentialsSignInPage from './pages/admin/login.jsx';
-import Users from './pages/admin/users.jsx';
-import NotFound from './pages/admin/notFound.jsx';
-import EditLocations from './pages/admin/editLocations.jsx';
-import EditSubLocations from './pages/admin/editSubLocations.jsx';
-import EditEquipmentName from './pages/admin/editEquipmentName.jsx';
-import EditCompartment from './pages/admin/editCompartment.jsx';
-import OverviewCard from './pages/admin/dashboard.jsx';
-import VesselClientManager from './pages/admin/clientManager/vesselClientManager.jsx';
-import Vessel from './pages/admin/vessel/vessel.jsx';
-import VesselDashboard from './pages/admin/vessel/vesselDashboard.jsx';
-import LocationDiagram from './pages/admin/vessel/locationDiagram.jsx';
-import InventoryPoint from './pages/admin/vessel/inventoryPoints.jsx'
-import GenerateIHM from './pages/admin/vessel/generateIHM.jsx'
-import GenerateLR from './pages/admin/vessel/generateLR.jsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App.jsx";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Layout from "./layout/layout.jsx";
+import { PageContainer } from "@toolpad/core";
+import CredentialsSignInPage from "./pages/admin/login.jsx";
+import Users from "./pages/admin/users.jsx";
+import NotFound from "./pages/admin/notFound.jsx";
+import EditLocations from "./pages/admin/editLocations.jsx";
+import EditSubLocations from "./pages/admin/editSubLocations.jsx";
+import EditEquipmentName from "./pages/admin/editEquipmentName.jsx";
+import EditCompartment from "./pages/admin/editCompartment.jsx";
+import OverviewCard from "./pages/admin/dashboard.jsx";
+import VesselClientManager from "./pages/admin/clientManager/vesselClientManager.jsx";
+import Vessel from "./pages/admin/vessel/vessel.jsx";
+import VesselDashboard from "./pages/admin/vessel/vesselDashboard.jsx";
+import LocationDiagram from "./pages/admin/vessel/locationDiagram.jsx";
+import InventoryPoint from "./pages/admin/vessel/inventoryPoints.jsx";
+import GenerateIHM from "./pages/admin/vessel/generateIHM.jsx";
+import GenerateLR from "./pages/admin/vessel/generateLR.jsx";
+import { RecoilRoot } from "recoil";
+import {
+  QueryClient,
+  QueryClientProvider
+} from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
+
 const router = createBrowserRouter([
   {
     Component: App,
@@ -30,23 +38,23 @@ const router = createBrowserRouter([
         children: [
           {
             path: "/users",
-            element: <Users />
+            element: <Users />,
           },
           {
             path: "/edit-location",
-            element: <EditLocations />
+            element: <EditLocations />,
           },
           {
             path: "/edit-sub-location",
-            element: <EditSubLocations />
+            element: <EditSubLocations />,
           },
           {
             path: "/edit-equipment",
-            element: <EditEquipmentName />
+            element: <EditEquipmentName />,
           },
           {
             path: "/edit-compartment",
-            element: <EditCompartment />
+            element: <EditCompartment />,
           },
           {
             path: "*",
@@ -84,19 +92,23 @@ const router = createBrowserRouter([
             path: "/vessels/generate-lr",
             element: <GenerateLR />,
           },
-        ]
+        ],
       },
 
       {
         path: "/login",
-        element: <CredentialsSignInPage />
+        element: <CredentialsSignInPage />,
       },
-    ]
+    ],
   },
 ]);
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
-)
+    <RecoilRoot>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </RecoilRoot>
+  </StrictMode>
+);
