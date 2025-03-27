@@ -20,6 +20,8 @@ import {
 } from "@mui/material";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPDivider from "../../../components/OPDivider";
+import AddIcon from "@mui/icons-material/Add";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 
 const AddEditInventoryPointDrawer = ({ open, onClose }) => {
   const theme = useTheme();
@@ -97,185 +99,276 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
           {/* Vessel Details Form */}
           {tabIndex === 0 && (
             <Box display="flex" flexDirection="column" gap={3} p={3}>
-              {/* Vessel Info */}
+              {/* Location Information */}
               <Box border={1} borderColor="green" p={2} borderRadius={2}>
-                <h3>Location Information</h3>
+                <h3 style={{ borderBottom: "1px solid green" }}>Location Information</h3>
                 <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-                  <TextField required label="Vessel Name" fullWidth name="vesselName" />
-                  <TextField required label="IMO Number" fullWidth name="imoNumber" />
-                  <TextField label="Vessel Type" fullWidth name="vesselType" />
-                  <TextField label="Flag" fullWidth name="flag" />
-                  <TextField label="Class Society" fullWidth name="classSociety" />
-                  <TextField label="Port of Registry" fullWidth name="portOfRegistry" />
-                  <TextField label="Gross Tonnage MT" fullWidth name="grossTonnageMT" />
-                  <TextField label="L*B*D" fullWidth name="lbd" />
-                  <TextField label="Registered Owner" fullWidth name="registeredOwner" />
-                  <TextField label="Registered Owner Address" fullWidth multiline rows={2} name="registeredOwnerAddress" />
-                  <TextField label="Vessel Manager" fullWidth name="vesselManager" />
-                  <TextField label="Client Name" fullWidth name="clientName" />
+                  <TextField label="Sub Location" fullWidth name="subLocation" select />
+                  <TextField label="Equipment" fullWidth name="equipment" select />
+                  <TextField label="Compartment" fullWidth name="compartment" select />
+                  <TextField label="Object" fullWidth name="object" select />
+                  <TextField label="Description" fullWidth name="description" multiline rows={2} />
+                  <TextField required label="Inventory Class" fullWidth name="inventoryClass" select />
+                  <FormControlLabel control={<Checkbox name="isPCHM" />} label="Is PCHM" />
                 </Box>
               </Box>
 
-              {/* Vessel Built Details */}
+              {/* Other Information */}
               <Box border={1} borderColor="green" p={2} borderRadius={2}>
-                <h3>Vessel Built Details</h3>
-                <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-                  <TextField label="Delivery Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="deliveryDate" />
-                  <TextField label="Keel Laid Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="keelLaidDate" />
-                  <TextField label="Ship Yard Name" fullWidth name="shipYardName" />
-                  <TextField label="Ship Yard Address" fullWidth multiline rows={2} name="shipYardAddress" />
-                </Box>
-              </Box>
-
-              {/* Survey / Maintenance Details */}
-              <Box border={1} borderColor="green" p={2} borderRadius={2}>
-                <h3>Survey / Maintenance Details</h3>
-                <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-                  <Select value={ihmClass} onChange={(e) => setIhmClass(e.target.value)} name="ihmClass" displayEmpty fullWidth>
-                    <MenuItem value="" disabled>IHM Class</MenuItem>
-                    <MenuItem value="Class A">Class A</MenuItem>
-                    <MenuItem value="Class B">Class B</MenuItem>
-                  </Select>
-                  <TextField label="IHM Survey Start Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="ihmSurveyStartDate" />
-                  <FormControlLabel control={<Checkbox name="ihmSurveyEndDateIsSame" checked={surveySameAsStart} onChange={(e) => setSurveySameAsStart(e.target.checked)} />} label="Survey End Dt same as Start Dt" />
-                  <TextField label="IHM Survey End Date" type="date" InputLabelProps={{ shrink: true }} fullWidth disabled={surveySameAsStart} name="ihmSurveyEndDate" />
-                  <TextField label="SOC Issue Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="socIssueDate" />
-                  <FormControlLabel control={<Checkbox name="readyForMaintenance" />} label="Ready For Maintenance" />
-                  <TextField label="Maintenance Start Date" type="date" InputLabelProps={{ shrink: true }} fullWidth name="maintenanceStartDate" />
+                <h3 style={{ borderBottom: "1px solid green" }}>Other Information</h3>
+                <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={2}>
+                  <TextField label="Manufacturer Brand" fullWidth name="manufacturerBrand" multiline rows={2} />
+                  <TextField label="Reference No/ Drawing No" fullWidth name="referenceNo" multiline rows={2} />
+                  <TextField label="Remarks" fullWidth name="remarks" multiline rows={2} />
                 </Box>
               </Box>
             </Box>
-
           )}
 
 {tabIndex === 1 && (
-        <Box display="flex" flexDirection="column" gap={3} p={2}>
-          {/* Vessel Attachments */}
-          <Box border={1} borderColor="green" p={2} borderRadius={2} overflow="auto">
-            <h3>Vessel Attachments</h3>
-            <Box sx={{ overflowX: "auto" }}>
-              <Table sx={{ minWidth: isSmallScreen ? "600px" : "100%" }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell><b>Document Name</b></TableCell>
-                    <TableCell><b>Document Type</b></TableCell>
-                    <TableCell><b>File Name</b></TableCell>
-                    <TableCell><b>Status</b></TableCell>
-                    <TableCell><b>Del</b></TableCell>
-                    <TableCell><b>Down</b></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {attachments.map((att, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{att.name}</TableCell>
-                      <TableCell>{att.type}</TableCell>
-                      <TableCell>{att.filename}</TableCell>
-                      <TableCell>{att.status}</TableCell>
-                      <TableCell>
-                        <Button variant="outlined" color="error" size="small">Delete</Button>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="outlined" color="primary" size="small">Download</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-            <Button variant="contained" color="primary" size="small" sx={{ mt: 1 }}>+ Add</Button>
-          </Box>
-
-          {/* Vessel Image Upload */}
-          <Box
-            border={1} borderColor="green" p={2} borderRadius={2}
-            width={isSmallScreen ? "100%" : "fit-content"}
-          >
-            <h3>Vessel Image</h3>
-            <Box display="flex" flexDirection={isSmallScreen ? "column" : "row"} alignItems="center" gap={2}>
-              <Box
-                width={isSmallScreen ? "100%" : 150} height={100} border={1}
-                display="flex" alignItems="center" justifyContent="center"
-              >
-                {image ? <img src={image} alt="Vessel" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "No Image"}
-              </Box>
-              <Button variant="contained" component="label" fullWidth={isSmallScreen}>
-                Upload Image
-                <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
-              </Button>
-            </Box>
-          </Box>
-        </Box>
-      )}
+  <Box display="flex" flexDirection="column" gap={3} p={2}>
+    {/* Vessel Attachments */}
+    <Box border={1} borderColor="green" p={2} borderRadius={2} overflow="auto">
+      <h3 style={{ color: 'green', marginBottom: '8px', borderBottom: '2px solid green', display: 'inline-block' }}>Vessel Attachments</h3>
+      <Box sx={{ overflowX: "auto" }}>
+        <Table sx={{ minWidth: "100%" }}>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: '#e8f5e9' }}>
+              <TableCell><b>Document Name</b></TableCell>
+              <TableCell><b>Document Type</b></TableCell>
+              <TableCell><b>File Name</b></TableCell>
+              <TableCell><b>Status</b></TableCell>
+              <TableCell><b>Delete</b></TableCell>
+              <TableCell><b>Download</b></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {attachments.map((att, index) => (
+              <TableRow key={index}>
+                <TableCell>{att.name}</TableCell>
+                <TableCell>{att.type}</TableCell>
+                <TableCell>{att.filename}</TableCell>
+                <TableCell>{att.status}</TableCell>
+                <TableCell>
+                  <Button variant="outlined" color="error" size="small">Delete</Button>
+                </TableCell>
+                <TableCell>
+                  <Button variant="outlined" color="primary" size="small">Download</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Box>
+      <Button variant="contained" color="primary" size="small" sx={{ mt: 1 }}>+ Add</Button>
+    </Box>
+  </Box>
+)}
 
           {tabIndex === 2 && (
-            <Box display="flex" flexDirection="column" gap={2} p={2}>
-              <Button variant="outlined" sx={{ alignSelf: "start" }}>Assign New DP</Button>
-              <Paper sx={{ overflow: "auto" }}>
+          <Box display="flex" flexDirection="column" gap={2} p={2}>
+          <Box 
+            sx={{ 
+              border: "2px solid #4CAF50", 
+              borderRadius: "8px", 
+              minHeight: "120px", 
+              p: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            {/* Image upload preview or placeholder */}
+          </Box>
+        
+          <Box display="flex" alignItems="center" gap={2}>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              sx={{ textTransform: "none", borderRadius: "8px" }}
+              startIcon={<AddIcon />}
+            >
+              Add Image
+            </Button>
+        
+            <FormControlLabel 
+              control={<Checkbox />} 
+              label="Save Without Image"
+            />
+            
+            <FormControlLabel 
+              control={<Checkbox />} 
+              label="Use Common Image"
+            />
+          </Box>
+        </Box>
+        
+          )}
+
+          {tabIndex === 3 && (
+
+<Box display="flex" flexDirection="column" gap={2} p={2} border="1px solid #ddd" borderRadius="8px">
+  {/* Select Item Button */}
+  <Button 
+    variant="outlined" 
+    sx={{ alignSelf: "start", textTransform: "none", borderRadius: "8px" }}
+  >
+    Select Item
+  </Button>
+
+  {/* Table */}
+  <Paper sx={{ overflow: "auto", border: "2px solid #4CAF50", borderRadius: "8px" }}>
+    <Table>
+      <TableHead>
+        <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+          <TableCell sx={{ fontWeight: "bold" }}>Item Details</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Hazmats (Total Mass)</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Item Replaced</TableCell>
+          <TableCell sx={{ fontWeight: "bold" }}>Delete</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        <TableRow>
+          <TableCell colSpan={4} align="center" sx={{ color: "#555" }}>
+            No records to display
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  </Paper>
+</Box>
+
+          )}
+
+          {tabIndex === 4 && (
+           
+           <Box 
+             display="flex" 
+             flexDirection="column" 
+             gap={2} 
+             p={2} 
+             border="2px solid #4CAF50" 
+             borderRadius="8px"
+             width="fit-content"
+           >
+             {/* Header */}
+             <Typography 
+               variant="subtitle1" 
+               sx={{ color: "#4CAF50", fontWeight: "bold", borderBottom: "1px solid #4CAF50" }}
+             >
+               – Inventory Remove/Replace Information
+             </Typography>
+           
+             {/* Checkboxes */}
+             <Box display="flex" alignItems="center" gap={1}>
+               <FormControlLabel 
+                 control={<Checkbox defaultChecked sx={{ color: "blue" }} />} 
+                 label="Is Removed from IHM"
+               />
+               <Typography variant="body2" sx={{ color: "blue", cursor: "pointer" }}>
+                 Note: Removal document is required to be attached
+               </Typography>
+             </Box>
+             
+             <FormControlLabel 
+               control={<Checkbox sx={{ color: "#555" }} />} 
+               label="Is Replaced"
+             />
+           
+             {/* Date Picker */}
+             <TextField 
+               label="Removed Date *" 
+               variant="outlined" 
+               defaultValue="14-Oct-2024" 
+               InputProps={{ endAdornment: <CalendarMonthIcon sx={{ color: "#555" }} /> }}
+               fullWidth
+             />
+           
+             {/* Remarks */}
+             <TextField 
+               label="Removed Remarks *" 
+               variant="outlined" 
+               multiline 
+               rows={3} 
+               defaultValue="Asbestos removed as per makers asbestos free declaration."
+               fullWidth
+             />
+           </Box>
+           
+          )}
+
+{tabIndex === 5 && (
+
+<Box display="flex" flexDirection="column" gap={1} p={2} border="2px solid #4CAF50" borderRadius="8px">
+  
+  {/* Header Title */}
+  <Typography 
+    variant="subtitle1" 
+    sx={{ color: "#4CAF50", fontWeight: "bold", borderBottom: "1px solid #4CAF50" }}
+  >
+    – Link Attachments to Inventory Point
+  </Typography>
+
+  {/* Table */}
+  <Paper sx={{ overflow: "auto", borderRadius: "8px" }}>
+    <Table>
+      <TableHead>
+        <TableRow sx={{ backgroundColor: "#f0f8e6" }}>
+          <TableCell sx={{ fontWeight: "bold", color: "#333" }}>Document Name</TableCell>
+          <TableCell sx={{ fontWeight: "bold", color: "#333" }}>Document Type</TableCell>
+          <TableCell sx={{ fontWeight: "bold", color: "#333" }}>Down</TableCell>
+          <TableCell sx={{ fontWeight: "bold", color: "#333" }}>Link Document</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        <TableRow>
+          <TableCell colSpan={4} align="center" sx={{ color: "#555" }}>
+            No records to display
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  </Paper>
+
+</Box>
+
+)}
+
+{tabIndex === 6 && (
+
+            <Box display="flex" flexDirection="column" gap={1} p={2} border="2px solid #4CAF50" borderRadius="8px">
+              
+              {/* Header Title */}
+              <Typography 
+                variant="subtitle1" 
+                sx={{ color: "#4CAF50", fontWeight: "bold", borderBottom: "1px solid #4CAF50" }}
+              >
+                – Link Attachments to Inventory Point
+              </Typography>
+            
+              {/* Table */}
+              <Paper sx={{ overflow: "auto", borderRadius: "8px" }}>
                 <Table>
                   <TableHead>
-                    <TableRow>
-                      <TableCell>DP Info</TableCell>
-                      <TableCell>Position</TableCell>
-                      <TableCell>Effective Period</TableCell>
-                      <TableCell>Actions</TableCell>
+                    <TableRow sx={{ backgroundColor: "#f0f8e6" }}>
+                      <TableCell sx={{ fontWeight: "bold", color: "#333" }}>Document Name</TableCell>
+                      <TableCell sx={{ fontWeight: "bold", color: "#333" }}>Document Type</TableCell>
+                      <TableCell sx={{ fontWeight: "bold", color: "#333" }}>Down</TableCell>
+                      <TableCell sx={{ fontWeight: "bold", color: "#333" }}>Link Document</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     <TableRow>
-                      <TableCell colSpan={4} align="center">No records to display</TableCell>
+                      <TableCell colSpan={4} align="center" sx={{ color: "#555" }}>
+                        No records to display
+                      </TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </Paper>
+            
             </Box>
-          )}
-
-          {tabIndex === 3 && (
-            <Box display="flex" flexDirection="column" gap={2} p={2}>
-              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                IHM Report Fixed Text Fields
-              </Typography>
-              <Paper sx={{ padding: 2, border: "1px solid #008000" }}>
-                <TextField label="Header FreeText Caption (20 Chars)" fullWidth />
-                <TextField label="Header FreeText Value (40 Chars)" fullWidth sx={{ mt: 2 }} />
-                <TextField label="PO Data Gap FreeText Disclaimer (500 Chars)" fullWidth multiline rows={3} sx={{ mt: 2 }} />
-              </Paper>
-
-              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                Common Inventory Pt Image
-              </Typography>
-              <Paper sx={{ padding: 2, border: "1px solid #008000" }}>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Box sx={{ width: 120, height: 120, border: "1px solid #000" }}></Box>
-                  <Button variant="outlined">Upload Image</Button>
-                </Box>
-                <Button variant="outlined" sx={{ mt: 2 }}>
-                  Update All Inventory Pts to Use Common Image
-                </Button>
-              </Paper>
-
-              <TextField
-                label="Common Reference No/ Drawing No"
-                required
-                fullWidth
-                sx={{ mt: 2 }}
-              />
-              <Button variant="outlined" sx={{ mt: 2 }}>
-                Update Reference/Drawing No for All Inventory Pts
-              </Button>
-            </Box>
-          )}
-
-          {tabIndex === 4 && (
-            <Box display="flex" flexDirection="column" gap={2} p={2}>
-              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                Vessel Other Info
-              </Typography>
-              <Paper sx={{ padding: 2, border: "1px solid #008000" }}>
-                <TextField label="Vessel Email ID" fullWidth name="vesselEmailId" />
-              </Paper>
-            </Box>
+            
           )}
 
 

@@ -16,7 +16,7 @@ import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
 // import AddEditVesselDrawer from "./addEditVesselDrawer";
 
-const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, vesselType, onEdit }) => (
+const ClientCard = ({ avatarSrc, vessel, Survey, clientName, remRep, vesselType, onEdit }) => (
     <OPCard sx={{ width: "100%" }}>
         <Box display="flex" alignItems="center" gap={2}>
             <Avatar src={avatarSrc} sx={{ width: 60, height: 60 }} />
@@ -50,10 +50,10 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
                     color="text.secondary"
                     mb={0.5}
                 >
-                    IMO Number
+                    Survey
                 </Typography>
                 <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
-                    {imoNumber}
+                    {Survey}
                 </Typography>
             </Grid>
             <Grid item xs={6}>
@@ -62,7 +62,7 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
                     color="text.secondary"
                     mb={0.5}
                 >
-                    Client Name
+                    Maint
                 </Typography>
                 <Typography fontWeight="bold"  variant="body2" color="text.primary" mb={2}>
                     {clientName}
@@ -74,10 +74,10 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
                     color="text.secondary"
                     mb={0.5}
                 >
-                    Manager Name
+                    Rem/Rep
                 </Typography>
                 <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
-                    {managerName}
+                    {remRep}
                 </Typography>
             </Grid>
             <Grid item xs={6}>
@@ -86,7 +86,7 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
                     color="text.secondary"
                     mb={0.5}
                 >
-                    Vessel Type
+                    Active
                 </Typography>
                 <Typography fontWeight="bold" variant="body2" color="text.primary">
                     {vesselType}
@@ -145,41 +145,41 @@ const Vessel = () => {
         {
             avatarSrc: "https://avatar.iran.liara.run/public/33",
             vessel: "A LA MARINE",
-            imoNumber: "123456789",
+            Survey: "123456789",
             clientName: "ACECHEM",
-            managerName: "John Doe",
+            remRep: "John Doe",
             vesselType: "Crude Oil Tanker",
         },
         {
             avatarSrc: "https://avatar.iran.liara.run/public/5",
             vessel: "ADIYAMAN SCHGE",
-            imoNumber: "123456789",
+            Survey: "123456789",
             clientName: "BETA LTD",
-            managerName: "John Doe",
+            remRep: "John Doe",
             vesselType: "Crude Oil Tanker",
         },
         {
             avatarSrc: "https://avatar.iran.liara.run/public/31",
             vessel: "ADAM SCHULTE",
-            imoNumber: "123456789",
+            Survey: "123456789",
             clientName: "OMEGA INC",
-            managerName: "John Doe",
+            remRep: "John Doe",
             vesselType: "Crude Oil Tanker",
         },
         {
             avatarSrc: "https://avatar.iran.liara.run/public/24",
             vessel: "A LA MARINE",
-            imoNumber: "123456789",
+            Survey: "123456789",
             clientName: "DELTA CORP",
-            managerName: "John Doe",
+            remRep: "John Doe",
             vesselType: "General Cargo Ship",
         },
         {
             avatarSrc: "https://avatar.iran.liara.run/public/9",
             vessel: "ACER ARROW",
-            imoNumber: "123456789",
+            Survey: "123456789",
             clientName: "ZETA LTD",
-            managerName: "John Doe",
+            remRep: "John Doe",
             vesselType: "Crude Oil Tanker",
         },
     ]);
@@ -265,10 +265,10 @@ const Vessel = () => {
                         <ClientCard
                             key={index}
                             avatarSrc={client.avatarSrc}
-                            imoNumber={client.imoNumber}
+                            Survey={client.Survey}
                             vessel={client.vessel}
                             clientName={client.clientName}
-                            managerName={client.managerName}
+                            remRep={client.remRep}
                             vesselType={client.vesselType}
                         />
                     ))}

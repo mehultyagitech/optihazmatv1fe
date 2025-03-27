@@ -8,7 +8,7 @@ const OPDivider = ({ sx, ...props }) => {
                 my: 0, // Default margin
                 marginLeft: 2, // Explicitly set no left margin
                 marginRight:2,
-                marginBottom: 1,
+                marginBottom: 2,
                 ...sx, // Allow additional styles to be passed and merged
             }}
             {...props} // Pass additional props to the Divider component

@@ -19,7 +19,8 @@ import VesselDashboard from './pages/admin/vessel/vesselDashboard.jsx';
 import LocationDiagram from './pages/admin/vessel/locationDiagram.jsx';
 import InventoryPoint from './pages/admin/vessel/inventoryPoints.jsx'
 import GenerateIHM from './pages/admin/vessel/generateIHM.jsx'
-import GenerateLR from './pages/admin/vessel/generateLR.jsx'
+import GenerateLR from './pages/admin/vessel/generateLR.jsx';
+import LocationPoint from './pages/admin/vessel/locationPoint.jsx'
 const router = createBrowserRouter([
   {
     Component: App,
@@ -83,6 +84,10 @@ const router = createBrowserRouter([
           {
             path: "/vessels/generate-lr",
             element: <GenerateLR />,
+          },
+          {
+            path: "/vessels/inventory-point",
+            element: <LocationPoint />,
           },
         ]
       },

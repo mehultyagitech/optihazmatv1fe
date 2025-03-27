@@ -58,7 +58,7 @@ export default function GenerateLR() {
 
     return (
         <OPPageContainer sx={{ px: 2, pt: 2 }}>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+            <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
                 {title}
             </Typography>
             <Divider sx={{ my: 2 }} />

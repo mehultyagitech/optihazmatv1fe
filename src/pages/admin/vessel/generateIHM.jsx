@@ -6,6 +6,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import OPPageContainer from "../../../components/OPPageContainer";
 import InventoryPointTopBar  from "../../../components/inventoryPointTopBar";
 import GenerateIHMTopBar  from "../../../components/generateIHMTopBar";
+import GetAppIcon from '@mui/icons-material/GetApp';
+import OPDivider from '../../../components/OPDivider';
+
 
 export default function GenerateIHM() {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -46,7 +49,22 @@ export default function GenerateIHM() {
     const columns = [
         { field: 'creationDate', headerName: 'Creation Date', width: 150 },
         { field: 'reportPeriodToDate', headerName: 'Report Period To Date', width: 180 },
-        { field: 'downloadReport', headerName: 'Download Report', width: 180 },
+        { 
+            field: 'downloadReport', 
+            headerName: 'Download Report', 
+            width: 220,
+            renderCell: (params) => (
+                <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    startIcon={<GetAppIcon />}
+                    onClick={() => handleDownload(params.row)}
+                >
+                    {params.value}
+                </Button>
+            ),
+        },
         { field: 'replacePdfReport', headerName: 'Replace PDF Report', width: 180 },
         { 
             field: 'approval', 
@@ -125,9 +143,10 @@ export default function GenerateIHM() {
     return (
         <OPPageContainer sx={{ px: 2, pt: 2 }}>
              <InventoryPointTopBar filters={filters} onFilterChange={handleFilterChange} onSearch={handleSearch} />
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+            <Typography variant='h5' component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
                 Generate IHM
             </Typography>
+            <OPDivider sx={{ my: 2, mx: 2 }} />
             <GenerateIHMTopBar />
             <Divider sx={{ my: 2 }} />
             <Box>
