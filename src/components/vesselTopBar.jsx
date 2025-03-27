@@ -15,18 +15,20 @@ import {
 import ContactPageIcon from "@mui/icons-material/ContactPage";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AddEditVesselDrawer from "../pages/admin/vessel/addEditVesselDrawer";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import { vesselSearchMetaState, vesselState } from "../utils/States/Vessel";
 
 const VesselTopBar = () => {
     const isMobile = useMediaQuery("(max-width:600px)");
-    const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedClient, setSelectedClient] = React.useState('');
     const [selectedMiscellaneous, setSelectedMiscellaneous] = React.useState('');
     const [selectedFleetManager, setSelectedFleetManager ] = React.useState('');
-
+    const setVessel = useSetRecoilState(vesselState);
+    const vesselMeta = useRecoilValue(vesselSearchMetaState);
 
     // Function to toggle drawer visibility
     const handleDrawerToggle = () => {
-        setDrawerOpen(!drawerOpen);
+        setVessel(prev => ({...prev, open: !prev.open}));
     };
 
     return (
@@ -49,7 +51,7 @@ const VesselTopBar = () => {
                     sx={{ fontWeight: 500, textAlign: isMobile ? "center" : "left" }}
                 >
                     <ContactPageIcon sx={{ mr: 1 }} />
-                    Records Count: 4
+                    Records Count: {vesselMeta?.total || 0}
                 </Typography>
 
                 {/* Right Section */}
@@ -136,7 +138,6 @@ const VesselTopBar = () => {
 
             {/* Drawer Component */}
             <AddEditVesselDrawer
-                open={drawerOpen}
                 onClose={handleDrawerToggle} // Close the drawer
             />
         </>

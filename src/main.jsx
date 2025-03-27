@@ -20,7 +20,14 @@ import LocationDiagram from './pages/admin/vessel/locationDiagram.jsx';
 import InventoryPoint from './pages/admin/vessel/inventoryPoints.jsx'
 import GenerateIHM from './pages/admin/vessel/generateIHM.jsx'
 import GenerateLR from './pages/admin/vessel/generateLR.jsx';
-import LocationPoint from './pages/admin/vessel/locationPoint.jsx'
+import LocationPoint from './pages/admin/vessel/locationPoint.jsx';
+import { RecoilRoot } from "recoil";
+import {
+  QueryClient,
+  QueryClientProvider
+} from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
     Component: App,
@@ -31,23 +38,23 @@ const router = createBrowserRouter([
         children: [
           {
             path: "/users",
-            element: <Users />
+            element: <Users />,
           },
           {
             path: "/edit-location",
-            element: <EditLocations />
+            element: <EditLocations />,
           },
           {
             path: "/edit-sub-location",
-            element: <EditSubLocations />
+            element: <EditSubLocations />,
           },
           {
             path: "/edit-equipment",
-            element: <EditEquipmentName />
+            element: <EditEquipmentName />,
           },
           {
             path: "/edit-compartment",
-            element: <EditCompartment />
+            element: <EditCompartment />,
           },
           {
             path: "*",
@@ -94,14 +101,18 @@ const router = createBrowserRouter([
 
       {
         path: "/login",
-        element: <CredentialsSignInPage />
+        element: <CredentialsSignInPage />,
       },
-    ]
+    ],
   },
 ]);
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
-)
+    <RecoilRoot>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </RecoilRoot>
+  </StrictMode>
+);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
     Box,
     Typography,
@@ -14,155 +14,131 @@ import VesselTopBar from "../../../components/vesselTopBar";
 import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
-// import AddEditVesselDrawer from "./addEditVesselDrawer";
+import useVessel from "../../../api/services/useVessel";
+import { useRecoilState } from "recoil";
+import { searchState } from "../../../utils/States/Search";
+import debounce from "lodash.debounce";
+import { useSetRecoilState } from "recoil";
+import { vesselState } from "../../../utils/States/Vessel";
 
-const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, vesselType, onEdit }) => (
-    <OPCard sx={{ width: "100%" }}>
-        <Box display="flex" alignItems="center" gap={2}>
-            <Avatar src={avatarSrc} sx={{ width: 60, height: 60 }} />
-            <Box>
-                <Typography
-                    variant="subtitle1"
-                    fontWeight="bold"
-                    sx={{ color: "#1976d2" }}
+const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, vesselType, clientId }) => {
+    const setVesselState = useSetRecoilState(vesselState);
+
+    const handleEdit = () => {
+        setVesselState({
+            id: clientId,
+            open: true,
+            imoNumber,
+            vesselName: vessel,
+            vesselType,
+            clientName,
+            avatarSrc,
+            managerName
+        });
+    }
+
+    return (
+        <OPCard sx={{ width: "100%" }}>
+            <Box display="flex" alignItems="center" gap={2}>
+                <Avatar src={avatarSrc} sx={{ width: 60, height: 60 }} />
+                <Box>
+                    <Typography
+                        variant="subtitle1"
+                        fontWeight="bold"
+                        sx={{ color: "#1976d2" }}
+                    >
+                        {vessel}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Vessel
+                    </Typography>
+                </Box>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<EditIcon />}
+                    sx={{ textTransform: "none", marginLeft: "auto" }}
+                    onClick={() => handleEdit()}
                 >
-                    {vessel}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    Vessel
-                </Typography>
+                    Edit
+                </Button>
             </Box>
-            <Button
-                variant="outlined"
-                size="small"
-                startIcon={<EditIcon />}
-                sx={{ textTransform: "none", marginLeft: "auto" }}
-                onClick={() => onEdit({ vessel, clientName, vesselType })}
-            >
-                Edit
-            </Button>
-        </Box>
-        <OPDivider />
-        <Grid container spacing={2} mt={2}>
-            <Grid item xs={6}>
-                <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    mb={0.5}
-                >
-                    IMO Number
-                </Typography>
-                <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
-                    {imoNumber}
-                </Typography>
+            <OPDivider />
+            <Grid container spacing={2} mt={2}>
+                <Grid item xs={6}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        mb={0.5}
+                    >
+                        IMO Number
+                    </Typography>
+                    <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
+                        {imoNumber}
+                    </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        mb={0.5}
+                    >
+                        Client Name
+                    </Typography>
+                    <Typography fontWeight="bold"  variant="body2" color="text.primary" mb={2}>
+                        {clientName}
+                    </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        mb={0.5}
+                    >
+                        Manager Name
+                    </Typography>
+                    <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
+                        {managerName}
+                    </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        mb={0.5}
+                    >
+                        Vessel Type
+                    </Typography>
+                    <Typography fontWeight="bold" variant="body2" color="text.primary">
+                        {vesselType}
+                    </Typography>
+                </Grid>
             </Grid>
-            <Grid item xs={6}>
-                <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    mb={0.5}
-                >
-                    Client Name
-                </Typography>
-                <Typography fontWeight="bold"  variant="body2" color="text.primary" mb={2}>
-                    {clientName}
-                </Typography>
-            </Grid>
-            <Grid item xs={6}>
-                <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    mb={0.5}
-                >
-                    Manager Name
-                </Typography>
-                <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
-                    {managerName}
-                </Typography>
-            </Grid>
-            <Grid item xs={6}>
-                <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    mb={0.5}
-                >
-                    Vessel Type
-                </Typography>
-                <Typography fontWeight="bold" variant="body2" color="text.primary">
-                    {vesselType}
-                </Typography>
-            </Grid>
-        </Grid>
-    </OPCard>
-);
+        </OPCard>
+    );
+};
 
 
 const Vessel = () => {
-    const [clients, setClients] = useState([
-        {
-            avatarSrc: "https://avatar.iran.liara.run/public/33",
-            vessel: "A LA MARINE",
-            imoNumber: "123456789",
-            clientName: "ACECHEM",
-            managerName: "John Doe",
-            vesselType: "Crude Oil Tanker",
-        },
-        {
-            avatarSrc: "https://avatar.iran.liara.run/public/5",
-            vessel: "ADIYAMAN SCHGE",
-            imoNumber: "123456789",
-            clientName: "BETA LTD",
-            managerName: "John Doe",
-            vesselType: "Crude Oil Tanker",
-        },
-        {
-            avatarSrc: "https://avatar.iran.liara.run/public/31",
-            vessel: "ADAM SCHULTE",
-            imoNumber: "123456789",
-            clientName: "OMEGA INC",
-            managerName: "John Doe",
-            vesselType: "Crude Oil Tanker",
-        },
-        {
-            avatarSrc: "https://avatar.iran.liara.run/public/24",
-            vessel: "A LA MARINE",
-            imoNumber: "123456789",
-            clientName: "DELTA CORP",
-            managerName: "John Doe",
-            vesselType: "General Cargo Ship",
-        },
-        {
-            avatarSrc: "https://avatar.iran.liara.run/public/9",
-            vessel: "ACER ARROW",
-            imoNumber: "123456789",
-            clientName: "ZETA LTD",
-            managerName: "John Doe",
-            vesselType: "Crude Oil Tanker",
-        },
-    ]);
+    const { getVessels } = useVessel();
+    const { data, isSuccess } = getVessels();
+    const [ search, setSearch ]  = useRecoilState(searchState);
+    const [inputValue, setInputValue] = useState(search);
 
-    const [searchQuery, setSearchQuery] = useState("");
-    const [view, setView] = useState("clients");
-    const [drawerOpen, setDrawerOpen] = useState(false);
+    const debouncedSetSearch = useCallback(
+        debounce((value) => {
+            setSearch(value);
+        }, 500),
+        []
+    );
 
     const handleSearchChange = (event) => {
-        setSearchQuery(event.target.value);
+        const newValue = event.target.value;
+        setInputValue(newValue);
+        debouncedSetSearch(newValue);
     };
 
-    const handleDrawerToggle = () => {
-        setDrawerOpen(!drawerOpen);
-      };
-
-    const handleToggleChange = (event, newView) => {
-        if (newView !== null) {
-            setView(newView);
-        }
-    };
-
-    const filteredClients = clients.filter((client) =>
-        client.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.vessel.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredClients = isSuccess ? data : [];
 
     return (
         <OPPageContainer>
@@ -194,7 +170,7 @@ const Vessel = () => {
                         <TextField
                             variant="outlined"
                             label="Vessel or Client Name"
-                            value={searchQuery}
+                            value={inputValue}
                             onChange={handleSearchChange}
                             size="small"
                             sx={{ width: { xs: "100%", sm: "auto" } }}
@@ -218,9 +194,10 @@ const Vessel = () => {
                     gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }}
                     gap={3}
                 >
-                    {filteredClients.map((client, index) => (
+                    {filteredClients.map((client) => (
                         <ClientCard
-                            key={index}
+                            key={client.id}
+                            clientId={client.id}
                             avatarSrc={client.avatarSrc}
                             imoNumber={client.imoNumber}
                             vessel={client.vessel}
