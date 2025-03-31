@@ -26,10 +26,11 @@ import OPDivider from "../../../components/OPDivider";
 import vesselSchema from "../../../validations/Vessel";
 import useVessel from "../../../api/services/useVessel";
 import { vesselState } from "../../../utils/States/Vessel";
+import axiosInstance from "../../../api/axiosInstance";
+import { toast } from "react-toastify";
 
 const AddEditVesselDrawer = ({ onClose }) => {
   const [vessel, setVessel] = useRecoilState(vesselState);
-  const open = vessel.open;
   const vesselId = vessel.id;
 
   const { getVesselById, createVessel, updateVessel } = useVessel();
@@ -39,8 +40,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const [ihmClass, setIhmClass] = useState("");
   const [surveySameAsStart, setSurveySameAsStart] = useState(false);
   const [attachments, setAttachments] = useState([]);
-  const [image, setImage] = useState(null);
-  const [commonInventoryImage, setCommonInventoryImage] = useState(null);
+  const [image, setImage] = useState();
+  const [commonInventoryImage, setCommonInventoryImage] = useState();
   const vesselMutation = vesselId ? updateVessel() : createVessel();
 
   const {
@@ -48,56 +49,60 @@ const AddEditVesselDrawer = ({ onClose }) => {
     handleSubmit,
     formState: { errors },
     setValue,
-    reset
+    reset,
   } = useForm({
     resolver: joiResolver(vesselSchema),
-    defaultValues: {
-      vesselName: "",
-      imoNumber: "",
-      vesselType: "",
-      flag: "",
-      classSociety: "",
-      portOfRegistry: "",
-      grossTonnageMT: "",
-      lbd: "",
-      registeredOwner: "",
-      vesselManager: "",
-      clientName: "",
-      registeredOwnerAddress: "",
-      deliveryDate: "",
-      keelLaidDate: "",
-      shipYardName: "",
-      shipYardAddress: "",
-      ihmClass: "",
-      ihmSurveyStartDate: "",
-      ihmSurveyEndDate: "",
-      socIssueDate: "",
-      readyForMaintenance: false,
-      maintenanceStartDate: "",
-      headerFreeTextCaption: "",
-      headerFreeTextValue: "",
-      poDataGapDisclaimer: "",
-      commonReferenceNo: "",
-      vesselEmailId: "",
-    }
   });
 
-  // console.log('vesselId:', vesselId, 'watch:', watch(), 'errors:', errors);
-
-  
   // Get single vessel by ID (if in edit mode)
   const { data: vesselData, isLoading: isLoadingVessel } = getVesselById(vesselId);
-  
+
+  const getFileObjectURL = (file) => {
+    if (file instanceof File) {
+      return URL.createObjectURL(file);
+    }
+    return process.env.REACT_APP_API_URL + '/uploads/' + file.url;
+  };
+
   // Effect to populate form when vessel data is loaded
   useEffect(() => {
-    if (vesselData && vesselId) {   
-      const { clientId, createdAt, createdBy, id, updatedAt, user, ...restVesselData} = vesselData;  
-      Object.keys(restVesselData).forEach(key => {
+    if (vesselData && vesselId) {
+      const {
+        VesselImages,
+        VesselAttachments,
+        ...restVesselData
+      } = vesselData;
+  
+      Object.keys(restVesselData).forEach((key) => {
         if (key.endsWith("Date") && restVesselData[key]) {
-          restVesselData[key] = new Date(restVesselData[key]).toISOString().split("T")[0];
+          restVesselData[key] = new Date(restVesselData[key])
+            .toISOString()
+            .split("T")[0];
         }
         setValue(key, restVesselData[key]);
       });
+
+      if (VesselImages && VesselImages.length > 0) {
+        const vesselImage = VesselImages[0];
+        setImage({
+          name: vesselImage.fileName,
+          file: vesselImage.fileName,
+          status: "Uploaded",
+          url: getFileObjectURL(vesselImage),
+        });
+      }
+
+      if (VesselAttachments && VesselAttachments.length > 0) {
+        console.log(VesselAttachments)
+        const formattedAttachments = VesselAttachments.map((att) => ({
+          id: att.id,
+          name: att.fileName,
+          filename: att.fileName,
+          status: "Uploaded",
+          url: att.url
+        }));
+        setAttachments(formattedAttachments);
+      }
     }
   }, [vesselData, vesselId, setValue]);
 
@@ -116,59 +121,124 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setImage(URL.createObjectURL(file));
+      setImage({
+        name: file.name,
+        filename: file.name,
+        status: "Not Uploaded",
+        file: file,
+        url: getFileObjectURL(file),
+      });
     }
   };
 
   const handleAttachmentUpload = (event) => {
     const files = Array.from(event.target.files);
     const newAttachments = files.map((file) => ({
+      id: crypto.randomUUID(),
       name: file.name,
-      type: file.type,
       filename: file.name,
-      status: "Uploaded",
+      status: "Not Uploaded",
       file: file,
+      url: getFileObjectURL(file),
     }));
-    setAttachments([...attachments, ...newAttachments]);
+    setAttachments((prev) => [...prev, ...newAttachments]);
   };
 
-  const handleAttachmentDelete = (index) => {
-    const updatedAttachments = attachments.filter((_, i) => i !== index);
-    setAttachments(updatedAttachments);
+  const handleAttachmentDelete = async (id) => {
+    try {
+      const attachment = attachments.find((att) => att.id === id);
+      console.log(attachment, 'attachment to del')
+
+      if (attachment && attachment.status === "Uploaded") {
+        const response = await axiosInstance.delete(`/attachments/${attachment.id}`);
+        console.log(response, 'DELETE ATTACHMENT RESPONSE');
+      }
+      const updatedAttachments = attachments.filter((att) => att.id !== id);
+      setAttachments(updatedAttachments);
+    } catch (error) {
+      toast.error("Failed to delete attachment.");
+    }
   };
 
-  const handleAttachmentDownload = (filename) => {
-    const attachment = attachments.find((att) => att.filename === filename);
-    if (attachment) {
+  const handleAttachmentDownload = async (id) => {
+    const attachment = attachments.find((att) => att.id === id);
+    
+    if (attachment.status === 'Not Uploaded') {
+      // For local files that haven't been uploaded yet
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(
-        new Blob([attachment.file], { type: attachment.type })
-      );
+      link.href = URL.createObjectURL(attachment.file);
       link.download = attachment.filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    } else {
+      // For files stored on the server
+      try {
+        // If the file has a direct URL
+        if (attachment.url) {
+          // Create a link to the file on the server
+          const fileUrl = process.env.REACT_APP_API_URL + '/uploads/' + attachment.url;
+          window.open(fileUrl, '_blank');
+        } else {
+          // Alternatively, fetch the file through the API
+          const response = await axiosInstance.get(`/attachments/${attachment.id}`, {
+            responseType: "blob",
+          });
+          
+          const contentType = response.headers['content-type'] || 'application/octet-stream';
+          const blob = new Blob([response.data], { type: contentType });
+          const url = URL.createObjectURL(blob);
+          
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = attachment.filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      } catch (error) {
+        console.error("Error downloading attachment:", error);
+        toast.error("Failed to download the file. Please try again.");
+      }
     }
   };
 
   const handleCommonInventoryImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setCommonInventoryImage(URL.createObjectURL(file));
+      setCommonInventoryImage(file);
     }
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
+    const formData = new FormData();
+
+    if (attachments.length > 0) {
+      attachments.filter(item => item.status === "Not Uploaded").forEach((att) => {
+        formData.append("attachments[]", att.file);
+      });
+    }
+
+    if (image && image.status === "Not Uploaded") {
+      formData.append("image", image.file);
+    }
+
+    if (commonInventoryImage) {
+      formData.append("commonInventoryImage", commonInventoryImage);
+    }
+
     if (surveySameAsStart && data.ihmSurveyStartDate) {
       data.ihmSurveyEndDate = data.ihmSurveyStartDate;
       data.ihmSurveyEndDateIsSame = true;
     }
 
     data.grossTonnageMT = parseFloat(data.grossTonnageMT);
-    data.readyForMaintenance = data.readyForMaintenance === "true" ? true : false;
+    data.readyForMaintenance =
+      data.readyForMaintenance === "true" ? true : false;
 
     // Append vessel data
-    Object.keys(data).forEach(key => {
+    Object.keys(data).forEach((key) => {
       if (data[key] !== undefined) {
         if (key.endsWith("Date") && data[key]) {
           data[key] = new Date(data[key]).toISOString();
@@ -176,24 +246,42 @@ const AddEditVesselDrawer = ({ onClose }) => {
       }
     });
 
-    if (!!vesselId) {
-      vesselMutation.mutate({ id: vesselId, data });
+    formData.append('data', JSON.stringify(data));
+
+    if (!vesselId) {
+      await axiosInstance.post("/vessels", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
     } else {
-      vesselMutation.mutate(data);
+      await axiosInstance.put(`/vessels/${vesselId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
     }
+
+    toast.success("Vessel saved successfully!");
+    handleOnClose();
   };
 
   const handleOnClose = () => {
     reset();
-    setVessel({ open: false, id: "" });
+    setVessel({
+      id: '',
+      open: false
+    });
+    setTabIndex(0);
     if (onClose) {
       onClose();
     }
-  }
+  };
 
   return (
     <OPPageContainer>
-      <Drawer anchor="right" open={open} onClose={handleOnClose}>
+      <Drawer anchor="right" open={vessel.open} onClose={handleOnClose}>
         <Box
           sx={{
             width: isSmallScreen ? "100vw" : 900,
@@ -472,8 +560,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
                           name="readyForMaintenance"
                           control={control}
                           render={({ field: { onChange, value, ...rest } }) => (
-                            <Checkbox 
-                              checked={Boolean(value)} 
+                            <Checkbox
+                              checked={Boolean(value)}
                               onChange={(e) => onChange(e.target.checked)}
                               {...rest}
                             />
@@ -541,7 +629,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         {attachments.map((att, index) => (
                           <TableRow key={index}>
                             <TableCell>{att.name}</TableCell>
-                            <TableCell>{att.type}</TableCell>
+                            <TableCell>{att.filename.split('.').pop().toUpperCase()}</TableCell>
                             <TableCell>{att.filename}</TableCell>
                             <TableCell>{att.status}</TableCell>
                             <TableCell>
@@ -549,7 +637,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                                 variant="outlined"
                                 color="error"
                                 size="small"
-                                onClick={() => handleAttachmentDelete(index)}
+                                onClick={() => handleAttachmentDelete(att.id)}
                               >
                                 Delete
                               </Button>
@@ -560,7 +648,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                                 color="primary"
                                 size="small"
                                 onClick={() =>
-                                  handleAttachmentDownload(att.filename)
+                                  handleAttachmentDownload(att.id)
                                 }
                               >
                                 Download
@@ -613,7 +701,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                     >
                       {image ? (
                         <img
-                          src={image}
+                          src={image.url}
                           alt="Vessel"
                           style={{
                             width: "100%",
@@ -731,7 +819,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                     >
                       {commonInventoryImage ? (
                         <img
-                          src={commonInventoryImage}
+                          src={URL.createObjectURL(commonInventoryImage)}
                           alt="Common Inventory"
                           style={{
                             width: "100%",
@@ -824,16 +912,24 @@ const AddEditVesselDrawer = ({ onClose }) => {
                   Next
                 </Button>
               ) : (
-                <Button 
-                  variant="contained" 
-                  color="primary" 
+                <Button
+                  variant="contained"
+                  color="primary"
                   type="submit"
                   disabled={vesselMutation.isPending}
                 >
-                  {vesselMutation.isPending ? "Saving..." : vesselId ? "Update" : "Save"}
+                  {vesselMutation.isPending
+                    ? "Saving..."
+                    : vesselId
+                      ? "Update"
+                      : "Save"}
                 </Button>
               )}
-              <Button variant="outlined" color="secondary" onClick={handleOnClose}>
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={handleOnClose}
+              >
                 Close
               </Button>
             </Box>

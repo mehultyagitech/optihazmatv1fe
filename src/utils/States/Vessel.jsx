@@ -5,11 +5,6 @@ export const vesselState = atom({
   default: {
     id: "",
     open: false,
-    imoNumber: "",
-    vesselName: "",
-    vesselType: "",
-    avatarSrc: "",
-    clientName: "",
   },
 });
 

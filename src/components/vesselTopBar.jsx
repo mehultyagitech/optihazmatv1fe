@@ -28,7 +28,7 @@ const VesselTopBar = () => {
 
     // Function to toggle drawer visibility
     const handleDrawerToggle = () => {
-        setVessel(prev => ({...prev, open: !prev.open}));
+        setVessel(prev => ({ id: '', open: !prev.open}));
     };
 
     return (
@@ -137,9 +137,7 @@ const VesselTopBar = () => {
             </Box>
 
             {/* Drawer Component */}
-            <AddEditVesselDrawer
-                onClose={handleDrawerToggle} // Close the drawer
-            />
+            <AddEditVesselDrawer />
         </>
     );
 };
