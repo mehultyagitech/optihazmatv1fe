@@ -98,6 +98,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
           id: att.id,
           name: att.fileName,
           filename: att.fileName,
+          type: att.fileName.split('.').pop().toUpperCase(),
           status: "Uploaded",
           url: att.url
         }));
@@ -136,6 +137,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
     const newAttachments = files.map((file) => ({
       id: crypto.randomUUID(),
       name: file.name,
+      type: file.type.split('/').pop().toUpperCase(),
       filename: file.name,
       status: "Not Uploaded",
       file: file,
@@ -268,12 +270,18 @@ const AddEditVesselDrawer = ({ onClose }) => {
   };
 
   const handleOnClose = () => {
+    setTabIndex(0);
+    setAttachments([]);
+    setImage(null);
+    setCommonInventoryImage(null);
+    setIhmClass("");
+    setSurveySameAsStart(false);
+    setValue("ihmSurveyEndDateIsSame", false);
     reset();
     setVessel({
       id: '',
       open: false
     });
-    setTabIndex(0);
     if (onClose) {
       onClose();
     }
@@ -629,7 +637,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         {attachments.map((att, index) => (
                           <TableRow key={index}>
                             <TableCell>{att.name}</TableCell>
-                            <TableCell>{att.filename.split('.').pop().toUpperCase()}</TableCell>
+                            <TableCell>{att.type}</TableCell>
                             <TableCell>{att.filename}</TableCell>
                             <TableCell>{att.status}</TableCell>
                             <TableCell>

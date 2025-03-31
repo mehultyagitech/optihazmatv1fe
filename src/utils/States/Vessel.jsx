@@ -18,6 +18,14 @@ export const vesselSearchMetaState = atom({
   }
 })
 
+export const commonVesselViewState = atom({
+  key: 'commonVesselViewState',
+  default: {
+      id: '',
+      name: ''
+  }
+});
+
 export const vesselOpenSelector = selector({
   key: "vesselOpenSelector",
   get: ({ get }) => get(vesselState).open,
@@ -31,4 +39,9 @@ export const vesselIdSelector = selector({
 export const imoNumberSelector = selector({
   key: "imoNumberSelector",
   get: ({ get }) => get(vesselState).imoNumber,
+});
+
+export const vesselNameSelector = selector({
+  key: "vesselNameSelector",
+  get: ({ get }) => get(vesselState).name,
 });
