@@ -9,7 +9,7 @@ export default function useVessel() {
   const queryClient = useQueryClient();
   const controllerRef = useRef(null);
   const search = useRecoilValue(searchState);
-  const vesselSearchMeta = useSetRecoilState(vesselSearchMetaState);
+  const setVesselSearchMeta = useSetRecoilState(vesselSearchMetaState);
   const defaultURL = "https://avatar.iran.liara.run/public/5";
 
   const getVesselImageUrl = (vessel) => {
@@ -39,7 +39,7 @@ export default function useVessel() {
           signal: controllerRef.current.signal,
         });
 
-        vesselSearchMeta(response.data.meta);
+        setVesselSearchMeta(response.data.meta);
 
         return response.data;
       },
@@ -107,20 +107,16 @@ export default function useVessel() {
   const createVessel = () => {
     return useMutation({
       mutationFn: async (data) => {
-        let type = "application/json";
-        if (data instanceof FormData) {
-          type = "multipart/form-data";
-        }
-
         const response = await axiosInstance.post("/vessels", data, {
           headers: {
-            "Content-Type": type,
+            "Content-Type": "multipart/form-data",
           },
         });
         return response.data;
       },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["vessels"] });
+        toast.success("Vessel created successfully!");
       },
     });
   };
@@ -128,14 +124,9 @@ export default function useVessel() {
   const updateVessel = () => {
     return useMutation({
       mutationFn: async ({ id, data }) => {
-        let type = "application/json";
-        if (data instanceof FormData) {
-          type = "multipart/form-data";
-        }
-
         const response = await axiosInstance.put(`/vessels/${id}`, data, {
           headers: {
-            "Content-Type": type,
+            "Content-Type": "multipart/form-data",
           },
         });
         return response.data;
@@ -143,6 +134,7 @@ export default function useVessel() {
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries({ queryKey: ["vessels"] });
         queryClient.invalidateQueries({ queryKey: ["vessel", variables.id] });
+        toast.success("Vessel saved successfully!");
       },
     });
   };
@@ -159,6 +151,10 @@ export default function useVessel() {
     });
   };
 
+  /**
+   * @deprecated use multipart/form-data instead
+   * @description Upload files to the server for a specific vessel.
+   */
   const uploadFiles = (id) => {
     return useMutation({
       mutationFn: async (data) => {

@@ -14,7 +14,6 @@ import LocationDiagramTopBar from "../../../components/locationDiagramTopBar";
 import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
-// import AddEditVesselDrawer from "./addEditVesselDrawer";
 
 const ClientCard = ({ avatarSrc, vessel, Survey, clientName, remRep, vesselType, onEdit }) => (
     <OPCard sx={{ width: "100%" }}>
@@ -62,7 +61,7 @@ const ClientCard = ({ avatarSrc, vessel, Survey, clientName, remRep, vesselType,
                     color="text.secondary"
                     mb={0.5}
                 >
-                    Maint
+                    Main
                 </Typography>
                 <Typography fontWeight="bold"  variant="body2" color="text.primary" mb={2}>
                     {clientName}
@@ -95,7 +94,6 @@ const ClientCard = ({ avatarSrc, vessel, Survey, clientName, remRep, vesselType,
         </Grid>
     </OPCard>
 );
-
 
 const Vessel = () => {
     const handleSearch = () => {
@@ -134,6 +132,7 @@ const Vessel = () => {
             ],
         },
     ]);
+
     const handleFilterChange = (name, value) => {
         setFilters((prevFilters) =>
             prevFilters.map((filter) =>
@@ -141,6 +140,7 @@ const Vessel = () => {
             )
         );
     };
+
     const [clients, setClients] = useState([
         {
             avatarSrc: "https://avatar.iran.liara.run/public/33",

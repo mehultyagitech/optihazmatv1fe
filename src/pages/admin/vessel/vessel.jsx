@@ -19,10 +19,12 @@ import { useRecoilState } from "recoil";
 import { searchState } from "../../../utils/States/Search";
 import debounce from "lodash.debounce";
 import { useSetRecoilState } from "recoil";
-import { vesselState } from "../../../utils/States/Vessel";
+import { vesselState, commonVesselViewState } from "../../../utils/States/Vessel";
+import { ShopTwo } from "@mui/icons-material";
 
 const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, vesselType, clientId }) => {
     const setVesselState = useSetRecoilState(vesselState);
+    const setCommonVesselViewState = useSetRecoilState(commonVesselViewState);
 
     const handleEdit = () => {
         setVesselState({
@@ -53,15 +55,26 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
                         Vessel
                     </Typography>
                 </Box>
-                <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<EditIcon />}
-                    sx={{ textTransform: "none", marginLeft: "auto" }}
-                    onClick={() => handleEdit()}
-                >
-                    Edit
-                </Button>
+                <Box>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<ShopTwo />}
+                        sx={{ textTransform: "none", marginLeft: "auto" }}
+                        onClick={() => setCommonVesselViewState({ id: clientId, name: vessel })}
+                    >
+                        View
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<EditIcon />}
+                        sx={{ textTransform: "none", marginLeft: "auto" }}
+                        onClick={() => handleEdit()}
+                    >
+                        Edit
+                    </Button>
+                </Box>
             </Box>
             <OPDivider />
             <Grid container spacing={2} mt={2}>

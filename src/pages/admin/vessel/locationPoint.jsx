@@ -4,9 +4,12 @@ import OPDivider from "../../../components/OPDivider";
 import { Box, Typography, Button, Grid, useMediaQuery } from "@mui/material";
 import LocationPointTopBar from "../../../components/locationPointTopBar";
 import { useTheme } from "@mui/material/styles";
-import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer"; // Import the drawer component
+import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer";
+import ImageViewer from "../../../components/ImageViewer"; 
 
 export default function LocationPoint() {
+  const attachmentId = '20ceab7f-bfee-47b3-9989-eb572153fc57';
+  const url = 'http://localhost:4000/uploads/b909bc0195b5e38c0a2203194a6d1851.jpeg';
   const title = "Location Point";
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -48,19 +51,7 @@ export default function LocationPoint() {
             p: 2,
           }}
         >
-          <Box
-            component="img"
-            src="/image.png" // Update with actual image source
-            alt="Blueprint"
-            sx={{
-              maxWidth: "100%",
-              maxHeight: "90%",
-              border: "2px solid #ccc",
-              borderRadius: "8px",
-              width: isMobile ? "90%" : "auto",
-              height: isMobile ? "auto" : "100%",
-            }}
-          />
+          <ImageViewer imageUrl={url} attachmentId={attachmentId} />
         </Grid>
 
         {/* Right Section - Location Details */}

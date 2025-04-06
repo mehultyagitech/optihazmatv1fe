@@ -149,11 +149,9 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const handleAttachmentDelete = async (id) => {
     try {
       const attachment = attachments.find((att) => att.id === id);
-      console.log(attachment, 'attachment to del')
 
       if (attachment && attachment.status === "Uploaded") {
         const response = await axiosInstance.delete(`/attachments/${attachment.id}`);
-        console.log(response, 'DELETE ATTACHMENT RESPONSE');
       }
       const updatedAttachments = attachments.filter((att) => att.id !== id);
       setAttachments(updatedAttachments);
@@ -166,7 +164,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
     const attachment = attachments.find((att) => att.id === id);
     
     if (attachment.status === 'Not Uploaded') {
-      // For local files that haven't been uploaded yet
       const link = document.createElement("a");
       link.href = URL.createObjectURL(attachment.file);
       link.download = attachment.filename;
@@ -174,15 +171,11 @@ const AddEditVesselDrawer = ({ onClose }) => {
       link.click();
       document.body.removeChild(link);
     } else {
-      // For files stored on the server
       try {
-        // If the file has a direct URL
         if (attachment.url) {
-          // Create a link to the file on the server
           const fileUrl = process.env.REACT_APP_API_URL + '/uploads/' + attachment.url;
           window.open(fileUrl, '_blank');
         } else {
-          // Alternatively, fetch the file through the API
           const response = await axiosInstance.get(`/attachments/${attachment.id}`, {
             responseType: "blob",
           });
@@ -200,7 +193,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
           URL.revokeObjectURL(url);
         }
       } catch (error) {
-        console.error("Error downloading attachment:", error);
         toast.error("Failed to download the file. Please try again.");
       }
     }
@@ -251,22 +243,19 @@ const AddEditVesselDrawer = ({ onClose }) => {
     formData.append('data', JSON.stringify(data));
 
     if (!vesselId) {
-      await axiosInstance.post("/vessels", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      vesselMutation.mutate(formData, {
+        onSettled: () => {
+          handleOnClose();
+        }
       });
-
     } else {
-      await axiosInstance.put(`/vessels/${vesselId}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      vesselMutation.mutate({ id: vesselId, data: formData }, {
+        onSettled: () => {
+          handleOnClose();
+        }
       });
     }
 
-    toast.success("Vessel saved successfully!");
-    handleOnClose();
   };
 
   const handleOnClose = () => {

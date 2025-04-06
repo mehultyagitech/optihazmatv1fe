@@ -1,5 +1,6 @@
 import axiosInstance from '../axiosInstance';
 import {USER_LOGIN} from "../endpoints";
+
 export const login = async (email, password) => {
   try {
     const response = await axiosInstance.post(USER_LOGIN, { email, password });
