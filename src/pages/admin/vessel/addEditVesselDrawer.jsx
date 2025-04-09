@@ -18,7 +18,7 @@ import {
   TableBody,
   Paper,
 } from "@mui/material";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { useRecoilState } from "recoil";
 import OPPageContainer from "../../../components/OPPageContainer";
@@ -28,10 +28,18 @@ import useVessel from "../../../api/services/useVessel";
 import { vesselState } from "../../../utils/States/Vessel";
 import axiosInstance from "../../../api/axiosInstance";
 import { toast } from "react-toastify";
+import { useRecoilValue } from "recoil";
+import {
+  DocumentTypeSelector,
+  defaultDocumentTypeSelector,
+} from "../../../utils/States/Generic";
 
 const AddEditVesselDrawer = ({ onClose }) => {
   const [vessel, setVessel] = useRecoilState(vesselState);
   const vesselId = vessel.id;
+
+  const documentTypes = useRecoilValue(DocumentTypeSelector);
+  const defaultDocumentType = useRecoilValue(defaultDocumentTypeSelector);
 
   const { getVesselById, createVessel, updateVessel } = useVessel();
   const theme = useTheme();
@@ -52,27 +60,30 @@ const AddEditVesselDrawer = ({ onClose }) => {
     reset,
   } = useForm({
     resolver: joiResolver(vesselSchema),
+    defaultValues: {
+      attachmentDocTypes: [],
+    },
   });
 
-  // Get single vessel by ID (if in edit mode)
-  const { data: vesselData, isLoading: isLoadingVessel } = getVesselById(vesselId);
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "attachmentDocTypes",
+  });
+
+  const { data: vesselData, isLoading: isLoadingVessel } =
+    getVesselById(vesselId);
 
   const getFileObjectURL = (file) => {
     if (file instanceof File) {
       return URL.createObjectURL(file);
     }
-    return process.env.REACT_APP_API_URL + '/uploads/' + file.url;
+    return process.env.REACT_APP_API_URL + "/uploads/" + file.url;
   };
 
-  // Effect to populate form when vessel data is loaded
   useEffect(() => {
     if (vesselData && vesselId) {
-      const {
-        VesselImages,
-        VesselAttachments,
-        ...restVesselData
-      } = vesselData;
-  
+      const { VesselImages, VesselAttachments, ...restVesselData } = vesselData;
+
       Object.keys(restVesselData).forEach((key) => {
         if (key.endsWith("Date") && restVesselData[key]) {
           restVesselData[key] = new Date(restVesselData[key])
@@ -93,19 +104,22 @@ const AddEditVesselDrawer = ({ onClose }) => {
       }
 
       if (VesselAttachments && VesselAttachments.length > 0) {
-        console.log(VesselAttachments)
         const formattedAttachments = VesselAttachments.map((att) => ({
           id: att.id,
           name: att.fileName,
           filename: att.fileName,
-          type: att.fileName.split('.').pop().toUpperCase(),
+          type: att.documentTypeId,
           status: "Uploaded",
-          url: att.url
+          url: att.url,
         }));
         setAttachments(formattedAttachments);
+
+        formattedAttachments.forEach((att, index) => {
+          setValue(`attachmentDocTypes[${index}]`, att.type || defaultDocumentType);
+        });
       }
     }
-  }, [vesselData, vesselId, setValue]);
+  }, [vesselData, vesselId, setValue, defaultDocumentType]);
 
   const tabSections = [
     "Vessel Details",
@@ -137,24 +151,35 @@ const AddEditVesselDrawer = ({ onClose }) => {
     const newAttachments = files.map((file) => ({
       id: crypto.randomUUID(),
       name: file.name,
-      type: file.type.split('/').pop().toUpperCase(),
+      type: file.type.split("/").pop().toUpperCase(),
       filename: file.name,
       status: "Not Uploaded",
       file: file,
       url: getFileObjectURL(file),
     }));
+
     setAttachments((prev) => [...prev, ...newAttachments]);
+
+    newAttachments.forEach(() => {
+      append(defaultDocumentType || "");
+    });
   };
 
   const handleAttachmentDelete = async (id) => {
     try {
       const attachment = attachments.find((att) => att.id === id);
+      const attachmentIndex = attachments.findIndex((att) => att.id === id);
 
       if (attachment && attachment.status === "Uploaded") {
-        const response = await axiosInstance.delete(`/attachments/${attachment.id}`);
+        await axiosInstance.delete(`/attachments/${attachment.id}`);
       }
+
       const updatedAttachments = attachments.filter((att) => att.id !== id);
       setAttachments(updatedAttachments);
+
+      if (attachmentIndex !== -1) {
+        remove(attachmentIndex);
+      }
     } catch (error) {
       toast.error("Failed to delete attachment.");
     }
@@ -162,8 +187,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
   const handleAttachmentDownload = async (id) => {
     const attachment = attachments.find((att) => att.id === id);
-    
-    if (attachment.status === 'Not Uploaded') {
+
+    if (attachment.status === "Not Uploaded") {
       const link = document.createElement("a");
       link.href = URL.createObjectURL(attachment.file);
       link.download = attachment.filename;
@@ -173,17 +198,22 @@ const AddEditVesselDrawer = ({ onClose }) => {
     } else {
       try {
         if (attachment.url) {
-          const fileUrl = process.env.REACT_APP_API_URL + '/uploads/' + attachment.url;
-          window.open(fileUrl, '_blank');
+          const fileUrl =
+            process.env.REACT_APP_API_URL + "/uploads/" + attachment.url;
+          window.open(fileUrl, "_blank");
         } else {
-          const response = await axiosInstance.get(`/attachments/${attachment.id}`, {
-            responseType: "blob",
-          });
-          
-          const contentType = response.headers['content-type'] || 'application/octet-stream';
+          const response = await axiosInstance.get(
+            `/attachments/${attachment.id}`,
+            {
+              responseType: "blob",
+            }
+          );
+
+          const contentType =
+            response.headers["content-type"] || "application/octet-stream";
           const blob = new Blob([response.data], { type: contentType });
           const url = URL.createObjectURL(blob);
-          
+
           const link = document.createElement("a");
           link.href = url;
           link.download = attachment.filename;
@@ -209,9 +239,11 @@ const AddEditVesselDrawer = ({ onClose }) => {
     const formData = new FormData();
 
     if (attachments.length > 0) {
-      attachments.filter(item => item.status === "Not Uploaded").forEach((att) => {
-        formData.append("attachments[]", att.file);
-      });
+      attachments
+        .filter((item) => item.status === "Not Uploaded")
+        .forEach((att) => {
+          formData.append("attachments[]", att.file);
+        });
     }
 
     if (image && image.status === "Not Uploaded") {
@@ -231,7 +263,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
     data.readyForMaintenance =
       data.readyForMaintenance === "true" ? true : false;
 
-    // Append vessel data
     Object.keys(data).forEach((key) => {
       if (data[key] !== undefined) {
         if (key.endsWith("Date") && data[key]) {
@@ -240,22 +271,24 @@ const AddEditVesselDrawer = ({ onClose }) => {
       }
     });
 
-    formData.append('data', JSON.stringify(data));
+    formData.append("data", JSON.stringify(data));
 
     if (!vesselId) {
       vesselMutation.mutate(formData, {
         onSettled: () => {
           handleOnClose();
-        }
+        },
       });
     } else {
-      vesselMutation.mutate({ id: vesselId, data: formData }, {
-        onSettled: () => {
-          handleOnClose();
+      vesselMutation.mutate(
+        { id: vesselId, data: formData },
+        {
+          onSettled: () => {
+            handleOnClose();
+          },
         }
-      });
+      );
     }
-
   };
 
   const handleOnClose = () => {
@@ -268,8 +301,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
     setValue("ihmSurveyEndDateIsSame", false);
     reset();
     setVessel({
-      id: '',
-      open: false
+      id: "",
+      open: false,
     });
     if (onClose) {
       onClose();
@@ -288,7 +321,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
           <Typography sx={{ fontWeight: "bold" }} variant="h5" gutterBottom>
             Vessel Details
           </Typography>
-          {/* Tabs */}
           <Box
             display="flex"
             gap={1}
@@ -335,10 +367,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
           <OPDivider />
 
           <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Vessel Details Form */}
             {tabIndex === 0 && (
               <Box display="flex" flexDirection="column" gap={3} p={3}>
-                {/* Vessel Info */}
                 <Box border={1} borderColor="green" p={2} borderRadius={2}>
                   <h3>Vessel Info</h3>
                   <Box
@@ -406,7 +436,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
                   </Box>
                 </Box>
 
-                {/* Vessel Built Details */}
                 <Box border={1} borderColor="green" p={2} borderRadius={2}>
                   <h3>Vessel Built Details</h3>
                   <Box
@@ -464,7 +493,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
                   </Box>
                 </Box>
 
-                {/* Survey / Maintenance Details */}
                 <Box border={1} borderColor="green" p={2} borderRadius={2}>
                   <h3>Survey / Maintenance Details</h3>
                   <Box
@@ -589,7 +617,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
             {tabIndex === 1 && (
               <Box display="flex" flexDirection="column" gap={3} p={2}>
-                {/* Vessel Attachments */}
                 <Box
                   border={1}
                   borderColor="green"
@@ -624,9 +651,34 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       </TableHead>
                       <TableBody>
                         {attachments.map((att, index) => (
-                          <TableRow key={index}>
+                          <TableRow key={att.id}>
                             <TableCell>{att.name}</TableCell>
-                            <TableCell>{att.type}</TableCell>
+                            <TableCell>
+                              <Controller
+                                name={`attachmentDocTypes[${index}]`}
+                                control={control}
+                                defaultValue={att.type || defaultDocumentType || ""}
+                                render={({ field }) => (
+                                  <TextField
+                                    select
+                                    fullWidth
+                                    label="Document Type"
+                                    error={!!errors.attachmentDocTypes?.[index]}
+                                    helperText={errors.attachmentDocTypes?.[index]?.message}
+                                    {...field}
+                                  >
+                                    {documentTypes.map((docType) => (
+                                      <MenuItem
+                                        key={docType.id}
+                                        value={docType.id}
+                                      >
+                                        {docType.name}
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
+                                )}
+                              />
+                            </TableCell>
                             <TableCell>{att.filename}</TableCell>
                             <TableCell>{att.status}</TableCell>
                             <TableCell>
@@ -644,9 +696,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                                 variant="outlined"
                                 color="primary"
                                 size="small"
-                                onClick={() =>
-                                  handleAttachmentDownload(att.id)
-                                }
+                                onClick={() => handleAttachmentDownload(att.id)}
                               >
                                 Download
                               </Button>
@@ -673,7 +723,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
                   </Button>
                 </Box>
 
-                {/* Vessel Image Upload */}
                 <Box
                   border={1}
                   borderColor="green"
@@ -887,7 +936,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
               </Box>
             )}
 
-            {/* Navigation Buttons */}
             <Box
               display="flex"
               justifyContent="space-between"
@@ -918,8 +966,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
                   {vesselMutation.isPending
                     ? "Saving..."
                     : vesselId
-                      ? "Update"
-                      : "Save"}
+                    ? "Update"
+                    : "Save"}
                 </Button>
               )}
               <Button

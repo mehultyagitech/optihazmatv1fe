@@ -17,10 +17,11 @@ import SummarizeIcon from "@mui/icons-material/Summarize";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
-import { useRecoilValue } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import { commonVesselViewState } from "./utils/States/Vessel";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "./api/axiosInstance";
+import genericState, { DocumentTypeSelector } from "./utils/States/Generic";
 
 const NAVIGATION = [
   {
@@ -108,6 +109,7 @@ const NAVIGATION = [
 
 function App() {
   const navigate = useNavigate();
+  const setGenericState = useSetRecoilState(genericState);
   const [session, setSession] = React.useState(null);
 
   const {
@@ -129,15 +131,25 @@ function App() {
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     cacheTime: 1000 * 60 * 10, // 10 minutes
-    select: (data) => data.data,
-    onSuccess: (data) => {
-      setSession(data);
-      console.log("User data fetched successfully:", data);
+    select: (data) => data.data
+  });
+
+  const generics = useQuery({
+    queryKey: ["genericData"],
+    queryFn: async () => {
+      try {
+        const response = await axiosInstance.get("/generics");
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching generic data:", error);
+        throw error;
+      }
     },
-    onError: (error) => {
-      setSession(null);
-      navigate("/login");
-    },
+    enabled: false,
+    retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    cacheTime: 1000 * 60 * 10, // 10 minutes
+    select: (response) => response.data
   });
 
   // Check authentication status when component mounts and handle redirects
@@ -186,6 +198,7 @@ function App() {
 
   useEffect(() => {
     if (user) {
+      generics.refetch();
       setSession(() => {
         return {
           user : {
@@ -196,6 +209,23 @@ function App() {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (generics.isSuccess) {
+      setGenericState((prev) => {
+        return {
+          ...prev,
+          Compartments: generics.data.Compartments,
+          DocumentTypes: generics.data.DocumentTypes,
+          Equipments: generics.data.Equipments,
+          Locations: generics.data.Locations,
+          SubLocations: generics.data.SubLocations,
+          Objects: generics.data.Objects,
+          Inventory: generics.data.Inventory,
+        };
+      });
+    }
+  }, [generics.isSuccess])
 
   // Create authentication as an object instead of a function
   const authentication = {
