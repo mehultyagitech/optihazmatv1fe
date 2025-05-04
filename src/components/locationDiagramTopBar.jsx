@@ -6,8 +6,16 @@ import DownloadIcon from '@mui/icons-material/Download';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CropIcon from '@mui/icons-material/Crop';
+import { useNavigate } from 'react-router-dom';
+
+
 
 const LocationDiagramTopBar = ({ filters, onFilterChange, onSearch }) => {
+    const navigate = useNavigate();
+
+const handleClick = () => {
+  navigate('/vessels/new-area'); // Replace with your actual route
+};
     return (
         <Box className="filter-bar" display="flex" justifyContent="space-between" alignItems="center" gap={2} flexDirection={{ xs: 'column', sm: 'row' }} sx={{  }}>
             {/* Left-aligned Vessel List button */}
@@ -16,6 +24,7 @@ const LocationDiagramTopBar = ({ filters, onFilterChange, onSearch }) => {
                 color="primary"
                 className="vessel-list-btn"
                 startIcon = {<CropIcon/>}
+                onClick={handleClick}
                 sx={{
                     width: { xs: '100%', sm: 'auto' },
                     maxWidth: { xs: '96%', sm: 'auto' },

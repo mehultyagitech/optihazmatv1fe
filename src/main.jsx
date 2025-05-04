@@ -21,6 +21,7 @@ import InventoryPoint from './pages/admin/vessel/inventoryPoints.jsx'
 import GenerateIHM from './pages/admin/vessel/generateIHM.jsx'
 import GenerateLR from './pages/admin/vessel/generateLR.jsx';
 import LocationPoint from './pages/admin/vessel/locationPoint.jsx';
+import CropLocationDiagram from './pages/admin/vessel/areaCrop.jsx';
 import { RecoilRoot } from "recoil";
 import {
   QueryClient,
@@ -95,6 +96,10 @@ const router = createBrowserRouter([
           {
             path: "/vessels/inventory-point",
             element: <LocationPoint />,
+          },
+          {
+            path: "/vessels/new-area",
+            element: <CropLocationDiagram />,
           },
         ]
       },
