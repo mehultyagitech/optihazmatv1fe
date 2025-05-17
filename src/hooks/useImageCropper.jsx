@@ -1,27 +1,24 @@
 import { useState, useRef, useEffect } from "react";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
+import { dataUrlToFile } from "../utils/helpers";
 
 export default function useImageCropper({ url, ...props }) {
-  useEffect(() => {
-    console.log("Image Cropper Hook triggered with URL:", url);
-  }, [url]);
-
   const [image, setImage] = useState(url);
+  const [cropData, setCropData] = useState(null);
+  const cropperRef = useRef(null);
 
   useEffect(() => {
     setImage(url);
   }, [url]);
-
-  const [cropData, setCropData] = useState("#");
-  const cropperRef = useRef(null);
 
   const getCroppedImage = () => {
     if (typeof cropperRef.current?.cropper !== "undefined") {
       const canvas = cropperRef.current.cropper.getCroppedCanvas();
       if (canvas) {
         const dataURL = canvas.toDataURL();
-        setCropData(dataURL);
+        setCropData(dataUrlToFile(dataURL, crypto.randomUUID() + ".png"));
+        setImage(dataURL);
         return dataURL;
       }
     }
@@ -34,27 +31,32 @@ export default function useImageCropper({ url, ...props }) {
   };
 
   const rotateRight = () => {
-    console.log("ksdskjnjl")
-     cropperRef.current?.cropper.rotate(90);
+    cropperRef.current?.cropper.rotate(90);
   };
 
   const cropper = (
     <Cropper
-      style={{ height: 400, width: "100%" }}
+      style={{ height: '80vh', width: "100%" }}
       initialAspectRatio={1}
       preview=".img-preview-remote"
       src={image}
       ref={cropperRef}
-      viewMode={1}
-      guides={true}
-      minCropBoxHeight={10}
-      minCropBoxWidth={10}
+      viewMode={!cropData ? 1 : 2}
+      guides={false}
       background={false}
       responsive={true}
       checkOrientation={false}
+      width={'100%'}
       {...props}
     />
   );
+
+  const resetCrop = () => {
+    cropperRef.current?.cropper.destroy();  
+    cropperRef.current = null;
+    setImage('#'); 
+    setCropData(null);
+  }
 
   return {
     cropper,
@@ -62,6 +64,7 @@ export default function useImageCropper({ url, ...props }) {
     cropperRef,
     getCroppedImage,
     rotateLeft,
-    rotateRight
+    rotateRight,
+    resetCrop
   };
 }
