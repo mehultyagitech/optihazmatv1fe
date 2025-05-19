@@ -1,26 +1,37 @@
 import React, { useState } from "react";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPDivider from "../../../components/OPDivider";
-import {
-  Box,
-  Typography,
-  Button,
-  Grid,
-  useMediaQuery,
-  Paper,
-} from "@mui/material";
+import { Box, Typography, Button, Grid, useMediaQuery } from "@mui/material";
 import LocationPointTopBar from "../../../components/locationPointTopBar";
 import { useTheme } from "@mui/material/styles";
 import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer";
-import Cropper from "react-cropper";
-import useImageCropper from "../../../hooks/useImageCropper";
+import ImageViewer from "../../../components/ImageViewer"; 
+import { useParams } from "react-router-dom";
+import { useRecoilValue } from "recoil";
+import { commonVesselViewState } from "../../../utils/States/Vessel";
+import {useQuery} from "@tanstack/react-query";
+import axiosInstance from "../../../api/axiosInstance";
 
 export default function LocationPoint() {
-  const attachmentId = "20ceab7f-bfee-47b3-9989-eb572153fc57";
-  const url =
-    "https://raw.githubusercontent.com/roadmanfong/react-cropper/master/example/img/child.jpg";
-  const imageCropper = useImageCropper({ url });
+  const { locationDiagramId } = useParams();
+  const commonVesselView = useRecoilValue(commonVesselViewState);
 
+  const locationDiagram = useQuery({
+    queryKey: ["locationDiagram", locationDiagramId, commonVesselView.id],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/location-diagrams/${commonVesselView.id}/${locationDiagramId}`
+      );
+      return response.data;
+    },
+    enabled: !!locationDiagramId,
+    select: (data) => data.data,
+  })
+
+  const url = locationDiagram.isPending ? '#' : process.env.REACT_APP_API_URL + '/uploads/' + locationDiagram.data.LocationDiagramImage[0].url;
+  
+
+  const attachmentId = '20ceab7f-bfee-47b3-9989-eb572153fc57';
   const title = "Location Point";
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -47,119 +58,60 @@ export default function LocationPoint() {
       <Grid
         container
         spacing={2}
-        sx={{ height: isMobile ? "auto" : "calc(100vh - 150px)" }}
+        sx={{ height: isMobile ? "auto" : "calc(100vh - 150px)", flexDirection: isMobile ? "column" : "row" }}
       >
-        {/* Left Section - Main Image Cropper */}
-        <Grid item xs={12} md={9}>
-          <Paper
-            elevation={2}
-            sx={{
-              height: "100%",
-              borderTop: `2px solid ${theme.palette.primary.main}`,
-              p: 2,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <Box sx={{ mb: 3 }}>{imageCropper.cropper}</Box>
-          </Paper>
+        {/* Left Section - Image / Floor Plan */}
+        <Grid 
+          item 
+          xs={12} 
+          md={9} 
+          sx={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            alignItems: "center", 
+            bgcolor: "#EAEAEA", 
+            p: 2,
+          }}
+        >
+          <ImageViewer imageUrl={url} attachmentId={attachmentId} />
         </Grid>
 
-        {/* Right Section - Location Details with Preview */}
-        <Grid item xs={12} md={3}>
-          <Paper
-            elevation={2}
-            sx={{
-              height: "100%",
-              borderTop: `2px solid ${theme.palette.primary.main}`,
-              p: 2,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
-              Location Details
+        {/* Right Section - Location Details */}
+        <Grid 
+          item 
+          xs={12} 
+          md={3} 
+          sx={{
+            bgcolor: "white",
+            borderLeft: isMobile ? "none" : "2px solid #00AEEF",
+            borderTop: isMobile ? "2px solid #00AEEF" : "none",
+            p: 2,
+            textAlign: isMobile ? "center" : "left",
+          }}
+        >
+          {[
+            "Location Category", "Location", "Check Point Number", "Sub Location", 
+            "Equipment", "Compartment", "Object", "Hazmat [ Quantity - Unit ]"
+          ].map((text, index) => (
+            <Typography key={index} sx={{ color: "#0073E6", mt: index === 0 ? 1 : 0.5 }}>
+              {text}
             </Typography>
+          ))}
 
-            {/* Preview now inside Location Details */}
-            <Box sx={{ mb: 3 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{ mb: 1, color: "text.secondary" }}
-              >
-                Preview
-              </Typography>
-              <Box
-                className="img-preview-remote"
-                sx={{
-                  width: "100%",
-                  height: "120px",
-                  overflow: "hidden",
-                  border: "1px solid #ccc",
-                  borderRadius: 1,
-                  mb: 1,
-                }}
-              />
-              <Button
-                variant="contained"
-                size="small"
-                color="primary"
-                onClick={imageCropper.getCroppedImage}
-                fullWidth
-                sx={{ mt: 1 }}
-              >
-                Crop Image
-              </Button>
-            </Box>
-
-            <OPDivider sx={{ my: 1 }} />
-
-            {/* Location information */}
-            {[
-              "Location Category",
-              "Location",
-              "Check Point Number",
-              "Sub Location",
-              "Equipment",
-              "Compartment",
-              "Object",
-              "Hazmat [ Quantity - Unit ]",
-            ].map((text, index) => (
-              <Box key={index} sx={{ mb: 1.5 }}>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  {text}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: "medium", color: "#0073E6" }}
-                >
-                  Not specified
-                </Typography>
-              </Box>
-            ))}
-
-            <Box sx={{ mt: "auto", pt: 2 }}>
-              <Button
-                variant="outlined"
-                fullWidth
-                sx={{
-                  borderColor: theme.palette.primary.main,
-                  color: theme.palette.primary.main,
-                }}
-                onClick={() => setOpenDrawer(true)}
-              >
-                Open Details
-              </Button>
-            </Box>
-          </Paper>
+          {/* Open Details Button */}
+          <Button
+            variant="outlined"
+            fullWidth
+            sx={{ mt: 3, borderColor: "#00AEEF", color: "#00AEEF" }}
+            onClick={() => setOpenDrawer(true)} // Open Drawer on Click
+          >
+            Open Details
+          </Button>
         </Grid>
       </Grid>
 
       {/* Inventory Point Drawer */}
-      <AddEditInventoryPointDrawer
-        open={openDrawer}
-        onClose={() => setOpenDrawer(false)}
-      />
+      <AddEditInventoryPointDrawer open={openDrawer} onClose={() => setOpenDrawer(false)} />
     </OPPageContainer>
   );
 }

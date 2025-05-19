@@ -75,8 +75,8 @@ const ImageViewer = ({ attachmentId, imageUrl }) => {
         margin: "20px",
         overflow: "hidden",
         border: "1px solid #ccc",
-        width: "800px",
-        height: "600px",
+        width: "100%",
+        height: "100%",
         maxWidth: "100%",
         maxHeight: "80vh",
       }}
