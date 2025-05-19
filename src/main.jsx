@@ -86,16 +86,16 @@ const router = createBrowserRouter([
             element: <InventoryPoint />,
           },
           {
+            path: "/vessels/inventory-points/:locationDiagramId",
+            element: <LocationPoint />,
+          },
+          {
             path: "/vessels/generate-ihm",
             element: <GenerateIHM />,
           },
           {
             path: "/vessels/generate-lr",
             element: <GenerateLR />,
-          },
-          {
-            path: "/vessels/inventory-point",
-            element: <LocationPoint />,
           },
           {
             path: "/vessels/new-area",

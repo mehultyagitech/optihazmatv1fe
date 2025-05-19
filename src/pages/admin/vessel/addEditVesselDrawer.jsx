@@ -45,7 +45,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [tabIndex, setTabIndex] = useState(0);
-  const [ihmClass, setIhmClass] = useState("");
   const [surveySameAsStart, setSurveySameAsStart] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [image, setImage] = useState();
@@ -296,7 +295,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
     setAttachments([]);
     setImage(null);
     setCommonInventoryImage(null);
-    setIhmClass("");
     setSurveySameAsStart(false);
     setValue("ihmSurveyEndDateIsSame", false);
     reset();
@@ -503,19 +501,15 @@ const AddEditVesselDrawer = ({ onClose }) => {
                     <Controller
                       name="ihmClass"
                       control={control}
+                      defaultValue={''}
                       render={({ field }) => (
                         <Select
-                          value={ihmClass}
-                          onChange={(e) => setIhmClass(e.target.value)}
-                          name="ihmClass"
+                          {...field}
                           displayEmpty
                           fullWidth
                           error={!!errors.ihmClass}
-                          {...field}
                         >
-                          <MenuItem value="" disabled>
-                            IHM Class
-                          </MenuItem>
+                          <MenuItem value="">IHM Class</MenuItem>
                           <MenuItem value="Class A">Class A</MenuItem>
                           <MenuItem value="Class B">Class B</MenuItem>
                         </Select>
@@ -657,7 +651,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
                               <Controller
                                 name={`attachmentDocTypes[${index}]`}
                                 control={control}
-                                defaultValue={att.type || defaultDocumentType || ""}
                                 render={({ field }) => (
                                   <TextField
                                     select
