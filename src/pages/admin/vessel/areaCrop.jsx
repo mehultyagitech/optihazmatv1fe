@@ -46,8 +46,6 @@ const CropLocationDiagram = () => {
   const imageCropper = useImageCropper({ url: selectedImage });
   const [openedImage, setOpenedImage] = useState(null);
 
-  console.log("Opened Image", openedImage);
-
   // mutation for saving the cropped image
   const { isPending, mutate, reset } = useMutation({
     mutationFn: async () => {
@@ -55,7 +53,7 @@ const CropLocationDiagram = () => {
       formData.append("vesselId", vesselView.id);
       formData.append("location", locationCategory);
       formData.append("subLocationId", location);
-	  formData.append("attachmentImageId", openedImage?.id);
+      formData.append("attachmentImageId", openedImage?.id);
       formData.append("attachmentId", openedImage?.attachmentId);
       formData.append("image", imageCropper.cropData);
 
@@ -131,7 +129,7 @@ const CropLocationDiagram = () => {
                   onClick={() => {
                     setSelectedImage(null);
                     imageCropper.resetCrop();
-					reset();
+                    reset();
                   }}
                 >
                   Clear Image
@@ -262,7 +260,12 @@ const CropLocationDiagram = () => {
               </FormControl>
             )}
 
-            <Button variant="outlined" fullWidth onClick={mutate} disabled={isPending}>
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={mutate}
+              disabled={isPending}
+            >
               Save Area
             </Button>
           </Box>

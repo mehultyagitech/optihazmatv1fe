@@ -26,15 +26,18 @@ export const filterDataByRole = (data, role) => {
   return data.filter((item) => item.role === role);
 };
 
-export const dataUrlToFile = (url, fileName) => {
-  const [mediaType, data] = url.split(",");
-  const mime = mediaType.match(/:(.*?);/)?.[0];
-  var n = data.length;
-  const arr = new Uint8Array(n);
-  while (n--) {
-    arr[n] = data.charCodeAt(n);
+export const dataUrlToFile = (base64String, filename) => {
+  const [header, data] = base64String.split(",");
+
+  const mime = header.match(/data:(.*);base64/)?.[1];
+  const byteString = atob(data);
+  const byteArray = new Uint8Array(byteString.length);
+
+  for (let i = 0; i < byteString.length; i++) {
+    byteArray[i] = byteString.charCodeAt(i);
   }
-  return new File([arr], fileName, { type: mime });
+
+  return new File([byteArray], filename, { type: mime });
 };
 
 export const dataUrlToFileUsingFetch = async (url, fileName, mimeType) => {
@@ -43,4 +46,3 @@ export const dataUrlToFileUsingFetch = async (url, fileName, mimeType) => {
 
   return new File([buffer], fileName, { type: mimeType });
 };
-
