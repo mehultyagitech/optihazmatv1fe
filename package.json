@@ -38,6 +38,7 @@
     "react-toastify": "^11.0.2",
     "react-zoom-pan-pinch": "^3.7.0",
     "recoil": "^0.7.7",
+    "recoil-persist": "^5.1.0",
     "toastr": "^2.1.4"
   },
   "devDependencies": {

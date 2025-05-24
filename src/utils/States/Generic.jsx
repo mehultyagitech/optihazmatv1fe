@@ -1,4 +1,10 @@
 import { atom, selector } from "recoil";
+import { recoilPersist } from "recoil-persist";
+
+const { persistAtom: genericPersist } = recoilPersist({
+  key: "genericPersist",
+  storage: sessionStorage,
+});
 
 const genericState = atom({
   key: "genericState",
@@ -11,6 +17,7 @@ const genericState = atom({
     Objects: [],
     Inventory: [],
   },
+  effects_UNSTABLE: [genericPersist],
 });
 
 const CompartmentSelector = selector({

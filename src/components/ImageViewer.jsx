@@ -1,10 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import RoomIcon from '@mui/icons-material/Room';
+import RoomIcon from "@mui/icons-material/Room";
 import axiosInstance from "../api/axiosInstance";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import {
+  PinsSelector,
+  locationPointAddDrawerState,
+} from "../utils/States/LocationDiagram";
 
-const ImageViewer = ({ attachmentId, imageUrl }) => {
-  const [pins, setPins] = useState([]);
+const ImageViewer = ({ imageUrl }) => {
+  const pins = useRecoilValue(PinsSelector);
+  const drawerState = useSetRecoilState(locationPointAddDrawerState);
   const [imageNaturalSize, setImageNaturalSize] = useState({
     width: 0,
     height: 0,
@@ -16,19 +22,6 @@ const ImageViewer = ({ attachmentId, imageUrl }) => {
   });
   const imageRef = useRef(null);
 
-  const fetchPins = async () => {
-    const response = await axiosInstance.get(
-      `/attachments/${attachmentId}/pins`
-    );
-    setPins(response.data.data);
-  };
-
-  useEffect(() => {
-    if (!!attachmentId) {
-      fetchPins();
-    }
-  }, [attachmentId]);
-
   const handleImageClick = async (e) => {
     if (!imageRef.current || !imageUrl) return;
 
@@ -39,24 +32,14 @@ const ImageViewer = ({ attachmentId, imageUrl }) => {
     const xPercent = ((e.clientX - left) / width) * 100;
     const yPercent = ((e.clientY - top) / height) * 100;
 
-    const note = prompt("Enter note for this pin:");
-    if (note) {
-      const newPin = {
-        x: xPercent,
-        y: yPercent,
-        label: note,
-        attachmentId: attachmentId,
-      };
+    const pinData = {
+      open: true,
+      x: xPercent,
+      y: yPercent,
+      pinId: "",
+    };
 
-      const response = await axiosInstance.post("/pins", newPin, {
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (response.ok) {
-        const createdPin = await response.json();
-        setPins((prev) => [...prev, createdPin]);
-      }
-    }
+    drawerState(pinData);
   };
 
   const handlePinDelete = async (pin) => {
@@ -75,14 +58,15 @@ const ImageViewer = ({ attachmentId, imageUrl }) => {
         margin: "20px",
         overflow: "hidden",
         border: "1px solid #ccc",
-        width: "100%",
-        height: "100%",
+        width: "800px",
+        height: "800px",
         maxWidth: "100%",
         maxHeight: "80vh",
       }}
     >
       <TransformWrapper
         initialScale={1}
+        doubleClick={{ disabled: true }} // Disable double-click zoom
         minScale={0.1}
         maxScale={10}
         centerOnInit={true}
@@ -99,13 +83,20 @@ const ImageViewer = ({ attachmentId, imageUrl }) => {
                 +
               </button>
               <button onClick={() => zoomOut()}>-</button>
-            </div>
-            <TransformComponent>
+            </div>{" "}
+            <TransformComponent
+              wrapperStyle={{
+                width: "100%",
+                height: "100%",
+                maxWidth: "100%",
+                maxHeight: "100%",
+              }}
+            >
               <div
                 style={{
-                  width: `${imageNaturalSize.width}px`,
-                  height: `${imageNaturalSize.height}px`,
                   position: "relative",
+                  width: "100%",
+                  height: "100%",
                 }}
                 onDoubleClick={handleImageClick}
               >
@@ -114,7 +105,12 @@ const ImageViewer = ({ attachmentId, imageUrl }) => {
                     ref={imageRef}
                     src={imageUrl}
                     alt="Floor Plan"
-                    style={{ width: "100%", height: "100%", display: "block" }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "block",
+                      objectFit: "contain",
+                    }}
                     onLoad={() => {
                       if (imageRef.current) {
                         setImageNaturalSize({
@@ -141,27 +137,21 @@ const ImageViewer = ({ attachmentId, imageUrl }) => {
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handlePinDelete(pin);
+                      drawerState({
+                        open: true,
+                        x: pin.x,
+                        y: pin.y,
+                        pinId: pin.id,
+                      });
                     }}
                   >
-                    <div 
-                      title={pin.label} 
-                      style={{ 
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transform: 'scale(1.5)',
-                        position: 'relative'
+                    <RoomIcon
+                      style={{
+                        color: "#31e040",
+                        filter: "drop-shadow(1px 1px 1px rgba(0,0,0,0.5))",
+                        transform: "translateY(-50%)",
                       }}
-                    >
-                      <RoomIcon 
-                        style={{ 
-                          color: '#31e040', 
-                          filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.5))',
-                          transform: 'translateY(-50%)'
-                        }} 
-                      />
-                    </div>
+                    />
                   </div>
                 ))}
               </div>

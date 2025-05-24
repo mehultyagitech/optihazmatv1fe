@@ -146,8 +146,6 @@ const Vessel = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  console.log("Location Diagrams:", locationDiagrams.data);
-
   const handleSearch = () => {
     const selectedFilters = filters.reduce((acc, filter) => {
       acc[filter.name] = filter.value;

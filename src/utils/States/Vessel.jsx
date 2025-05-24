@@ -1,11 +1,17 @@
 import { atom, selector } from "recoil";
+import { recoilPersist } from "recoil-persist";
+
+const { persistAtom: vesselCommonViewPersist } = recoilPersist({
+  key: "vesselCommonViewPersist",
+  storage: sessionStorage,
+});
 
 export const vesselState = atom({
   key: "vesselState",
   default: {
     id: "",
     open: false,
-  },
+  }
 });
 
 export const vesselSearchMetaState = atom({
@@ -23,7 +29,8 @@ export const commonVesselViewState = atom({
   default: {
       id: '',
       name: ''
-  }
+  },
+  effects_UNSTABLE: [vesselCommonViewPersist],
 });
 
 export const vesselOpenSelector = selector({
