@@ -184,11 +184,6 @@ function App() {
         icon: <InventoryIcon />,
       },
       {
-        segment: "inventory-points/:locationDiagramId",
-        title: "Inventory Points",
-        icon: <InventoryIcon />,
-      },
-      {
         segment: "generate-ihm",
         title: "Generate IHM",
         icon: <SummarizeIcon />,

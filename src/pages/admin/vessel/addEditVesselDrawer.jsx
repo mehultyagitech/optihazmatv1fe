@@ -18,7 +18,7 @@ import {
   TableBody,
   Paper,
 } from "@mui/material";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { useRecoilState } from "recoil";
 import OPPageContainer from "../../../components/OPPageContainer";
@@ -59,14 +59,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
     reset,
   } = useForm({
     resolver: joiResolver(vesselSchema),
-    defaultValues: {
-      attachmentDocTypes: [],
-    },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "attachmentDocTypes",
+    defaultValues: {},
   });
 
   const { data: vesselData, isLoading: isLoadingVessel } =
@@ -82,7 +75,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
   useEffect(() => {
     if (vesselData && vesselId) {
       const { VesselImages, VesselAttachments, ...restVesselData } = vesselData;
-
       Object.keys(restVesselData).forEach((key) => {
         if (key.endsWith("Date") && restVesselData[key]) {
           restVesselData[key] = new Date(restVesselData[key])
@@ -91,7 +83,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
         }
         setValue(key, restVesselData[key]);
       });
-
       if (VesselImages && VesselImages.length > 0) {
         const vesselImage = VesselImages[0];
         setImage({
@@ -101,21 +92,16 @@ const AddEditVesselDrawer = ({ onClose }) => {
           url: getFileObjectURL(vesselImage),
         });
       }
-
       if (VesselAttachments && VesselAttachments.length > 0) {
         const formattedAttachments = VesselAttachments.map((att) => ({
           id: att.id,
           name: att.fileName,
           filename: att.fileName,
-          type: att.documentTypeId,
+          docType: att.documentTypeId || defaultDocumentType,
           status: "Uploaded",
           url: att.url,
         }));
         setAttachments(formattedAttachments);
-
-        formattedAttachments.forEach((att, index) => {
-          setValue(`attachmentDocTypes[${index}]`, att.type || defaultDocumentType);
-        });
       }
     }
   }, [vesselData, vesselId, setValue, defaultDocumentType]);
@@ -150,18 +136,13 @@ const AddEditVesselDrawer = ({ onClose }) => {
     const newAttachments = files.map((file) => ({
       id: crypto.randomUUID(),
       name: file.name,
-      type: file.type.split("/").pop().toUpperCase(),
+      docType: defaultDocumentType || "",
       filename: file.name,
       status: "Not Uploaded",
       file: file,
       url: getFileObjectURL(file),
     }));
-
     setAttachments((prev) => [...prev, ...newAttachments]);
-
-    newAttachments.forEach(() => {
-      append(defaultDocumentType || "");
-    });
   };
 
   const handleAttachmentDelete = async (id) => {
@@ -234,7 +215,14 @@ const AddEditVesselDrawer = ({ onClose }) => {
     }
   };
 
+  const handleAttachmentDocTypeChange = (index, value) => {
+    setAttachments((prev) =>
+      prev.map((att, i) => (i === index ? { ...att, docType: value } : att))
+    );
+  };
+
   const onSubmit = async (data) => {
+    console.log("Form Data:", data);
     const formData = new FormData();
 
     if (attachments.length > 0) {
@@ -270,12 +258,18 @@ const AddEditVesselDrawer = ({ onClose }) => {
       }
     });
 
+    // Add docTypes to attachments in data
+    data.attachments = attachments.map((att) => ({
+      ...att,
+      docType: att.docType,
+    }));
+
     formData.append("data", JSON.stringify(data));
 
     if (!vesselId) {
       vesselMutation.mutate(formData, {
         onSettled: () => {
-          handleOnClose();
+          // handleOnClose();
         },
       });
     } else {
@@ -283,7 +277,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
         { id: vesselId, data: formData },
         {
           onSettled: () => {
-            handleOnClose();
+            // handleOnClose();
           },
         }
       );
@@ -501,7 +495,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                     <Controller
                       name="ihmClass"
                       control={control}
-                      defaultValue={''}
+                      defaultValue={""}
                       render={({ field }) => (
                         <Select
                           {...field}
@@ -648,29 +642,24 @@ const AddEditVesselDrawer = ({ onClose }) => {
                           <TableRow key={att.id}>
                             <TableCell>{att.name}</TableCell>
                             <TableCell>
-                              <Controller
-                                name={`attachmentDocTypes[${index}]`}
-                                control={control}
-                                render={({ field }) => (
-                                  <TextField
-                                    select
-                                    fullWidth
-                                    label="Document Type"
-                                    error={!!errors.attachmentDocTypes?.[index]}
-                                    helperText={errors.attachmentDocTypes?.[index]?.message}
-                                    {...field}
-                                  >
-                                    {documentTypes.map((docType) => (
-                                      <MenuItem
-                                        key={docType.id}
-                                        value={docType.id}
-                                      >
-                                        {docType.name}
-                                      </MenuItem>
-                                    ))}
-                                  </TextField>
-                                )}
-                              />
+                              <TextField
+                                select
+                                fullWidth
+                                label="Document Type"
+                                value={att.docType || ""}
+                                onChange={(e) =>
+                                  handleAttachmentDocTypeChange(
+                                    index,
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                {documentTypes.map((docType) => (
+                                  <MenuItem key={docType.id} value={docType.id}>
+                                    {docType.name}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
                             </TableCell>
                             <TableCell>{att.filename}</TableCell>
                             <TableCell>{att.status}</TableCell>
@@ -959,8 +948,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
                   {vesselMutation.isPending
                     ? "Saving..."
                     : vesselId
-                    ? "Update"
-                    : "Save"}
+                      ? "Update"
+                      : "Save"}
                 </Button>
               )}
               <Button

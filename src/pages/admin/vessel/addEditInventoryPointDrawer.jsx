@@ -69,8 +69,8 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
   });
 
   useEffect(() => {
-    if (pinDataById.isSuccess && !!pinDataById.data) {
-      const { PinAttachments, PinImages, ...pinData } = pinDataById.data;
+    if (pinDataById.isSuccess && !!pinDataById?.data) {
+      const { PinAttachments, PinImages, ...pinData } = pinDataById?.data;
       const formData = {
         subLocationId: pinData.subLocationId || "",
         equipmentId: pinData.equipmentId || "",
@@ -91,7 +91,7 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
       };
 
       // Set attachments
-      const formattedAttachments = PinAttachments.map((att) => ({
+      const formattedAttachments = PinAttachments?.map((att) => ({
         id: att.id,
         name: att.fileName,
         type: att.documentTypeId, // Document type id will be set by user
@@ -100,7 +100,7 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
         file: att,
       }));
 
-      const formattedImages = PinImages.map((img) => ({
+      const formattedImages = PinImages?.map((img) => ({
         id: img.id,
         file: img,
         url: process.env.REACT_APP_API_URL + "/uploads/" + img.url,
@@ -113,7 +113,7 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
       setForm(formData);
     }
   }, [pinDataById.isSuccess]);
-  
+
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [tabIndex, setTabIndex] = useState(0);
 
@@ -263,6 +263,21 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
     return false;
   };
 
+  const handleClose = () => {
+    setForm({
+      saveWithoutImage: false,
+      useCommonImage: false,
+    });
+    setAttachments([]);
+    setImages([]);
+    setDeletedImages([]);
+    setDeletedAttachments([]);
+    setFormErrors({});
+    setTabIndex(0);
+    queryClient.invalidateQueries(["pinData", pinId]);
+    onClose();
+  };
+
   const savePoint = useMutation({
     mutationFn: async (data) => {
       console.log("Saving Inventory Point with data:", data);
@@ -306,13 +321,12 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
       form.append("y", y);
       form.append("locationDiagramId", locationId);
 
-      
       let response;
-      
+
       if (!!pinId) {
-        form.append('deletedImages', JSON.stringify(deletedImages));
-        form.append('deletedAttachments', JSON.stringify(deletedAttachments));
-  
+        form.append("deletedImages", JSON.stringify(deletedImages));
+        form.append("deletedAttachments", JSON.stringify(deletedAttachments));
+
         response = await axiosInstance.put(`/pins/${pinId}`, form, {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -331,25 +345,14 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
       return response.data;
     },
     onSuccess: (data) => {
+      handleClose();
       console.log("Inventory Point saved successfully:", data);
-      setForm({
-        saveWithoutImage: false,
-        useCommonImage: false,
-      });
-      setAttachments([]);
-      setImages([]);
-      setDeletedImages([]);
-      setDeletedAttachments([]);
-      setFormErrors({});
-      setTabIndex(0);
-      queryClient.invalidateQueries(["pinData", pinId]);
-      onClose();
     },
   });
 
   return (
     <OPPageContainer>
-      <Drawer anchor="right" open={open} onClose={onClose}>
+      <Drawer anchor="right" open={open} onClose={() => handleClose()}>
         <Box
           sx={{
             width: isSmallScreen ? "100vw" : 900,
@@ -1089,7 +1092,7 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
                 {savePoint.isPending ? "Saving..." : "Save Point"}
               </Button>
             )}
-            <Button variant="outlined" color="secondary" onClick={onClose}>
+            <Button variant="outlined" color="secondary" onClick={handleClose}>
               Close
             </Button>
           </Box>
