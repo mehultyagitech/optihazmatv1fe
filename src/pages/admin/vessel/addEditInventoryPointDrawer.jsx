@@ -24,7 +24,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import genericState from "../../../utils/States/Generic";
-import { useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { inventoryPointSchema } from "../../../validations/inventoryPoint";
 import {
@@ -32,9 +32,8 @@ import {
   locationPointState,
 } from "../../../utils/States/LocationDiagram";
 import axiosInstance from "../../../api/axiosInstance";
-import { set } from "nprogress";
 
-const AddEditInventoryPointDrawer = ({ open, onClose }) => {
+const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const theme = useTheme();
   const {
     SubLocations,
@@ -44,7 +43,9 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
     Inventory,
     DocumentTypes,
   } = useRecoilValue(genericState);
-  const { x, y, pinId } = useRecoilValue(locationPointAddDrawerState);
+  const [{ x, y, pinId, open }, setDrawer] = useRecoilState(
+    locationPointAddDrawerState
+  );
   const { id: locationId } = useRecoilValue(locationPointState);
   const [attachments, setAttachments] = useState([]);
   const [images, setImages] = useState([]);
@@ -268,13 +269,18 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
       saveWithoutImage: false,
       useCommonImage: false,
     });
+    setDrawer((prev) => ({
+      open: false,
+      pinId: "",
+      x: 0,
+      y: 0,
+    }));
     setAttachments([]);
     setImages([]);
     setDeletedImages([]);
     setDeletedAttachments([]);
     setFormErrors({});
     setTabIndex(0);
-    queryClient.invalidateQueries(["pinData", pinId]);
     onClose();
   };
 
@@ -345,6 +351,8 @@ const AddEditInventoryPointDrawer = ({ open, onClose }) => {
       return response.data;
     },
     onSuccess: (data) => {
+      queryClient.invalidateQueries(["pinData", pinId]);
+      queryClient.invalidateQueries(["pinsListing"]);
       handleClose();
       console.log("Inventory Point saved successfully:", data);
     },
