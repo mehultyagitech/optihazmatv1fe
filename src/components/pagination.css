@@ -1,0 +1,27 @@
+.pagination {
+  display: flex;
+  list-style: none;
+  gap: 0.5rem;
+  padding: 0;
+}
+.page-item {
+  border: 1px solid #1976d2;
+  color: #1976d2;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #fff;
+  transition: background 0.2s, color 0.2s;
+}
+.page-item:hover:not(.active):not(.disabled) {
+  background: #e3f2fd;
+}
+.active {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1976d2;
+}
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}

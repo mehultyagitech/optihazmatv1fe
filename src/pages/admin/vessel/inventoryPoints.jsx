@@ -21,6 +21,8 @@ import locationPointState, { locationPointAddDrawerState } from "../../../utils/
 import { commonVesselViewState } from "../../../utils/States/Vessel";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "../../../api/axiosInstance";
+import ReactPaginate from 'react-paginate';
+import './../../../components/pagination.css';
 
 const InventoryPointCard = ({
   inventoryPointName,
@@ -138,6 +140,7 @@ const InventoryPointCard = ({
 const InventoryPoints = () => {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const limit = 10;
   const [drawer, setDrawer] = useRecoilState(locationPointAddDrawerState);
   const vesselView = useRecoilValue(commonVesselViewState);
   const setLocationPoint = useSetRecoilState(locationPointState);
@@ -149,6 +152,7 @@ const InventoryPoints = () => {
         params: {
           page: page,
           search: searchQuery,
+          limit: limit,
         },
       });
       return response.data;
@@ -209,7 +213,17 @@ const InventoryPoints = () => {
     setSearchQuery(event.target.value);
   };
 
+  // Get items and meta from API response
   const filteredClients = pinsListing.isSuccess ? pinsListing.data.data : [];
+  const meta = pinsListing.isSuccess ? pinsListing.data.meta : { page: 1, total: { pages: 1, items: 0 } };
+
+  console.log("Filtered Clients:", filteredClients);
+  console.log("Meta Data:", meta);
+
+  // ReactPaginate handler
+  const handlePageClick = (event) => {
+    setPage(event.selected + 1); // react-paginate is 0-based, API is 1-based
+  };
 
   return (
     <OPPageContainer sx={{ px: 2, pt: 2 }}>
@@ -306,6 +320,28 @@ const InventoryPoints = () => {
               />
             ))}
         </Box>
+        {/* Pagination */}
+        {meta.total.pages > 1 && (
+          <Box display="flex" justifyContent="center" mt={3}>
+            <ReactPaginate
+              previousLabel={"← Previous"}
+              nextLabel={"Next →"}
+              breakLabel={"..."}
+              pageCount={meta.total.pages}
+              forcePage={meta.page - 1}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={3}
+              onPageChange={handlePageClick}
+              containerClassName={"pagination"}
+              activeClassName={"active"}
+              pageClassName={"page-item"}
+              previousClassName={"page-item"}
+              nextClassName={"page-item"}
+              breakClassName={"page-item"}
+              disabledClassName={"disabled"}
+            />
+          </Box>
+        )}
       </Box>
       {drawer.open && <AddEditInventoryPointDrawer />}
     </OPPageContainer>
