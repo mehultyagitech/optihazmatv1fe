@@ -4,7 +4,7 @@ import OPDivider from "../../../components/OPDivider";
 import { Box, Typography, Button, Grid, useMediaQuery } from "@mui/material";
 import LocationPointTopBar from "../../../components/locationPointTopBar";
 import { useTheme } from "@mui/material/styles";
-import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer";
+import LazyInventoryPointDrawer from "./LazyInventoryPointDrawer";
 import ImageViewer from "../../../components/ImageViewer";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRecoilValue, useRecoilState } from "recoil";
@@ -158,7 +158,7 @@ export default function LocationPoint() {
       </Grid>
 
       {/* Inventory Point Drawer */}
-      <AddEditInventoryPointDrawer
+              <LazyInventoryPointDrawer
         open={drawer.open}
         onClose={() => setDrawer({ open: false, x: 0, y: 0, pinId: "" })}
       />

@@ -1,34 +1,47 @@
-import { StrictMode } from 'react'
+import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Layout from './layout/layout.jsx';
 import { PageContainer } from '@toolpad/core';
-import CredentialsSignInPage from './pages/admin/login.jsx';
-import Users from './pages/admin/users.jsx';
-import NotFound from './pages/admin/notFound.jsx';
-import EditLocations from './pages/admin/editLocations.jsx';
-import EditSubLocations from './pages/admin/editSubLocations.jsx';
-import EditEquipmentName from './pages/admin/editEquipmentName.jsx';
-import EditCompartment from './pages/admin/editCompartment.jsx';
-import OverviewCard from './pages/admin/dashboard.jsx';
-import VesselClientManager from './pages/admin/clientManager/vesselClientManager.jsx';
-import Vessel from './pages/admin/vessel/vessel.jsx';
-import VesselDashboard from './pages/admin/vessel/vesselDashboard.jsx';
-import LocationDiagram from './pages/admin/vessel/locationDiagram.jsx';
-import InventoryPoint from './pages/admin/vessel/inventoryPoints.jsx'
-import GenerateIHM from './pages/admin/vessel/generateIHM.jsx'
-import GenerateLR from './pages/admin/vessel/generateLR.jsx';
-import LocationPoint from './pages/admin/vessel/locationPoint.jsx';
-import CropLocationDiagram from './pages/admin/vessel/areaCrop.jsx';
 import { RecoilRoot } from "recoil";
 import {
   QueryClient,
   QueryClientProvider
 } from "@tanstack/react-query";
+import { PageLoader } from './components/SharedLoaders';
 
-const queryClient = new QueryClient();
+// Lazy load all page components
+const CredentialsSignInPage = lazy(() => import('./pages/admin/login.jsx'));
+const Users = lazy(() => import('./pages/admin/users.jsx'));
+const NotFound = lazy(() => import('./pages/admin/notFound.jsx'));
+const EditLocations = lazy(() => import('./pages/admin/editLocations.jsx'));
+const EditSubLocations = lazy(() => import('./pages/admin/editSubLocations.jsx'));
+const EditEquipmentName = lazy(() => import('./pages/admin/editEquipmentName.jsx'));
+const EditCompartment = lazy(() => import('./pages/admin/editCompartment.jsx'));
+const OverviewCard = lazy(() => import('./pages/admin/dashboard.jsx'));
+const VesselClientManager = lazy(() => import('./pages/admin/clientManager/vesselClientManager.jsx'));
+const Vessel = lazy(() => import('./pages/admin/vessel/vessel.jsx'));
+const VesselDashboard = lazy(() => import('./pages/admin/vessel/vesselDashboard.jsx'));
+const LocationDiagram = lazy(() => import('./pages/admin/vessel/locationDiagram.jsx'));
+const InventoryPoint = lazy(() => import('./pages/admin/vessel/inventoryPoints.jsx'));
+const GenerateIHM = lazy(() => import('./pages/admin/vessel/generateIHM.jsx'));
+const GenerateLR = lazy(() => import('./pages/admin/vessel/generateLR.jsx'));
+const LocationPoint = lazy(() => import('./pages/admin/vessel/locationPoint.jsx'));
+const CropLocationDiagram = lazy(() => import('./pages/admin/vessel/areaCrop.jsx'));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 10, // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 const router = createBrowserRouter([
   {
     Component: App,
@@ -39,74 +52,142 @@ const router = createBrowserRouter([
         children: [
           {
             path: "/users",
-            element: <Users />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Users />
+              </Suspense>
+            ),
           },
           {
             path: "/edit-location",
-            element: <EditLocations />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <EditLocations />
+              </Suspense>
+            ),
           },
           {
             path: "/edit-sub-location",
-            element: <EditSubLocations />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <EditSubLocations />
+              </Suspense>
+            ),
           },
           {
             path: "/edit-equipment",
-            element: <EditEquipmentName />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <EditEquipmentName />
+              </Suspense>
+            ),
           },
           {
             path: "/edit-compartment",
-            element: <EditCompartment />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <EditCompartment />
+              </Suspense>
+            ),
           },
           {
             path: "*",
-            element: <NotFound />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <NotFound />
+              </Suspense>
+            ),
           },
           {
             path: "/dashboard",
-            element: <OverviewCard />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OverviewCard />
+              </Suspense>
+            ),
           },
           {
             path: "/client-manager",
-            element: <VesselClientManager />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <VesselClientManager />
+              </Suspense>
+            ),
           },
           {
             path: "/vessels/vessels",
-            element: <Vessel />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Vessel />
+              </Suspense>
+            ),
           },
           {
             path: "/vessels/vesselDashboard",
-            element: <VesselDashboard />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <VesselDashboard />
+              </Suspense>
+            ),
           },
           {
             path: "/vessels/location-diagram",
-            element: <LocationDiagram />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <LocationDiagram />
+              </Suspense>
+            ),
           },
           {
             path: "/vessels/inventory-points",
-            element: <InventoryPoint />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <InventoryPoint />
+              </Suspense>
+            ),
           },
           {
             path: "/vessels/inventory-points/:locationDiagramId",
-            element: <LocationPoint />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <LocationPoint />
+              </Suspense>
+            ),
           },
           {
             path: "/vessels/generate-ihm",
-            element: <GenerateIHM />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <GenerateIHM />
+              </Suspense>
+            ),
           },
           {
             path: "/vessels/generate-lr",
-            element: <GenerateLR />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <GenerateLR />
+              </Suspense>
+            ),
           },
           {
             path: "/vessels/new-area",
-            element: <CropLocationDiagram />,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <CropLocationDiagram />
+              </Suspense>
+            ),
           },
         ]
       },
 
       {
         path: "/login",
-        element: <CredentialsSignInPage />,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <CredentialsSignInPage />
+          </Suspense>
+        ),
       },
     ],
   },
