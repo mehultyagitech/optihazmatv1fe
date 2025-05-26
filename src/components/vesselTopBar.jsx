@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import ContactPageIcon from "@mui/icons-material/ContactPage";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import LazyVesselDrawer from "../pages/admin/vessel/LazyVesselDrawer";
+import AddEditVesselDrawer from "../pages/admin/vessel/addEditVesselDrawer";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { vesselSearchMetaState, vesselState } from "../utils/States/Vessel";
 
@@ -137,7 +137,7 @@ const VesselTopBar = () => {
             </Box>
 
             {/* Drawer Component */}
-            <LazyVesselDrawer />
+            <AddEditVesselDrawer />
         </>
     );
 };
