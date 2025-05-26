@@ -15,7 +15,7 @@ import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
 import DeleteIcon from "@mui/icons-material/Delete";
-import LazyInventoryPointDrawer from "./LazyInventoryPointDrawer";
+import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import locationPointState, { locationPointAddDrawerState } from "../../../utils/States/LocationDiagram";
 import { commonVesselViewState } from "../../../utils/States/Vessel";
@@ -343,7 +343,7 @@ const InventoryPoints = () => {
           </Box>
         )}
       </Box>
-      {drawer.open && <LazyInventoryPointDrawer />}
+      {drawer.open && <AddEditInventoryPointDrawer />}
     </OPPageContainer>
   );
 };
