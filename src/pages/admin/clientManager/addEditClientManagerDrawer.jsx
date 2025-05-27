@@ -19,8 +19,6 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
-  console.log("clientData:", clientData);
-
   const [role, setRole] = useState("manager");
   const [formData, setFormData] = useState({
     companyName: "",
@@ -88,7 +86,6 @@ const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
     try {
       let response;
       if (clientData && clientData.id) {
-        console.log("clientData.id:", clientData.id);
         // Update existing client manager
         response = await updateClientManager(clientData.id, formData);
         if(clientData.isClient==true){

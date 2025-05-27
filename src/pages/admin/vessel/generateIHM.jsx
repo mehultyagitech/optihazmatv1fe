@@ -137,7 +137,6 @@ export default function GenerateIHM() {
             acc[filter.name] = filter.value;
             return acc;
         }, {});
-        console.log("Selected Filters:", selectedFilters);
     };
 
     return (

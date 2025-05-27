@@ -161,14 +161,12 @@ const InventoryPoints = () => {
     keepPreviousData: true,
   });
 
-  console.log("Pins Listing Data:", pinsListing.data);
 
   const handleSearch = () => {
     const selectedFilters = filters.reduce((acc, filter) => {
       acc[filter.name] = filter.value;
       return acc;
     }, {});
-    console.log("Selected Filters:", selectedFilters);
   };
 
   const [filters, setFilters] = useState([
@@ -216,9 +214,6 @@ const InventoryPoints = () => {
   // Get items and meta from API response
   const filteredClients = pinsListing.isSuccess ? pinsListing.data.data : [];
   const meta = pinsListing.isSuccess ? pinsListing.data.meta : { page: 1, total: { pages: 1, items: 0 } };
-
-  console.log("Filtered Clients:", filteredClients);
-  console.log("Meta Data:", meta);
 
   // ReactPaginate handler
   const handlePageClick = (event) => {

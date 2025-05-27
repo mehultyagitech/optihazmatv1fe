@@ -151,7 +151,6 @@ const Vessel = () => {
       acc[filter.name] = filter.value;
       return acc;
     }, {});
-    console.log("Selected Filters:", selectedFilters);
   };
 
   const [filters, setFilters] = useState([

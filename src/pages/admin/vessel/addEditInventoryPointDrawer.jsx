@@ -153,7 +153,6 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   };
 
   const handleImageDownload = (file) => {
-    console.log("Downloading image:", file);
     if (file) {
       if (file.status === "New") {
         const url = URL.createObjectURL(file);
@@ -232,7 +231,6 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
 
   // Add Attachment Download Handler
   const handleAttachmentDownload = (file) => {
-    console.log("Downloading file:", file);
     if (file) {
       if (file.status === "New") {
         const link = document.createElement("a");
@@ -286,8 +284,6 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
 
   const savePoint = useMutation({
     mutationFn: async (data) => {
-      console.log("Saving Inventory Point with data:", data);
-
       const form = new FormData();
 
       form.append("compartment", data.compartmentId);
@@ -347,14 +343,12 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
           },
         });
       }
-      console.log("Response from server:", response.data);
       return response.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(["pinData", pinId]);
       queryClient.invalidateQueries(["pinsListing"]);
       handleClose();
-      console.log("Inventory Point saved successfully:", data);
     },
   });
 

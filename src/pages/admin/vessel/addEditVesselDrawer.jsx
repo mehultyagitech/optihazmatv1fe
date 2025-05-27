@@ -224,7 +224,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
   };
 
   const onSubmit = async (data) => {
-    console.log("Form Data:", data);
     const formData = new FormData();
 
     if (attachments.length > 0) {
