@@ -1,87 +1,69 @@
 import React, { useState } from 'react';
-import { DataGrid, GridToolbar } from '@mui/x-data-grid';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import {
-  Button,
-  Drawer,
+  DataGrid,
+  GridToolbar,
+} from '@mui/x-data-grid';
+import {
   Box,
   Typography,
+  Button,
   Divider,
+  Drawer,
   TextField,
   Switch,
   FormControlLabel,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import OPPageContainer from '../../components/OPPageContainer';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import axiosInstance from '../../api/axiosInstance';
+import { useTheme } from '@mui/material/styles';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import axiosInstance from '../../api/axiosInstance';
+import OPPageContainer from '../../components/OPPageContainer';
 
-const columns = [
-  { field: 'name', headerName: 'Sub-Location Name', width: 250 },
-  { field: 'isDisabled', headerName: 'Disabled', width: 150, type: 'boolean' },
-  {
-    field: 'action',
-    headerName: 'Action',
-    width: 120,
-    renderCell: (params) => (
-      <Button
-        variant="outlined"
-        size="small"
-        onClick={() => params.api.publishEvent('rowEdit', params.row)}
-      >
-        Edit
-      </Button>
-    ),
-  },
-];
-
-export default function EditSubLocations() {
+export default function EditObjectName() {
+  const theme = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [formData, setFormData] = useState({ name: '', isDisabled: false });
-  const theme = useTheme();
 
-  // Fetch sub-locations data
+  // Fetch object list
   const { data, refetch, isLoading } = useQuery({
-    queryKey: ['subLocations'],
+    queryKey: ['objects'],
     queryFn: async () => {
-      const response = await axiosInstance.get('/sub-locations');
-      return response.data.data; // extract the array from API response
+      const response = await axiosInstance.get('/objects');
+      return response.data.data;
     },
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    cacheTime: 0,
   });
 
-  // Add mutation
+  // Add object
   const addMutation = useMutation({
-    mutationFn: (newSubLocation) => axiosInstance.post('/sub-locations', newSubLocation),
+    mutationFn: (newObject) => axiosInstance.post('/objects', newObject),
     onSuccess: () => {
-      toast.success('Sub-location added successfully');
+      toast.success('Object added successfully');
       refetch();
       handleCloseDrawer();
     },
     onError: () => {
-      toast.error('Failed to add sub-location');
+      toast.error('Failed to add object');
     },
   });
 
-  // Update mutation
+  // Update object
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...updatedSubLocation }) =>
-      axiosInstance.put(`/sub-locations/${id}`, updatedSubLocation),
+    mutationFn: ({ id, ...updatedData }) =>
+      axiosInstance.put(`/objects/${id}`, updatedData),
     onSuccess: () => {
-      toast.success('Sub-location updated successfully');
+      toast.success('Object updated successfully');
       refetch();
       handleCloseDrawer();
     },
     onError: () => {
-      toast.error('Failed to update sub-location');
+      toast.error('Failed to update object');
     },
   });
 
-  // Open drawer and set form data (for edit or add)
   const handleOpenDrawer = (row = null) => {
     setSelectedRow(row);
     setFormData(row ? { name: row.name, isDisabled: row.isDisabled } : { name: '', isDisabled: false });
@@ -94,22 +76,40 @@ export default function EditSubLocations() {
     setFormData({ name: '', isDisabled: false });
   };
 
-  // Form submit handler
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (selectedRow && selectedRow.id) {
+    if (selectedRow?.id) {
       updateMutation.mutate({ id: selectedRow.id, ...formData });
     } else {
       addMutation.mutate(formData);
     }
   };
 
+  const columns = [
+    { field: 'name', headerName: 'Object Name', width: 250 },
+    { field: 'isDisabled', headerName: 'Disabled', width: 150, type: 'boolean' },
+    {
+      field: 'action',
+      headerName: 'Action',
+      width: 120,
+      renderCell: (params) => (
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => handleOpenDrawer(params.row)}
+        >
+          Edit
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <OPPageContainer sx={{ px: 4, pt: 2 }}>
       <ToastContainer />
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-          Edit Sub Locations List
+          Edit Object List
         </Typography>
         <Button
           variant="contained"
@@ -117,23 +117,24 @@ export default function EditSubLocations() {
           startIcon={<AddCircleOutlineIcon />}
           onClick={() => handleOpenDrawer()}
         >
-          Add Sub-Location
+          Add Object
         </Button>
       </Box>
       <Divider sx={{ my: 2 }} />
+
       <Box sx={{ height: 400 }}>
         <DataGrid
-          slots={{ toolbar: GridToolbar }}
-          slotProps={{ toolbar: { showQuickFilter: true } }}
           rows={data || []}
           columns={columns}
           getRowId={(row) => row.id}
-          pageSize={5}
-          rowsPerPageOptions={[5]}
+          loading={isLoading}
           checkboxSelection
           disableSelectionOnClick
+          pageSize={5}
+          rowsPerPageOptions={[5]}
           onRowClick={(params) => handleOpenDrawer(params.row)}
-          loading={isLoading}
+          slots={{ toolbar: GridToolbar }}
+          slotProps={{ toolbar: { showQuickFilter: true } }}
         />
       </Box>
 
@@ -153,14 +154,14 @@ export default function EditSubLocations() {
           },
         }}
       >
-        <Typography variant="h5">{selectedRow ? 'Edit Sub-Location' : 'Add New Sub-Location'}</Typography>
+        <Typography variant="h5">{selectedRow ? 'Edit Object' : 'Add New Object'}</Typography>
         <Divider />
         <form
           onSubmit={handleSubmit}
           style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}
         >
           <TextField
-            label="Sub-Location Name"
+            label="Object Name"
             variant="outlined"
             fullWidth
             value={formData.name}
