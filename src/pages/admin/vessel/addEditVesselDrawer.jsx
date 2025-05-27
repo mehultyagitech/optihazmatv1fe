@@ -33,6 +33,7 @@ import {
   DocumentTypeSelector,
   defaultDocumentTypeSelector,
 } from "../../../utils/States/Generic";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AddEditVesselDrawer = ({ onClose }) => {
   const [vessel, setVessel] = useRecoilState(vesselState);
@@ -50,6 +51,9 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const [image, setImage] = useState();
   const [commonInventoryImage, setCommonInventoryImage] = useState();
   const vesselMutation = vesselId ? updateVessel() : createVessel();
+  const queryClient = useQueryClient();
+
+  const [deletedAttachments, setDeletedAttachments] = useState([]);
 
   const {
     control,
@@ -145,13 +149,13 @@ const AddEditVesselDrawer = ({ onClose }) => {
     setAttachments((prev) => [...prev, ...newAttachments]);
   };
 
-  const handleAttachmentDelete = async (id) => {
+  const handleAttachmentDelete = async (attachment) => {
     try {
-      const attachment = attachments.find((att) => att.id === id);
+      const id = attachment.id;
       const attachmentIndex = attachments.findIndex((att) => att.id === id);
 
-      if (attachment && attachment.status === "Uploaded") {
-        await axiosInstance.delete(`/attachments/${attachment.id}`);
+      if (attachment.status === "Uploaded") {
+        setDeletedAttachments((prev) => [...prev, attachment]);
       }
 
       const updatedAttachments = attachments.filter((att) => att.id !== id);
@@ -165,9 +169,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
     }
   };
 
-  const handleAttachmentDownload = async (id) => {
-    const attachment = attachments.find((att) => att.id === id);
-
+  const handleAttachmentDownload = async (attachment) => {
     if (attachment.status === "Not Uploaded") {
       const link = document.createElement("a");
       link.href = URL.createObjectURL(attachment.file);
@@ -264,20 +266,23 @@ const AddEditVesselDrawer = ({ onClose }) => {
       docType: att.docType,
     }));
 
-    formData.append("data", JSON.stringify(data));
-
     if (!vesselId) {
+      formData.append("data", JSON.stringify(data));
       vesselMutation.mutate(formData, {
         onSettled: () => {
-          // handleOnClose();
+          handleOnClose();
+          queryClient.invalidateQueries(["vessels"]);
         },
       });
     } else {
+      data.deletedAttachments = JSON.stringify(deletedAttachments);
+      formData.append("data", JSON.stringify(data));
       vesselMutation.mutate(
         { id: vesselId, data: formData },
         {
           onSettled: () => {
-            // handleOnClose();
+            queryClient.invalidateQueries(["vessel", vesselId]);
+            handleOnClose();
           },
         }
       );
@@ -668,7 +673,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                                 variant="outlined"
                                 color="error"
                                 size="small"
-                                onClick={() => handleAttachmentDelete(att.id)}
+                                onClick={() => handleAttachmentDelete(att)}
                               >
                                 Delete
                               </Button>
@@ -678,7 +683,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                                 variant="outlined"
                                 color="primary"
                                 size="small"
-                                onClick={() => handleAttachmentDownload(att.id)}
+                                onClick={() => handleAttachmentDownload(att)}
                               >
                                 Download
                               </Button>
