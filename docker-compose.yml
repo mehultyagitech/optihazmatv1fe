@@ -1,9 +1,10 @@
-version: '3.8'
 services:
   frontend:
-    build: .
+    build:
+      context: .
     ports:
       - "4173:4173"
-    environment:
-      - NODE_ENV=production
+    command: npm run preview -- --host
+    container_name: optihazmatv1fe-frontend
     restart: unless-stopped
+
