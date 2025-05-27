@@ -44,7 +44,7 @@ export default function LocationPoint() {
   const url =
     locationDiagram.isPending || locationDiagram.isError
       ? "#"
-      : process.env.REACT_APP_API_URL +
+      : import.meta.env.VITE_API_URL +
         "/uploads/" +
         locationDiagram.data.LocationDiagramImage[0].url;
 

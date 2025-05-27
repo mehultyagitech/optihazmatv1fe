@@ -104,7 +104,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       const formattedImages = PinImages?.map((img) => ({
         id: img.id,
         file: img,
-        url: process.env.REACT_APP_API_URL + "/uploads/" + img.url,
+        url: import.meta.env.VITE_API_URL + "/uploads/" + img.url,
         name: img.fileName,
         status: "Uploaded",
       }));
@@ -165,7 +165,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       } else {
-        const url = process.env.REACT_APP_API_URL + "/uploads/" + file.name;
+        const url = import.meta.env.VITE_API_URL + "/uploads/" + file.name;
         window.open(url, "_blank");
       }
     }
@@ -242,7 +242,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
         link.click();
         document.body.removeChild(link);
       } else if (file.status === "Uploaded") {
-        const url = process.env.REACT_APP_API_URL + "/uploads/" + file.filename;
+        const url = import.meta.env.VITE_API_URL + "/uploads/" + file.filename;
         window.open(url, "_blank");
       }
     }

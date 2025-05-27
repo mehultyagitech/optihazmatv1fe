@@ -266,7 +266,7 @@ const Vessel = () => {
               id={client.id}
               key={client.id}
               avatarSrc={
-                process.env.REACT_APP_API_URL + "/uploads/" + client.imageUrl
+                import.meta.env.VITE_API_URL + "/uploads/" + client.imageUrl
               }
               Survey={"123456789"}
               name={client.locationName}

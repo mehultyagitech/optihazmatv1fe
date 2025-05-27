@@ -69,7 +69,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
     if (file instanceof File) {
       return URL.createObjectURL(file);
     }
-    return process.env.REACT_APP_API_URL + "/uploads/" + file.url;
+    return import.meta.env.VITE_API_URL + "/uploads/" + file.url;
   };
 
   useEffect(() => {
@@ -179,7 +179,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
       try {
         if (attachment.url) {
           const fileUrl =
-            process.env.REACT_APP_API_URL + "/uploads/" + attachment.url;
+            import.meta.env.VITE_API_URL + "/uploads/" + attachment.url;
           window.open(fileUrl, "_blank");
         } else {
           const response = await axiosInstance.get(

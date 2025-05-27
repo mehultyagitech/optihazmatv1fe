@@ -59,7 +59,7 @@ const CropLocationDiagram = () => {
 
       try {
         const response = await axiosInstance.post(
-          `${process.env.REACT_APP_API_URL}/api/location-diagrams/${vesselView?.id}`,
+          `${import.meta.env.VITE_API_URL}/api/location-diagrams/${vesselView?.id}`,
           formData,
           {
             headers: {
@@ -87,7 +87,7 @@ const CropLocationDiagram = () => {
     queryFn: async () => {
       if (!selectedAttachmentType || !vesselView?.id) return null;
       const response = await axiosInstance.get(
-        `${process.env.REACT_APP_API_URL}/api/document-types/${selectedAttachmentType}/${vesselView.id}`
+        `${import.meta.env.VITE_API_URL}/api/document-types/${selectedAttachmentType}/${vesselView.id}`
       );
       return response.data.data;
     },
@@ -318,7 +318,7 @@ const CropLocationDiagram = () => {
                 docType.VesselAttachments?.map((attachment) =>
                   attachment.AttachmentImages?.map((image) => {
                     const imageUrl =
-                      process.env.REACT_APP_API_URL + "/uploads/" + image.url;
+                      import.meta.env.VITE_API_URL + "/uploads/" + image.url;
 
                     return (
                       <Box

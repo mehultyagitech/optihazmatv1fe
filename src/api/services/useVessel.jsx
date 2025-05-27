@@ -15,7 +15,7 @@ export default function useVessel() {
   const getVesselImageUrl = (vessel) => {
     if (!!vessel?.VesselImages[0]) {
       return (
-        process.env.REACT_APP_API_URL + "/uploads/" + vessel.VesselImages[0].url
+        import.meta.env.VITE_API_URL + "/uploads/" + vessel.VesselImages[0].url
       );
     } else {
       return defaultURL;
