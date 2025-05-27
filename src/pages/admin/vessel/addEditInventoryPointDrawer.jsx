@@ -222,10 +222,15 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     );
   };
 
+  console.log("Attachments:", attachments);
+  console.log("Images:", images);
+  console.log("Deleted Images:", deletedImages);
+  console.log("Deleted Attachments:", deletedAttachments);
+
   // Add Attachment Delete Handler
   const handleAttachmentDelete = (file) => {
     if (file.status === "Uploaded") {
-      setDeletedAttachments((prev) => [...prev, file.id]);
+      setDeletedAttachments((prev) => [...prev, file]);
     }
     setAttachments((prev) => prev.filter((att) => att.id !== file.id));
   };
