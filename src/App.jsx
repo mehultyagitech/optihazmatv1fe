@@ -88,6 +88,11 @@ const NAVIGATION = [
     icon: <EquipmentIcon />,
   },
   {
+    segment: "edit-document-type",
+    title: "Edit Document Type",
+    icon: <EquipmentIcon />,
+  },
+  {
     segment: "edit-compartment",
     title: "Edit Compartment",
     icon: <StorageIcon />,

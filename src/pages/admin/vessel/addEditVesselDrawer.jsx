@@ -17,6 +17,7 @@ import {
   TableCell,
   TableBody,
   Paper,
+  Grid
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -54,6 +55,18 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const queryClient = useQueryClient();
 
   const [deletedAttachments, setDeletedAttachments] = useState([]);
+
+  const statusHistoryData = [
+    {
+      entryDate: "19-Mar-2023",
+      activeDate: "04-Jul-2017",
+      discontinueDate: "",
+      activeRemarks: "Activated when Ready for Maintenance",
+      discontinueRemarks: "",
+      clientName: "Oltmann Schiffahrts"
+    }
+  ];
+  
 
   const {
     control,
@@ -385,7 +398,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       },
                       { name: "vesselType", label: "Vessel Type" },
                       { name: "flag", label: "Flag" },
-                      { name: "classSociety", label: "Class Society" },
+                      { name: "classSociety", label: "Vessel class" },
                       { name: "portOfRegistry", label: "Port of Registry" },
                       {
                         name: "grossTonnageMT",
@@ -394,8 +407,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       },
                       { name: "lbd", label: "L*B*D" },
                       { name: "registeredOwner", label: "Registered Owner" },
-                      { name: "vesselManager", label: "Vessel Manager" },
-                      { name: "clientName", label: "Client Name" },
+                      // { name: "vesselManager", label: "Vessel Manager" },
+                      // { name: "clientName", label: "Client Name" },
                     ].map(({ name, label, required, type = "text" }) => (
                       <Controller
                         key={name}
@@ -414,6 +427,42 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         )}
                       />
                     ))}
+                    <Controller
+                      name="vesselManager"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                          <Select
+                            {...field}
+                            label="Vessel Manager"
+                          >
+                            <MenuItem value="">
+                              <em>Select Manager</em>
+                            </MenuItem>
+                            <MenuItem value="ManagerA">Manager A</MenuItem>
+                            <MenuItem value="ManagerB">Manager B</MenuItem>
+                            <MenuItem value="ManagerC">Manager C</MenuItem>
+                          </Select>
+                      )}
+                    />
+                    <Controller
+                      name="clientName"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                          <Select
+                            {...field}
+                            label="Client Name"
+                          >
+                            <MenuItem value="">
+                              <em>Select Client</em>
+                            </MenuItem>
+                            <MenuItem value="clientA">Client A</MenuItem>
+                            <MenuItem value="clientB">Client B</MenuItem>
+                            <MenuItem value="clientC">Client C</MenuItem>
+                          </Select>
+                      )}
+                    />
                     <Controller
                       name="registeredOwnerAddress"
                       control={control}
@@ -562,7 +611,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          label="SOC Issue Date"
+                          label="SOC Expiry Date"
                           type="date"
                           InputLabelProps={{ shrink: true }}
                           fullWidth
@@ -899,28 +948,107 @@ const AddEditVesselDrawer = ({ onClose }) => {
               </Box>
             )}
 
-            {tabIndex === 4 && (
-              <Box display="flex" flexDirection="column" gap={2} p={2}>
-                <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                  Vessel Other Info
-                </Typography>
-                <Paper sx={{ padding: 2, border: "1px solid #008000" }}>
-                  <Controller
-                    name="vesselEmailId"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label="Vessel Email ID"
-                        fullWidth
-                        error={!!errors.vesselEmailId}
-                        helperText={errors.vesselEmailId?.message}
-                      />
-                    )}
-                  />
-                </Paper>
-              </Box>
+{tabIndex === 4 && (
+  <Box display="flex" flexDirection="column" gap={3} p={2}>
+    
+    {/* Vessel Active / Discontinued Info */}
+    <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+      Vessel Active / Discontinued Info
+    </Typography>
+    <Paper sx={{ padding: 2, border: "2px solid #008000", borderRadius: 2 }}>
+      <Grid container spacing={2} alignItems="center">
+        <Grid item xs={12} sm={6}>
+          <Controller
+            name="discontinued"
+            control={control}
+            render={({ field }) => (
+              <FormControlLabel
+                control={<Checkbox {...field} checked={field.value} />}
+                label="Discontinued"
+              />
             )}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Controller
+            name="discontinueRemarks"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Discontinue Remarks"
+                multiline
+                rows={3}
+                fullWidth
+                error={!!errors.discontinueRemarks}
+                helperText={errors.discontinueRemarks?.message}
+              />
+            )}
+          />
+        </Grid>
+      </Grid>
+    </Paper>
+
+    {/* Vessel Status History */}
+    <Typography variant="h6" color="primary" fontWeight={600}>
+      Vessel Status History
+    </Typography>
+    <Paper
+      sx={{
+        border: "2px solid #008000",
+        borderRadius: 2,
+        overflow: "auto",
+        maxHeight: 200,
+      }}
+    >
+      <Table size="small">
+        <TableHead>
+          <TableRow sx={{ backgroundColor: "#e0f7e9" }}>
+            <TableCell>Entry Date</TableCell>
+            <TableCell>Active Date</TableCell>
+            <TableCell>Discontinue Date</TableCell>
+            <TableCell>Active Remarks</TableCell>
+            <TableCell>Discontinue Remarks</TableCell>
+            <TableCell>Client Name</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {(statusHistoryData ?? []).map((row, idx) => (
+            <TableRow key={idx}>
+              <TableCell>{row.entryDate}</TableCell>
+              <TableCell>{row.activeDate}</TableCell>
+              <TableCell>{row.discontinueDate}</TableCell>
+              <TableCell>{row.activeRemarks}</TableCell>
+              <TableCell>{row.discontinueRemarks}</TableCell>
+              <TableCell>{row.clientName}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Paper>
+
+    {/* Vessel Other Info */}
+    <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+      Vessel Other Info
+    </Typography>
+    <Paper sx={{ padding: 2, border: "2px solid #008000", borderRadius: 2 }}>
+      <Controller
+        name="vesselEmailId"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Vessel Email ID"
+            fullWidth
+            error={!!errors.vesselEmailId}
+            helperText={errors.vesselEmailId?.message}
+          />
+        )}
+      />
+    </Paper>
+  </Box>
+)}
+
 
             <Box
               display="flex"

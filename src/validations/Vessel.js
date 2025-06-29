@@ -5,7 +5,7 @@ const vesselSchema = Joi.object({
   imoNumber: Joi.string().required().label("IMO Number"),
   vesselType: Joi.string().label("Vessel Type"),
   flag: Joi.string().optional().label("Flag"),
-  classSociety: Joi.string().optional().label("Class Society"),
+  classSociety: Joi.string().optional().label("Vessel class"),
   portOfRegistry: Joi.string().optional().label("Port of Registry"),
   grossTonnageMT: Joi.number().optional().label("Gross Tonnage MT"),
   lbd: Joi.string().optional().label("L*B*D"),
@@ -20,7 +20,7 @@ const vesselSchema = Joi.object({
   ihmClass: Joi.string().valid("Class A", "Class B", "Class C").optional().label("IHM Class"),
   ihmSurveyStartDate: Joi.date().optional().label("IHM Survey Start Date"),
   ihmSurveyEndDate: Joi.date().optional().label("IHM Survey End Date"),
-  socIssueDate: Joi.date().optional().label("SOC Issue Date"),
+  socIssueDate: Joi.date().optional().label("SOC Expiry Date"),
   readyForMaintenance: Joi.boolean().optional().label("Ready For Maintenance"),
   maintenanceStartDate: Joi.date().optional().label("Maintenance Start Date"),
   vesselEmailId: Joi.string()

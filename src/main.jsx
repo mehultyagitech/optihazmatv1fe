@@ -12,6 +12,7 @@ import EditLocations from './pages/admin/editLocations.jsx';
 import EditObjectName from './pages/admin/editObjects.jsx';
 import EditSubLocations from './pages/admin/editSubLocations.jsx';
 import EditEquipmentName from './pages/admin/editEquipmentName.jsx';
+import EditDocumentTypeName from './pages/admin/editDocumentTypeName.jsx';
 import EditCompartment from './pages/admin/editCompartment.jsx';
 import OverviewCard from './pages/admin/dashboard.jsx';
 import VesselClientManager from './pages/admin/clientManager/vesselClientManager.jsx';
@@ -53,6 +54,10 @@ const router = createBrowserRouter([
           {
             path: "/edit-equipment",
             element: <EditEquipmentName />,
+          },
+          {
+            path: "/edit-document-type",
+            element: <EditDocumentTypeName />,
           },
           {
             path: "/edit-compartment",

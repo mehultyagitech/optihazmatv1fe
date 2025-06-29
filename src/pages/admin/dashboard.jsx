@@ -5,25 +5,35 @@ import { useState } from 'react';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { Button } from '@mui/material';
 import OPPageContainer from '../../components/OPPageContainer';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import axiosInstance from '../../api/axiosInstance';
 
 const Dashboard = () => {
+    const { data: dashboardData, isLoading } = useQuery({
+        queryKey: ['fleetOverview'],
+        queryFn: async () => {
+          const response = await axiosInstance.get('/getAllDashboardData');
+          return response.data.overview;
+        },
+        cacheTime: 0,
+      });
     const cardData = [
         {
             title: 'Fleet Overview',
             data: [
-                { label: 'Total Vessels', value: '5,276.33' },
-                { label: 'Total Managers', value: '512' },
-                { label: 'Total Fleet Owners', value: '120' },
+              { label: 'Total Vessels', value: dashboardData?.totalVessels ?? '-' },
+              { label: 'Total Managers', value: dashboardData?.totalManagers ?? '-' },
+              { label: 'Total Fleet Owners', value: dashboardData?.totalFleetOwners ?? '-' },
             ],
-        },
-        {
+          },
+          {
             title: 'IHM Inventory Summary',
             data: [
-                { label: 'I-1 Inventory Pts', value: '2,200' },
-                { label: 'I-2 Inventory Pts', value: '1,876' },
-                { label: 'I-3 Inventory Pts', value: '1,200' },
+              { label: 'I-1 Inventory Pts', value: dashboardData?.i1InventoryPts ?? '-' },
+              { label: 'I-2 Inventory Pts', value: dashboardData?.i2InventoryPts ?? '-' },
+              { label: 'I-3 Inventory Pts', value: dashboardData?.i3InventoryPts ?? '-' },
             ],
-        },
+          },
         {
             title: 'Inventory Points',
             data: [
@@ -34,9 +44,9 @@ const Dashboard = () => {
         },
         {
             title: 'Vessel Overview',
-            data: [{ label: 'Total Registered Vessels', value: '2,396' },
-            { label: 'Total Active Vessels', value: '1,876' },
-            { label: 'Total Inactive Vessels', value: '300' },
+            data: [{ label: 'Total Registered Vessels', value: dashboardData?.totalVessels ?? '-' },
+            { label: 'Total Active Vessels', value: dashboardData?.totalVessels ?? '-' },
+            { label: 'Total Inactive Vessels', value: dashboardData?.totalVessels ?? '-' },
             ],
         },
         {
