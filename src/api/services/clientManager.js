@@ -1,5 +1,5 @@
 import axiosInstance from '../axiosInstance';
-import { GET_CLIENT_MANAGERS, UPDATE_CLIENT_MANAGERS } from "../endpoints";
+import { GET_CLIENT_MANAGERS, UPDATE_CLIENT_MANAGERS,DELETE_CLIENT_MANAGERS } from "../endpoints";
 
 export const getAllClientManagers = async () => {
     try {
@@ -27,6 +27,16 @@ export const updateClientManager = async (id, data) => {
         return response.data;
     } catch (error) {
         console.error("Error updating client manager:", error);
+        throw error;
+    }
+};
+
+export const deleteClientManager = async (id) => {
+    try {
+        const response = await axiosInstance.put(DELETE_CLIENT_MANAGERS(id));
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting client manager:", error.response?.data || error.message);
         throw error;
     }
 };
