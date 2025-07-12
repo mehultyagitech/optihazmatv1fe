@@ -227,6 +227,8 @@ function App() {
           SubLocations: generics.data.SubLocations,
           Objects: generics.data.Objects,
           Inventory: generics.data.Inventory,
+          Clients: generics.data.Clients || [],
+          Managers: generics.data.Managers || [],
         };
       });
     }

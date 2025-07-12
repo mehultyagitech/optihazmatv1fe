@@ -96,6 +96,8 @@ export default function useVessel() {
         commonReferenceNo: data.data.commonReferenceNo,
         VesselImages: data.data.VesselImages,
         VesselAttachments: data.data.VesselAttachments,
+        discontinued: data.data.discontinued,
+        VesselHistory: data.data.VesselHistory,
         // clientId: data.data.clientId,
         // createdBy: data.data.createdBy,
         // createdAt: data.data.createdAt,

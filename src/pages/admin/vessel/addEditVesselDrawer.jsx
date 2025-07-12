@@ -17,7 +17,7 @@ import {
   TableCell,
   TableBody,
   Paper,
-  Grid
+  Grid,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -33,6 +33,8 @@ import { useRecoilValue } from "recoil";
 import {
   DocumentTypeSelector,
   defaultDocumentTypeSelector,
+  ClientSelector,
+  ManagerSelector,
 } from "../../../utils/States/Generic";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -42,6 +44,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
   const documentTypes = useRecoilValue(DocumentTypeSelector);
   const defaultDocumentType = useRecoilValue(defaultDocumentTypeSelector);
+  const clients = useRecoilValue(ClientSelector);
+  const managers = useRecoilValue(ManagerSelector);
 
   const { getVesselById, createVessel, updateVessel } = useVessel();
   const theme = useTheme();
@@ -54,19 +58,10 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const vesselMutation = vesselId ? updateVessel() : createVessel();
   const queryClient = useQueryClient();
 
-  const [deletedAttachments, setDeletedAttachments] = useState([]);
+  console.log('tabIndex:', tabIndex);
 
-  const statusHistoryData = [
-    {
-      entryDate: "19-Mar-2023",
-      activeDate: "04-Jul-2017",
-      discontinueDate: "",
-      activeRemarks: "Activated when Ready for Maintenance",
-      discontinueRemarks: "",
-      clientName: "Oltmann Schiffahrts"
-    }
-  ];
-  
+  const [deletedAttachments, setDeletedAttachments] = useState([]);
+  const [statusHistoryData, setStatusHistoryData] = useState([]);
 
   const {
     control,
@@ -79,8 +74,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
     defaultValues: {},
   });
 
-  const { data: vesselData, isLoading: isLoadingVessel } =
-    getVesselById(vesselId);
+  const { data: vesselData, isLoading: isLoadingVessel } = getVesselById(vesselId);
 
   const getFileObjectURL = (file) => {
     if (file instanceof File) {
@@ -90,8 +84,11 @@ const AddEditVesselDrawer = ({ onClose }) => {
   };
 
   useEffect(() => {
-    if (vesselData && vesselId) {
-      const { VesselImages, VesselAttachments, ...restVesselData } = vesselData;
+    if (vesselData && vesselId && !isLoadingVessel) {
+      const { VesselImages, VesselAttachments, VesselHistory, ...restVesselData } = vesselData;
+
+      console.log(VesselHistory)
+
       Object.keys(restVesselData).forEach((key) => {
         if (key.endsWith("Date") && restVesselData[key]) {
           restVesselData[key] = new Date(restVesselData[key])
@@ -100,6 +97,11 @@ const AddEditVesselDrawer = ({ onClose }) => {
         }
         setValue(key, restVesselData[key]);
       });
+
+      if (VesselHistory && VesselHistory.length > 0) {
+        setStatusHistoryData(VesselHistory);
+      }
+
       if (VesselImages && VesselImages.length > 0) {
         const vesselImage = VesselImages[0];
         setImage({
@@ -121,7 +123,9 @@ const AddEditVesselDrawer = ({ onClose }) => {
         setAttachments(formattedAttachments);
       }
     }
-  }, [vesselData, vesselId, setValue, defaultDocumentType]);
+  }, [vesselData, vesselId, isLoadingVessel, setValue, defaultDocumentType]);
+
+  console.log('vessel history:', statusHistoryData);
 
   const tabSections = [
     "Vessel Details",
@@ -278,6 +282,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
       docType: att.docType,
     }));
 
+    console.log("Submitting data:", data);
+
     if (!vesselId) {
       formData.append("data", JSON.stringify(data));
       vesselMutation.mutate(formData, {
@@ -432,17 +438,17 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
-                          <Select
-                            {...field}
-                            label="Vessel Manager"
-                          >
-                            <MenuItem value="">
-                              <em>Select Manager</em>
-                            </MenuItem>
-                            <MenuItem value="ManagerA">Manager A</MenuItem>
-                            <MenuItem value="ManagerB">Manager B</MenuItem>
-                            <MenuItem value="ManagerC">Manager C</MenuItem>
-                          </Select>
+                        <Select {...field} label="Vessel Manager">
+                          <MenuItem value="">
+                            <em>Select Manager</em>
+                          </MenuItem>
+                          {managers.length > 0 &&
+                            managers.map((manager) => (
+                              <MenuItem key={manager.id} value={manager.id}>
+                                {manager.companyName}
+                              </MenuItem>
+                            ))}
+                        </Select>
                       )}
                     />
                     <Controller
@@ -450,17 +456,17 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
-                          <Select
-                            {...field}
-                            label="Client Name"
-                          >
-                            <MenuItem value="">
-                              <em>Select Client</em>
-                            </MenuItem>
-                            <MenuItem value="clientA">Client A</MenuItem>
-                            <MenuItem value="clientB">Client B</MenuItem>
-                            <MenuItem value="clientC">Client C</MenuItem>
-                          </Select>
+                        <Select {...field} label="Client Name">
+                          <MenuItem value="">
+                            <em>Select Client</em>
+                          </MenuItem>
+                          {clients.length > 0 &&
+                            clients.map((client) => (
+                              <MenuItem key={client.id} value={client.id}>
+                                {client.companyName}
+                              </MenuItem>
+                            ))}
+                        </Select>
                       )}
                     />
                     <Controller
@@ -948,107 +954,121 @@ const AddEditVesselDrawer = ({ onClose }) => {
               </Box>
             )}
 
-{tabIndex === 4 && (
-  <Box display="flex" flexDirection="column" gap={3} p={2}>
-    
-    {/* Vessel Active / Discontinued Info */}
-    <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-      Vessel Active / Discontinued Info
-    </Typography>
-    <Paper sx={{ padding: 2, border: "2px solid #008000", borderRadius: 2 }}>
-      <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name="discontinued"
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={<Checkbox {...field} checked={field.value} />}
-                label="Discontinued"
-              />
+            {tabIndex === 4 && (
+              <Box display="flex" flexDirection="column" gap={3} p={2}>
+                {/* Vessel Active / Discontinued Info */}
+                <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                  Vessel Active / Discontinued Info
+                </Typography>
+                <Paper
+                  sx={{
+                    padding: 2,
+                    border: "2px solid #008000",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={6}>
+                      <Controller
+                        name="discontinued"
+                        control={control}
+                        render={({ field }) => (
+                          <>
+                            <Checkbox {...field} checked={field.value} />
+                            <label htmlFor={field.name}>Discontinued</label>
+                          </>
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Controller
+                        name="discontinueRemarks"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Discontinue Remarks"
+                            multiline
+                            rows={3}
+                            fullWidth
+                            error={!!errors.discontinueRemarks}
+                            helperText={errors.discontinueRemarks?.message}
+                          />
+                        )}
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
+
+                {/* Vessel Status History */}
+                {!!vesselId && (
+                  <>
+                    <Typography variant="h6" color="primary" fontWeight={600}>
+                      Vessel Status History
+                    </Typography>
+                    <Paper
+                      sx={{
+                        border: "2px solid #008000",
+                        borderRadius: 2,
+                        overflow: "auto",
+                        maxHeight: 200,
+                      }}
+                    >
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow sx={{ backgroundColor: "#e0f7e9" }}>
+                            <TableCell>Entry Date</TableCell>
+                            <TableCell>Active Date</TableCell>
+                            <TableCell>Discontinue Date</TableCell>
+                            <TableCell>Active Remarks</TableCell>
+                            <TableCell>Discontinue Remarks</TableCell>
+                            <TableCell>Client Name</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(statusHistoryData ?? []).map((row, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>{row.entryDate}</TableCell>
+                              <TableCell>{row.activeDate}</TableCell>
+                              <TableCell>{row.discontinueDate}</TableCell>
+                              <TableCell>{row.activeRemarks}</TableCell>
+                              <TableCell>{row.discontinueRemarks}</TableCell>
+                              <TableCell>{row.clientName}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </Paper>
+                  </>
+                )}
+
+                {/* Vessel Other Info */}
+                <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                  Vessel Other Info
+                </Typography>
+                <Paper
+                  sx={{
+                    padding: 2,
+                    border: "2px solid #008000",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Controller
+                    name="vesselEmailId"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Vessel Email ID"
+                        fullWidth
+                        error={!!errors.vesselEmailId}
+                        helperText={errors.vesselEmailId?.message}
+                      />
+                    )}
+                  />
+                </Paper>
+              </Box>
             )}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Controller
-            name="discontinueRemarks"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Discontinue Remarks"
-                multiline
-                rows={3}
-                fullWidth
-                error={!!errors.discontinueRemarks}
-                helperText={errors.discontinueRemarks?.message}
-              />
-            )}
-          />
-        </Grid>
-      </Grid>
-    </Paper>
-
-    {/* Vessel Status History */}
-    <Typography variant="h6" color="primary" fontWeight={600}>
-      Vessel Status History
-    </Typography>
-    <Paper
-      sx={{
-        border: "2px solid #008000",
-        borderRadius: 2,
-        overflow: "auto",
-        maxHeight: 200,
-      }}
-    >
-      <Table size="small">
-        <TableHead>
-          <TableRow sx={{ backgroundColor: "#e0f7e9" }}>
-            <TableCell>Entry Date</TableCell>
-            <TableCell>Active Date</TableCell>
-            <TableCell>Discontinue Date</TableCell>
-            <TableCell>Active Remarks</TableCell>
-            <TableCell>Discontinue Remarks</TableCell>
-            <TableCell>Client Name</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {(statusHistoryData ?? []).map((row, idx) => (
-            <TableRow key={idx}>
-              <TableCell>{row.entryDate}</TableCell>
-              <TableCell>{row.activeDate}</TableCell>
-              <TableCell>{row.discontinueDate}</TableCell>
-              <TableCell>{row.activeRemarks}</TableCell>
-              <TableCell>{row.discontinueRemarks}</TableCell>
-              <TableCell>{row.clientName}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Paper>
-
-    {/* Vessel Other Info */}
-    <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-      Vessel Other Info
-    </Typography>
-    <Paper sx={{ padding: 2, border: "2px solid #008000", borderRadius: 2 }}>
-      <Controller
-        name="vesselEmailId"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            label="Vessel Email ID"
-            fullWidth
-            error={!!errors.vesselEmailId}
-            helperText={errors.vesselEmailId?.message}
-          />
-        )}
-      />
-    </Paper>
-  </Box>
-)}
-
 
             <Box
               display="flex"
@@ -1063,7 +1083,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
               >
                 Previous
               </Button>
-              {tabIndex < tabSections.length - 1 ? (
+              {tabIndex < 4 ? (
                 <Button
                   variant="contained"
                   onClick={() => setTabIndex(tabIndex + 1)}

@@ -16,6 +16,8 @@ const genericState = atom({
     SubLocations: [],
     Objects: [],
     Inventory: [],
+    Clients: [],
+    Managers: [],
   },
   effects_UNSTABLE: [genericPersist],
 });
@@ -84,6 +86,22 @@ const InventorySelector = selector({
   },
 });
 
+const ClientSelector = selector({
+  key: "ClientSelector",
+  get: ({ get }) => {
+    const state = get(genericState);
+    return state.Clients;
+  },
+});
+
+const ManagerSelector = selector({
+  key: "ManagerSelector",
+  get: ({ get }) => {
+    const state = get(genericState);
+    return state.Managers;
+  }
+});
+
 export {
   genericState,
   defaultDocumentTypeSelector,
@@ -94,6 +112,8 @@ export {
   SubLocationSelector,
   ObjectSelector,
   InventorySelector,
+  ClientSelector,
+  ManagerSelector,
 };
 
 export default genericState;

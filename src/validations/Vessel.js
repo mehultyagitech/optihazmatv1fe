@@ -11,8 +11,8 @@ const vesselSchema = Joi.object({
   lbd: Joi.string().optional().label("L*B*D"),
   registeredOwner: Joi.string().optional().label("Registered Owner"),
   registeredOwnerAddress: Joi.string().optional().label("Registered Owner Address"),
-  vesselManager: Joi.string().optional().label("Vessel Manager"),
-  clientName: Joi.string().optional().label("Client Name"),
+  vesselManager: Joi.number().optional().label("Vessel Manager"),
+  clientName: Joi.number().optional().label("Client Name"),
   deliveryDate: Joi.date().optional().label("Delivery Date"),
   keelLaidDate: Joi.date().optional().label("Keel Laid Date"),
   shipYardName: Joi.string().optional().label("Ship Yard Name"),
@@ -25,13 +25,14 @@ const vesselSchema = Joi.object({
   maintenanceStartDate: Joi.date().optional().label("Maintenance Start Date"),
   vesselEmailId: Joi.string()
     .email({ tlds: { allow: false } }) // Disable TLD validation
-    .optional()
     .label("Vessel Email ID")
     .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/).label("Vessel Email ID"),
   headerFreeTextCaption: Joi.string().max(20).optional().label("Header FreeText Caption"),
   headerFreeTextValue: Joi.string().max(40).optional().label("Header FreeText Value"),
   poDataGapDisclaimer: Joi.string().max(500).optional().label("PO Data Gap FreeText Disclaimer"),
   commonReferenceNo: Joi.string().optional().label("Common Reference No/ Drawing No"),
+  discontinued: Joi.boolean().optional(),
+  discontinueRemarks: Joi.string().max(500).optional(),
 });
 
 export default vesselSchema;
