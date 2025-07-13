@@ -689,6 +689,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                               type="number"
                               value={hazmat.totalMass}
                               onChange={(e) => handleHazmatChange(hazmat.id, "totalMass", e.target.value)}
+                              sx={{ width: 120 }}
                             />
                           </TableCell>
 
