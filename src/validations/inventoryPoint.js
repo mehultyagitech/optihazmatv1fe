@@ -24,5 +24,6 @@ export const inventoryPointSchema = Joi.object({
     is: true,
     then: Joi.string().required().label("Removed Remarks"),
     otherwise: Joi.string().allow("")
-  })
+  }),
+  hazmats: Joi.any().optional()
 });

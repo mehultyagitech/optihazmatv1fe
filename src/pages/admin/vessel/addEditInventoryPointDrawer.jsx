@@ -35,8 +35,6 @@ import {
   locationPointState,
 } from "../../../utils/States/LocationDiagram";
 import axiosInstance from "../../../api/axiosInstance";
-import { Check } from "@mui/icons-material";
-import { set } from "nprogress";
 
 const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const theme = useTheme();
@@ -64,20 +62,10 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const [formErrors, setFormErrors] = useState({});
   const [deletedImages, setDeletedImages] = useState([]);
   const [deletedAttachments, setDeletedAttachments] = useState([]);
-  const [AttachmentLinks, setAttachmentLinks] = useState([]);
+  const [AttachmentLinks, setAttachmentLinks] = useState({});
   const queryClient = useQueryClient();
 
-  const [hazmats, setHazmats] = useState([
-    {
-      id: 1,
-      name: "",
-      totalMass: "",
-      unit: "",
-      resultType: "",
-      remarks: "",
-      hazInventMass: "",
-    },
-  ]);
+  const [hazmats, setHazmats] = useState([]);
 
   const handleHazmatChange = (id, field, value) => {
     setHazmats((prev) =>
@@ -119,7 +107,8 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
 
   useEffect(() => {
     if (pinDataById.isSuccess && !!pinDataById?.data) {
-      const { PinAttachments, PinImages, PinAttachmentLink, ...pinData } = pinDataById?.data;
+      const { PinAttachments, PinImages, PinAttachmentLink, PinHazmat, ...pinData } =
+        pinDataById?.data;
       const formData = {
         subLocationId: pinData.subLocationId || "",
         equipmentId: pinData.equipmentId || "",
@@ -135,12 +124,27 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
         useCommonImage: pinData.useCommonImage || false,
         isRemovedFromIHM: pinData.isRemovedFromIHM || false,
         isReplaced: pinData.isReplaced || false,
-        removedDate: pinData.removedDate || "",
+        removedDate: pinData.removedDate
+          ? pinData.removedDate.split("T")[0]
+          : "",
         removedRemarks: pinData.removedRemarks || "",
       };
 
       if (!!PinAttachmentLink) {
         setAttachmentLinks(PinAttachmentLink);
+      }
+
+      if (PinHazmat && PinHazmat.length > 0) {
+        const formattedHazmats = PinHazmat.map((hazmat) => ({
+          id: hazmat.id,
+          name: hazmat.hazmatId,
+          totalMass: hazmat.totalMass,
+          unit: hazmat.unitId,
+          resultType: hazmat.resultTypeId,
+          remarks: hazmat.remarks,
+          hazInventMass: hazmat.hazInventMass || 0,
+        }));
+        setHazmats(formattedHazmats);
       }
 
       // Set attachments
@@ -329,6 +333,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     setImages([]);
     setDeletedImages([]);
     setDeletedAttachments([]);
+    setAttachmentLinks({});
     setFormErrors({});
     setTabIndex(0);
     onClose();
@@ -339,13 +344,13 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       pinId,
       attachmentId,
       linked,
-    })
+    });
 
     setAttachmentLinks((prev) => ({
       ...prev,
       [attachmentId]: linked,
     }));
-  }
+  };
 
   const savePoint = useMutation({
     mutationFn: async (data) => {
@@ -356,14 +361,44 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       form.append("equipment", data.equipmentId);
       form.append("inventory", data.inventoryId);
       form.append("isPCHM", data.isPCHM);
-      form.append("isRemovedFromIHM", data.isRemovedFromIHM);
-      form.append("isReplaced", data.isReplaced);
+      if (data.isRemovedFromIHM) {
+        form.append("isRemovedFromIHM", data.isRemovedFromIHM);
+        form.append("removedDate", data.removedDate);
+        form.append("removedRemarks", data.removedRemarks);
+        form.append("isReplaced", false);
+      }
+
+      if (data.isReplaced) {
+        form.append("isRemovedFromIHM", false);
+        form.append("removedDate", null);
+        form.append("removedRemarks", null);
+        form.append("isReplaced", data.isReplaced);
+      }
+
+      if (hazmats.length > 0) {
+        const updatedHazmats = hazmats.map((hazmat) => {
+          const dataHazmat = {
+            hazmatId: hazmat.name,
+            totalMass: hazmat.totalMass,
+            unitId: hazmat.unit,
+            resultTypeId: hazmat.resultType,
+            remarks: hazmat.remarks,
+            hazInventMass: !!hazmat.hazInventMass ? hazmat.hazInventMass : 0,
+          };
+
+          if(!!pinId) {
+            dataHazmat.pinId = pinId;
+          }
+
+          return dataHazmat;
+        });
+        form.append("hazmats", JSON.stringify(updatedHazmats));
+      }
+
       form.append("manufacturerBrand", data.manufacturerBrand);
       form.append("object", data.objectId);
       form.append("referenceNo", data.referenceNo);
       form.append("remarks", data.remarks);
-      form.append("removedDate", data.removedDate);
-      form.append("removedRemarks", data.removedRemarks);
       form.append("saveWithoutImage", data.saveWithoutImage);
       form.append("subLocation", data.subLocationId);
       form.append("useCommonImage", data.useCommonImage);
