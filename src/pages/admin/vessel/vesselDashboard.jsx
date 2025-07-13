@@ -265,7 +265,7 @@ const VesselDashboard = () => {
         <ClientCard
           id={client.id}
           avatarSrc={
-            process.env.REACT_APP_API_URL + "/uploads/" + client.imageUrl
+            import.meta.env.REACT_APP_API_URL + "/uploads/" + client.imageUrl
           }
           name={client.locationName}
           survey={client.i1Count ?? 0}

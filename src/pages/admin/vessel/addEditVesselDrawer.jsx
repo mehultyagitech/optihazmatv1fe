@@ -37,6 +37,7 @@ import {
   ManagerSelector,
 } from "../../../utils/States/Generic";
 import { useQueryClient } from "@tanstack/react-query";
+import { getAllClientManagers, deleteClientManager } from "../../../api/services/clientManager";
 
 const AddEditVesselDrawer = ({ onClose }) => {
   const [vessel, setVessel] = useRecoilState(vesselState);
@@ -55,6 +56,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const [attachments, setAttachments] = useState([]);
   const [image, setImage] = useState();
   const [commonInventoryImage, setCommonInventoryImage] = useState();
+  const [clientManagers, setClientManagers] = useState([]);
   const vesselMutation = vesselId ? updateVessel() : createVessel();
   const queryClient = useQueryClient();
 
@@ -438,25 +440,26 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
-                        <Select {...field} label="Vessel Manager">
-                          <MenuItem value="">
-                            <em>Select Manager</em>
-                          </MenuItem>
-                          {managers.length > 0 &&
-                            managers.map((manager) => (
-                              <MenuItem key={manager.id} value={manager.id}>
-                                {manager.companyName}
-                              </MenuItem>
+                          <Select {...field} label="Vessel Manager" fullWidth>
+                            <MenuItem value="">
+                              <em>Select Manager</em>
+                            </MenuItem>
+                            {managers.length > 0 &&
+                              managers.map((manager) => (
+                                <MenuItem key={manager.id} value={manager.id}>
+                                  {manager.companyName}
+                                </MenuItem>
                             ))}
-                        </Select>
+                          </Select>
                       )}
                     />
+
                     <Controller
                       name="clientName"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
-                        <Select {...field} label="Client Name">
+                        <Select {...field} label="Client Name" fullWidth>
                           <MenuItem value="">
                             <em>Select Client</em>
                           </MenuItem>
@@ -469,6 +472,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         </Select>
                       )}
                     />
+
                     <Controller
                       name="registeredOwnerAddress"
                       control={control}
