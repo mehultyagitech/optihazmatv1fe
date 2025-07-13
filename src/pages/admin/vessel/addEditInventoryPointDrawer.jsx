@@ -345,8 +345,6 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       ...prev,
       [attachmentId]: linked,
     }));
-
-    queryClient.invalidateQueries(["pinData", pinId]);
   }
 
   const savePoint = useMutation({
