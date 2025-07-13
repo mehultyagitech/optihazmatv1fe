@@ -18,6 +18,9 @@ const genericState = atom({
     Inventory: [],
     Clients: [],
     Managers: [],
+    Hazmats: [],
+    Units: [],
+    ResultTypes: [],
   },
   effects_UNSTABLE: [genericPersist],
 });
@@ -102,6 +105,30 @@ const ManagerSelector = selector({
   }
 });
 
+const HazmatSelector = selector({
+  key: "HazmatSelector",
+  get: ({ get }) => {
+    const state = get(genericState);
+    return state.Hazmats;
+  }
+});
+
+const UnitSelector = selector({
+  key: "UnitSelector",
+  get: ({ get }) => {
+    const state = get(genericState);
+    return state.Units;
+  }
+});
+
+const ResultTypeSelector = selector({
+  key: "ResultTypeSelector",
+  get: ({ get }) => {
+    const state = get(genericState);
+    return state.ResultTypes;
+  }
+});
+
 export {
   genericState,
   defaultDocumentTypeSelector,
@@ -114,6 +141,9 @@ export {
   InventorySelector,
   ClientSelector,
   ManagerSelector,
+  HazmatSelector,
+  UnitSelector,
+  ResultTypeSelector,
 };
 
 export default genericState;

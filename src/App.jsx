@@ -229,6 +229,9 @@ function App() {
           Inventory: generics.data.Inventory,
           Clients: generics.data.Clients || [],
           Managers: generics.data.Managers || [],
+          Hazmats: generics.data.Hazmats || [],
+          Units: generics.data.Units || [],
+          ResultTypes: generics.data.ResultTypes || [],
         };
       });
     }

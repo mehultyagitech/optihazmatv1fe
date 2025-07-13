@@ -17,9 +17,9 @@ import {
   TableCell,
   TableBody,
   Paper,
-  IconButton
+  IconButton,
 } from "@mui/material";
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPDivider from "../../../components/OPDivider";
@@ -35,6 +35,8 @@ import {
   locationPointState,
 } from "../../../utils/States/LocationDiagram";
 import axiosInstance from "../../../api/axiosInstance";
+import { Check } from "@mui/icons-material";
+import { set } from "nprogress";
 
 const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const theme = useTheme();
@@ -45,6 +47,9 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     Objects,
     Inventory,
     DocumentTypes,
+    Hazmats,
+    Units,
+    ResultTypes,
   } = useRecoilValue(genericState);
   const [{ x, y, pinId, open }, setDrawer] = useRecoilState(
     locationPointAddDrawerState
@@ -59,6 +64,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const [formErrors, setFormErrors] = useState({});
   const [deletedImages, setDeletedImages] = useState([]);
   const [deletedAttachments, setDeletedAttachments] = useState([]);
+  const [AttachmentLinks, setAttachmentLinks] = useState([]);
   const queryClient = useQueryClient();
 
   const [hazmats, setHazmats] = useState([
@@ -75,9 +81,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
 
   const handleHazmatChange = (id, field, value) => {
     setHazmats((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
 
@@ -102,7 +106,6 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     console.log("Download/View hazmat", hazmat);
   };
 
-
   const pinDataById = useQuery({
     queryKey: ["pinData", pinId],
     queryFn: async () => {
@@ -116,7 +119,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
 
   useEffect(() => {
     if (pinDataById.isSuccess && !!pinDataById?.data) {
-      const { PinAttachments, PinImages, ...pinData } = pinDataById?.data;
+      const { PinAttachments, PinImages, PinAttachmentLink, ...pinData } = pinDataById?.data;
       const formData = {
         subLocationId: pinData.subLocationId || "",
         equipmentId: pinData.equipmentId || "",
@@ -135,6 +138,10 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
         removedDate: pinData.removedDate || "",
         removedRemarks: pinData.removedRemarks || "",
       };
+
+      if (!!PinAttachmentLink) {
+        setAttachmentLinks(PinAttachmentLink);
+      }
 
       // Set attachments
       const formattedAttachments = PinAttachments?.map((att) => ({
@@ -326,6 +333,21 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     setTabIndex(0);
     onClose();
   };
+
+  const handleAttachmentLinkChange = async (pinId, attachmentId, linked) => {
+    await axiosInstance.post(`/pins/link-attachments`, {
+      pinId,
+      attachmentId,
+      linked,
+    })
+
+    setAttachmentLinks((prev) => ({
+      ...prev,
+      [attachmentId]: linked,
+    }));
+
+    queryClient.invalidateQueries(["pinData", pinId]);
+  }
 
   const savePoint = useMutation({
     mutationFn: async (data) => {
@@ -618,7 +640,13 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
           {tabIndex === 1 && (
             <Box display="flex" flexDirection="column" gap={3} p={2}>
               {/* Hazmats Section */}
-              <Box border={1} borderColor="green" p={2} borderRadius={2} overflow="auto">
+              <Box
+                border={1}
+                borderColor="green"
+                p={2}
+                borderRadius={2}
+                overflow="auto"
+              >
                 <h3
                   style={{
                     color: "green",
@@ -634,14 +662,30 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                   <Table sx={{ minWidth: "100%" }}>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#e8f5e9" }}>
-                        <TableCell><b>Hazmat</b></TableCell>
-                        <TableCell><b>Total Mass</b></TableCell>
-                        <TableCell><b>Unit</b></TableCell>
-                        <TableCell><b>Result Type</b></TableCell>
-                        <TableCell><b>Total Mass (HazInvent)</b></TableCell>
-                        <TableCell><b>Remarks</b></TableCell>
-                        <TableCell><b>View</b></TableCell>
-                        <TableCell><b>Delete</b></TableCell>
+                        <TableCell>
+                          <b>Hazmat</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Total Mass</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Unit</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Result Type</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Total Mass (HazInvent)</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Remarks</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>View</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Delete</b>
+                        </TableCell>
                       </TableRow>
                     </TableHead>
 
@@ -652,33 +696,25 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                           <TableCell>
                             <Select
                               value={hazmat.name || ""}
-                              onChange={(e) => handleHazmatChange(hazmat.id, "name", e.target.value)}
+                              onChange={(e) =>
+                                handleHazmatChange(
+                                  hazmat.id,
+                                  "name",
+                                  e.target.value
+                                )
+                              }
                               displayEmpty
                               size="small"
                               sx={{ minWidth: 200 }}
                             >
-                              <MenuItem value="" disabled>Select Hazmat</MenuItem>
-                              {[
-                                "Asbestos",
-                                "Polychlorinated biphenyls (PCBs)",
-                                "Ozone Depleting Substance (ODS)",
-                                "Anti-fouling systems containing organotin compounds as a biocide",
-                                "Cybutryne",
-                                "Perfluorooctane sulfonic acid (PFOS)",
-                                "Cadmium and cadmium compounds",
-                                "Hexavalent chromium and hexavalent chromium compounds",
-                                "Lead and lead compounds",
-                                "Mercury and mercury compounds",
-                                "Polybrominated biphenyl (PBBs)",
-                                "Polybrominated diphenyl ethers (PBDEs)",
-                                "Polychloronaphthalenes (Cl >=3)",
-                                "Radioactive substances",
-                                "Certain shortchain chlorinated paraffins (CSCP)",
-                                "Brominated flame retardant (HBCDD)"
-                              ].map((haz) => (
-                                <MenuItem key={haz} value={haz}>{haz}</MenuItem>
+                              <MenuItem value="" disabled>
+                                Select Hazmat
+                              </MenuItem>
+                              {Hazmats.map((haz) => (
+                                <MenuItem key={haz.id} value={haz.id}>
+                                  {haz.name}
+                                </MenuItem>
                               ))}
-
                             </Select>
                           </TableCell>
 
@@ -688,7 +724,14 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                               size="small"
                               type="number"
                               value={hazmat.totalMass}
-                              onChange={(e) => handleHazmatChange(hazmat.id, "totalMass", e.target.value)}
+                              minimum="0"
+                              onChange={(e) =>
+                                handleHazmatChange(
+                                  hazmat.id,
+                                  "totalMass",
+                                  e.target.value
+                                )
+                              }
                               sx={{ width: 120 }}
                             />
                           </TableCell>
@@ -697,14 +740,22 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                           <TableCell>
                             <Select
                               value={hazmat.unit || ""}
-                              onChange={(e) => handleHazmatChange(hazmat.id, "unit", e.target.value)}
+                              onChange={(e) =>
+                                handleHazmatChange(
+                                  hazmat.id,
+                                  "unit",
+                                  e.target.value
+                                )
+                              }
                               displayEmpty
                               size="small"
                               sx={{ minWidth: 100 }}
                             >
-                              <MenuItem value="Kg">Kg</MenuItem>
-                              <MenuItem value="Ton">Ton</MenuItem>
-                              <MenuItem value="Litre">Litre</MenuItem>
+                              {Units.map((unit) => (
+                                <MenuItem key={unit.id} value={unit.id}>
+                                  {unit.name}
+                                </MenuItem>
+                              ))}
                             </Select>
                           </TableCell>
 
@@ -712,14 +763,22 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                           <TableCell>
                             <Select
                               value={hazmat.resultType || ""}
-                              onChange={(e) => handleHazmatChange(hazmat.id, "resultType", e.target.value)}
+                              onChange={(e) =>
+                                handleHazmatChange(
+                                  hazmat.id,
+                                  "resultType",
+                                  e.target.value
+                                )
+                              }
                               displayEmpty
                               size="small"
                               sx={{ minWidth: 150 }}
                             >
-                              <MenuItem value="PCHM">PCHM</MenuItem>
-                              <MenuItem value="Documented">Documented</MenuItem>
-                              <MenuItem value="Visual">Visual</MenuItem>
+                              {ResultTypes.map((type) => (
+                                <MenuItem key={type.id} value={type.id}>
+                                  {type.name}
+                                </MenuItem>
+                              ))}
                             </Select>
                           </TableCell>
 
@@ -731,20 +790,31 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                             <TextField
                               size="small"
                               value={hazmat.remarks}
-                              onChange={(e) => handleHazmatChange(hazmat.id, "remarks", e.target.value)}
+                              onChange={(e) =>
+                                handleHazmatChange(
+                                  hazmat.id,
+                                  "remarks",
+                                  e.target.value
+                                )
+                              }
                             />
                           </TableCell>
 
                           {/* View/Download */}
                           <TableCell>
-                            <IconButton onClick={() => handleViewHazmat(hazmat)}>
+                            <IconButton
+                              onClick={() => handleViewHazmat(hazmat)}
+                            >
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
                           </TableCell>
 
                           {/* Delete */}
                           <TableCell>
-                            <IconButton onClick={() => handleDeleteHazmat(hazmat.id)} color="error">
+                            <IconButton
+                              onClick={() => handleDeleteHazmat(hazmat.id)}
+                              color="error"
+                            >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </TableCell>
@@ -767,7 +837,6 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
               </Box>
             </Box>
           )}
-
 
           {tabIndex === 2 && (
             <Box display="flex" flexDirection="column" gap={2} p={2}>
@@ -1073,15 +1142,72 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        align="center"
-                        sx={{ color: "#555" }}
-                      >
-                        No records to display
-                      </TableCell>
-                    </TableRow>
+                    {attachments.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          align="center"
+                          sx={{ color: "#555" }}
+                        >
+                          No records to display
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      attachments.map((attachment) => (
+                        <TableRow key={attachment.id}>
+                          <TableCell>{attachment.name}</TableCell>
+                          <TableCell>
+                            <Select
+                              disabled={attachment.status === "Uploaded"}
+                              value={attachment.type || ""}
+                              onChange={(e) =>
+                                handleAttachmentTypeChange(
+                                  attachment.id,
+                                  e.target.value
+                                )
+                              }
+                              displayEmpty
+                              size="small"
+                              sx={{ minWidth: 120 }}
+                            >
+                              <MenuItem value="" disabled>
+                                Select Type
+                              </MenuItem>
+                              {DocumentTypes.map((type) => (
+                                <MenuItem key={type.id} value={type.id}>
+                                  {type.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              size="small"
+                              onClick={() =>
+                                handleAttachmentDownload(attachment)
+                              }
+                            >
+                              <DownloadIcon fontSize="small" />
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            {/* Checkbox Input */}
+                            <Checkbox
+                              checked={AttachmentLinks[attachment.id] || false}
+                              onChange={(e) =>
+                                handleAttachmentLinkChange(
+                                  pinId,
+                                  attachment.id,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </Paper>
@@ -1140,7 +1266,10 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                             <Select
                               value={att.type || ""}
                               onChange={(e) =>
-                                handleAttachmentTypeChange(att.id, e.target.value)
+                                handleAttachmentTypeChange(
+                                  att.id,
+                                  e.target.value
+                                )
                               }
                               displayEmpty
                               size="small"
@@ -1150,19 +1279,12 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                                 Select Type
                               </MenuItem>
 
-                              <MenuItem value="inventory_creation">
-                                Inventory Creation Document
-                              </MenuItem>
-
-                              <MenuItem value="removal">
-                                Inventory Removal Document
-                              </MenuItem>
-
-                              <MenuItem value="replacement_document">
-                                Inventory Replacement Document
-                              </MenuItem>
+                              {DocumentTypes.map((type) => (
+                                <MenuItem key={type.id} value={type.id}>
+                                  {type.name}
+                                </MenuItem>
+                              ))}
                             </Select>
-
                           </TableCell>
                           <TableCell>{att.filename}</TableCell>
                           <TableCell>{att.status}</TableCell>
