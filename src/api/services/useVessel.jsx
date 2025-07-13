@@ -98,6 +98,7 @@ export default function useVessel() {
         VesselAttachments: data.data.VesselAttachments,
         discontinued: data.data.discontinued,
         VesselHistory: data.data.VesselHistory,
+        VesselInventoryImages: data.data.VesselInventoryImage,
         // clientId: data.data.clientId,
         // createdBy: data.data.createdBy,
         // createdAt: data.data.createdAt,

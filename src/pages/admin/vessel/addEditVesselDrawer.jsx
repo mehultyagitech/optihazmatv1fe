@@ -37,7 +37,6 @@ import {
   ManagerSelector,
 } from "../../../utils/States/Generic";
 import { useQueryClient } from "@tanstack/react-query";
-import { getAllClientManagers, deleteClientManager } from "../../../api/services/clientManager";
 
 const AddEditVesselDrawer = ({ onClose }) => {
   const [vessel, setVessel] = useRecoilState(vesselState);
@@ -56,11 +55,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const [attachments, setAttachments] = useState([]);
   const [image, setImage] = useState();
   const [commonInventoryImage, setCommonInventoryImage] = useState();
-  const [clientManagers, setClientManagers] = useState([]);
   const vesselMutation = vesselId ? updateVessel() : createVessel();
   const queryClient = useQueryClient();
-
-  console.log('tabIndex:', tabIndex);
 
   const [deletedAttachments, setDeletedAttachments] = useState([]);
   const [statusHistoryData, setStatusHistoryData] = useState([]);
@@ -76,7 +72,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
     defaultValues: {},
   });
 
-  const { data: vesselData, isLoading: isLoadingVessel } = getVesselById(vesselId);
+  const { data: vesselData, isLoading: isLoadingVessel } =
+    getVesselById(vesselId);
 
   const getFileObjectURL = (file) => {
     if (file instanceof File) {
@@ -87,9 +84,13 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
   useEffect(() => {
     if (vesselData && vesselId && !isLoadingVessel) {
-      const { VesselImages, VesselAttachments, VesselHistory, ...restVesselData } = vesselData;
-
-      console.log(VesselHistory)
+      const {
+        VesselImages,
+        VesselAttachments,
+        VesselHistory,
+        VesselInventoryImages,
+        ...restVesselData
+      } = vesselData;
 
       Object.keys(restVesselData).forEach((key) => {
         if (key.endsWith("Date") && restVesselData[key]) {
@@ -102,6 +103,15 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
       if (VesselHistory && VesselHistory.length > 0) {
         setStatusHistoryData(VesselHistory);
+      }
+
+      if (VesselInventoryImages && VesselInventoryImages.length > 0) {
+        setCommonInventoryImage({
+          name: VesselInventoryImages[0].fileName,
+          file: VesselInventoryImages[0].fileName,
+          url: getFileObjectURL(VesselInventoryImages[0]),
+          status: "Uploaded",
+        });
       }
 
       if (VesselImages && VesselImages.length > 0) {
@@ -126,8 +136,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
       }
     }
   }, [vesselData, vesselId, isLoadingVessel, setValue, defaultDocumentType]);
-
-  console.log('vessel history:', statusHistoryData);
 
   const tabSections = [
     "Vessel Details",
@@ -229,10 +237,49 @@ const AddEditVesselDrawer = ({ onClose }) => {
     }
   };
 
+  const handleIsMainInventoryImage = async (isMain) => {
+    if (!vesselId) {
+      toast.error("Please save the vessel first to set the common inventory image.");
+      return;
+    }
+
+    const form = new FormData();
+    if (commonInventoryImage.status === "Not Uploaded") {
+      form.append("commonInventoryImage", commonInventoryImage.file);
+    }
+
+    form.append("isMain", isMain);
+    
+    try {
+      const response = await axiosInstance.post(
+        `/vessels/common-inventory-image/${vesselId}`,
+        form,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      if (response.status === 200) {
+        toast.success("Common Inventory Image updated successfully.");
+      } else {
+        toast.error("Failed to update Common Inventory Image.");
+      }
+    } catch (error) {
+      console.error("Error updating Common Inventory Image:", error);
+      toast.error("Failed to update Common Inventory Image.");
+    }
+  };
+
   const handleCommonInventoryImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setCommonInventoryImage(file);
+      setCommonInventoryImage({
+        name: file.name,
+        file: file,
+        url: getFileObjectURL(file),
+        status: "Not Uploaded",
+      });
     }
   };
 
@@ -257,8 +304,11 @@ const AddEditVesselDrawer = ({ onClose }) => {
       formData.append("image", image.file);
     }
 
-    if (commonInventoryImage) {
-      formData.append("commonInventoryImage", commonInventoryImage);
+    if (
+      commonInventoryImage &&
+      commonInventoryImage.status === "Not Uploaded"
+    ) {
+      formData.append("commonInventoryImage", commonInventoryImage.file);
     }
 
     if (surveySameAsStart && data.ihmSurveyStartDate) {
@@ -440,17 +490,17 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
-                          <Select {...field} label="Vessel Manager" fullWidth>
-                            <MenuItem value="">
-                              <em>Select Manager</em>
-                            </MenuItem>
-                            {managers.length > 0 &&
-                              managers.map((manager) => (
-                                <MenuItem key={manager.id} value={manager.id}>
-                                  {manager.companyName}
-                                </MenuItem>
+                        <Select {...field} label="Vessel Manager" fullWidth>
+                          <MenuItem value="">
+                            <em>Select Manager</em>
+                          </MenuItem>
+                          {managers.length > 0 &&
+                            managers.map((manager) => (
+                              <MenuItem key={manager.id} value={manager.id}>
+                                {manager.companyName}
+                              </MenuItem>
                             ))}
-                          </Select>
+                        </Select>
                       )}
                     />
 
@@ -910,7 +960,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                     >
                       {commonInventoryImage ? (
                         <img
-                          src={URL.createObjectURL(commonInventoryImage)}
+                          src={commonInventoryImage.url}
                           alt="Common Inventory"
                           style={{
                             width: "100%",
@@ -932,7 +982,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       />
                     </Button>
                   </Box>
-                  <Button variant="outlined" sx={{ mt: 2 }}>
+                  <Button variant="outlined" sx={{ mt: 2 }} onClick={() => handleIsMainInventoryImage(1)}>
                     Update All Inventory Pts to Use Common Image
                   </Button>
                 </Paper>
