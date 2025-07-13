@@ -17,7 +17,10 @@ import {
   TableCell,
   TableBody,
   Paper,
+  IconButton
 } from "@mui/material";
+import VisibilityIcon from '@mui/icons-material/Visibility';
+
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPDivider from "../../../components/OPDivider";
 import AddIcon from "@mui/icons-material/Add";
@@ -57,6 +60,48 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const [deletedImages, setDeletedImages] = useState([]);
   const [deletedAttachments, setDeletedAttachments] = useState([]);
   const queryClient = useQueryClient();
+
+  const [hazmats, setHazmats] = useState([
+    {
+      id: 1,
+      name: "",
+      totalMass: "",
+      unit: "",
+      resultType: "",
+      remarks: "",
+      hazInventMass: "",
+    },
+  ]);
+
+  const handleHazmatChange = (id, field, value) => {
+    setHazmats((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  const handleAddHazmat = () => {
+    const newHazmat = {
+      id: Date.now(),
+      name: "",
+      totalMass: "",
+      unit: "",
+      resultType: "",
+      remarks: "",
+      hazInventMass: "",
+    };
+    setHazmats((prev) => [...prev, newHazmat]);
+  };
+
+  const handleDeleteHazmat = (id) => {
+    setHazmats((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleViewHazmat = (hazmat) => {
+    console.log("Download/View hazmat", hazmat);
+  };
+
 
   const pinDataById = useQuery({
     queryKey: ["pinData", pinId],
@@ -572,14 +617,8 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
 
           {tabIndex === 1 && (
             <Box display="flex" flexDirection="column" gap={3} p={2}>
-              {/* Vessel Attachments */}
-              <Box
-                border={1}
-                borderColor="green"
-                p={2}
-                borderRadius={2}
-                overflow="auto"
-              >
+              {/* Hazmats Section */}
+              <Box border={1} borderColor="green" p={2} borderRadius={2} overflow="auto">
                 <h3
                   style={{
                     color: "green",
@@ -588,99 +627,146 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                     display: "inline-block",
                   }}
                 >
-                  Vessel Attachments
+                  Hazmats
                 </h3>
+
                 <Box sx={{ overflowX: "auto" }}>
                   <Table sx={{ minWidth: "100%" }}>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#e8f5e9" }}>
-                        <TableCell>
-                          <b>Document Name</b>
-                        </TableCell>
-                        <TableCell>
-                          <b>Document Type</b>
-                        </TableCell>
-                        <TableCell>
-                          <b>File Name</b>
-                        </TableCell>
-                        <TableCell>
-                          <b>Status</b>
-                        </TableCell>
-                        <TableCell>
-                          <b>Delete</b>
-                        </TableCell>
-                        <TableCell>
-                          <b>Download</b>
-                        </TableCell>
+                        <TableCell><b>Hazmat</b></TableCell>
+                        <TableCell><b>Total Mass</b></TableCell>
+                        <TableCell><b>Unit</b></TableCell>
+                        <TableCell><b>Result Type</b></TableCell>
+                        <TableCell><b>Total Mass (HazInvent)</b></TableCell>
+                        <TableCell><b>Remarks</b></TableCell>
+                        <TableCell><b>View</b></TableCell>
+                        <TableCell><b>Delete</b></TableCell>
                       </TableRow>
                     </TableHead>
+
                     <TableBody>
-                      {attachments.map((att, index) => (
-                        <TableRow key={att.id}>
-                          <TableCell>{att.name}</TableCell>
+                      {hazmats.map((hazmat, index) => (
+                        <TableRow key={hazmat.id}>
+                          {/* Hazmat Dropdown */}
                           <TableCell>
                             <Select
-                              value={att.type || ""}
-                              onChange={(e) =>
-                                handleAttachmentTypeChange(
-                                  att.id,
-                                  e.target.value
-                                )
-                              }
+                              value={hazmat.name || ""}
+                              onChange={(e) => handleHazmatChange(hazmat.id, "name", e.target.value)}
                               displayEmpty
                               size="small"
-                              sx={{ minWidth: 120 }}
+                              sx={{ minWidth: 200 }}
                             >
-                              <MenuItem value="" disabled>
-                                Select Type
-                              </MenuItem>
-                              {DocumentTypes?.map((dt) => (
-                                <MenuItem key={dt.id} value={dt.id}>
-                                  {dt.name}
-                                </MenuItem>
+                              <MenuItem value="" disabled>Select Hazmat</MenuItem>
+                              {[
+                                "Asbestos",
+                                "Polychlorinated biphenyls (PCBs)",
+                                "Ozone Depleting Substance (ODS)",
+                                "Anti-fouling systems containing organotin compounds as a biocide",
+                                "Cybutryne",
+                                "Perfluorooctane sulfonic acid (PFOS)",
+                                "Cadmium and cadmium compounds",
+                                "Hexavalent chromium and hexavalent chromium compounds",
+                                "Lead and lead compounds",
+                                "Mercury and mercury compounds",
+                                "Polybrominated biphenyl (PBBs)",
+                                "Polybrominated diphenyl ethers (PBDEs)",
+                                "Polychloronaphthalenes (Cl >=3)",
+                                "Radioactive substances",
+                                "Certain shortchain chlorinated paraffins (CSCP)",
+                                "Brominated flame retardant (HBCDD)"
+                              ].map((haz) => (
+                                <MenuItem key={haz} value={haz}>{haz}</MenuItem>
                               ))}
+
                             </Select>
                           </TableCell>
-                          <TableCell>{att.filename}</TableCell>
-                          <TableCell>{att.status}</TableCell>
+
+                          {/* Total Mass */}
                           <TableCell>
-                            <Button
-                              variant="outlined"
-                              color="error"
+                            <TextField
                               size="small"
-                              onClick={() => handleAttachmentDelete(att)}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </Button>
+                              type="number"
+                              value={hazmat.totalMass}
+                              onChange={(e) => handleHazmatChange(hazmat.id, "totalMass", e.target.value)}
+                            />
                           </TableCell>
+
+                          {/* Unit Dropdown */}
                           <TableCell>
-                            <Button
-                              variant="outlined"
-                              color="primary"
+                            <Select
+                              value={hazmat.unit || ""}
+                              onChange={(e) => handleHazmatChange(hazmat.id, "unit", e.target.value)}
+                              displayEmpty
                               size="small"
-                              onClick={() => handleAttachmentDownload(att)}
+                              sx={{ minWidth: 100 }}
                             >
-                              <DownloadIcon fontSize="small" />
-                            </Button>
+                              <MenuItem value="Kg">Kg</MenuItem>
+                              <MenuItem value="Ton">Ton</MenuItem>
+                              <MenuItem value="Litre">Litre</MenuItem>
+                            </Select>
+                          </TableCell>
+
+                          {/* Result Type Dropdown */}
+                          <TableCell>
+                            <Select
+                              value={hazmat.resultType || ""}
+                              onChange={(e) => handleHazmatChange(hazmat.id, "resultType", e.target.value)}
+                              displayEmpty
+                              size="small"
+                              sx={{ minWidth: 150 }}
+                            >
+                              <MenuItem value="PCHM">PCHM</MenuItem>
+                              <MenuItem value="Documented">Documented</MenuItem>
+                              <MenuItem value="Visual">Visual</MenuItem>
+                            </Select>
+                          </TableCell>
+
+                          {/* HazInvent Mass */}
+                          <TableCell>{hazmat.hazInventMass || "-"}</TableCell>
+
+                          {/* Remarks */}
+                          <TableCell>
+                            <TextField
+                              size="small"
+                              value={hazmat.remarks}
+                              onChange={(e) => handleHazmatChange(hazmat.id, "remarks", e.target.value)}
+                            />
+                          </TableCell>
+
+                          {/* View/Download */}
+                          <TableCell>
+                            <IconButton onClick={() => handleViewHazmat(hazmat)}>
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+
+                          {/* Delete */}
+                          <TableCell>
+                            <IconButton onClick={() => handleDeleteHazmat(hazmat.id)} color="error">
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </Box>
+
+                {/* Add Button */}
                 <Button
                   variant="contained"
                   color="primary"
                   size="small"
                   sx={{ mt: 1 }}
-                  component="label"
+                  onClick={handleAddHazmat}
                 >
                   + Add
-                  <input type="file" hidden onChange={handleAttachmentUpload} />
                 </Button>
               </Box>
             </Box>
           )}
+
 
           {tabIndex === 2 && (
             <Box display="flex" flexDirection="column" gap={2} p={2}>
@@ -1002,58 +1088,119 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
           )}
 
           {tabIndex === 6 && (
-            <Box
-              display="flex"
-              flexDirection="column"
-              gap={1}
-              p={2}
-              border="2px solid #4CAF50"
-              borderRadius="8px"
-            >
-              {/* Header Title */}
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  color: "#4CAF50",
-                  fontWeight: "bold",
-                  borderBottom: "1px solid #4CAF50",
-                }}
+            <Box display="flex" flexDirection="column" gap={3} p={2}>
+              {/* Vessel Attachments */}
+              <Box
+                border={1}
+                borderColor="green"
+                p={2}
+                borderRadius={2}
+                overflow="auto"
               >
-                – Link Attachments to Inventory Point
-              </Typography>
+                <h3
+                  style={{
+                    color: "green",
+                    marginBottom: "8px",
+                    borderBottom: "2px solid green",
+                    display: "inline-block",
+                  }}
+                >
+                  Inventory Attachments
+                </h3>
+                <Box sx={{ overflowX: "auto" }}>
+                  <Table sx={{ minWidth: "100%" }}>
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "#e8f5e9" }}>
+                        <TableCell>
+                          <b>Document Name</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Document Type</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>File Name</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Status</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Delete</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Download</b>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {attachments.map((att, index) => (
+                        <TableRow key={att.id}>
+                          <TableCell>{att.name}</TableCell>
+                          <TableCell>
+                            <Select
+                              value={att.type || ""}
+                              onChange={(e) =>
+                                handleAttachmentTypeChange(att.id, e.target.value)
+                              }
+                              displayEmpty
+                              size="small"
+                              sx={{ minWidth: 120 }}
+                            >
+                              <MenuItem value="" disabled>
+                                Select Type
+                              </MenuItem>
 
-              {/* Table */}
-              <Paper sx={{ overflow: "auto", borderRadius: "8px" }}>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: "#f0f8e6" }}>
-                      <TableCell sx={{ fontWeight: "bold", color: "#333" }}>
-                        Document Name
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: "bold", color: "#333" }}>
-                        Document Type
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: "bold", color: "#333" }}>
-                        Down
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: "bold", color: "#333" }}>
-                        Link Document
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        align="center"
-                        sx={{ color: "#555" }}
-                      >
-                        No records to display
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </Paper>
+                              <MenuItem value="inventory_creation">
+                                Inventory Creation Document
+                              </MenuItem>
+
+                              <MenuItem value="removal">
+                                Inventory Removal Document
+                              </MenuItem>
+
+                              <MenuItem value="replacement_document">
+                                Inventory Replacement Document
+                              </MenuItem>
+                            </Select>
+
+                          </TableCell>
+                          <TableCell>{att.filename}</TableCell>
+                          <TableCell>{att.status}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              size="small"
+                              onClick={() => handleAttachmentDelete(att)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              size="small"
+                              onClick={() => handleAttachmentDownload(att)}
+                            >
+                              <DownloadIcon fontSize="small" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Box>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  sx={{ mt: 1 }}
+                  component="label"
+                >
+                  + Add
+                  <input type="file" hidden onChange={handleAttachmentUpload} />
+                </Button>
+              </Box>
             </Box>
           )}
 

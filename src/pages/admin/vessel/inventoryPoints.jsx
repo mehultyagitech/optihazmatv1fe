@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "../../../api/axiosInstance";
 import ReactPaginate from 'react-paginate';
 import './../../../components/pagination.css';
+import { toast } from "react-toastify";
 
 const InventoryPointCard = ({
   inventoryPointName,
@@ -78,7 +79,7 @@ const InventoryPointCard = ({
             color: "error.main",
             borderColor: "error.main",
           }}
-          onClick={() => onDelete(inventoryPointNumber)}
+          onClick={onDelete}
         >
           Delete
         </Button>
@@ -160,6 +161,24 @@ const InventoryPoints = () => {
     select: (data) => data.data,
     keepPreviousData: true,
   });
+
+  const handleDelete = async (pinId) => {
+    if (!window.confirm("Are you sure you want to delete this inventory point?")) {
+      return;
+    }
+  
+    try {
+      await axiosInstance.delete(`/pins/${pinId}`);
+      toast.success("Inventory Point deleted successfully");
+  
+      // Refetch the data after deletion
+      pinsListing.refetch();
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete inventory point");
+    }
+  };
+  
 
 
   const handleSearch = () => {
@@ -309,9 +328,8 @@ const InventoryPoints = () => {
                     pinId: inventoryPoint.id,
                   })
                 }}
-                onDelete={(inventoryPointNumber) =>
-                  console.log(`Delete ${inventoryPointNumber}`)
-                }
+                onDelete={() => handleDelete(inventoryPoint.id)}
+
               />
             ))}
         </Box>
