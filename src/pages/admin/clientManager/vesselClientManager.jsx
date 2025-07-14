@@ -16,9 +16,22 @@ import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
 import AddEditClientManagerDrawer from "./addEditClientManagerDrawer";
-import { getAllClientManagers, deleteClientManager } from "../../../api/services/clientManager";
+import {
+  getAllClientManagers,
+  deleteClientManager,
+} from "../../../api/services/clientManager";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-const ClientCard = ({ id, verifaviaId, companyName, isClient, address, contactDetails, onEdit, onDelete }) => {
+const ClientCard = ({
+  id,
+  verifaviaId,
+  companyName,
+  isClient,
+  address,
+  contactDetails,
+  onEdit,
+  onDelete,
+}) => {
   // Generating a random avatar URL
   const randomAvatar = `https://avatar.iran.liara.run/public`;
 
@@ -43,7 +56,9 @@ const ClientCard = ({ id, verifaviaId, companyName, isClient, address, contactDe
           size="small"
           startIcon={<EditIcon />}
           sx={{ textTransform: "none", marginLeft: "auto" }}
-          onClick={() => onEdit({ id, verifaviaId, companyName, address, contactDetails })}
+          onClick={() =>
+            onEdit({ id, verifaviaId, companyName, address, contactDetails })
+          }
         >
           Edit
         </Button>
@@ -56,7 +71,6 @@ const ClientCard = ({ id, verifaviaId, companyName, isClient, address, contactDe
         >
           Delete
         </Button>
-
       </Box>
       <OPDivider />
       <Box>
@@ -77,7 +91,7 @@ const ClientCard = ({ id, verifaviaId, companyName, isClient, address, contactDe
           fontWeight="bold"
           color="text.primary"
           mb={0.5}
-        >   
+        >
           Address
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -100,23 +114,20 @@ const ClientCard = ({ id, verifaviaId, companyName, isClient, address, contactDe
 };
 
 const VesselClientManager = () => {
-  const [clients, setClients] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [view, setView] = useState("clients");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState(null); // State to hold the client data being edited
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const data = await getAllClientManagers(); // Fetch data
-        setClients(data); // Update state with the fetched data
-      } catch (error) {
-        console.error("Error fetching client managers:", error);
-      }
-    };
-    fetchClients();
-  }, []);
+  const { data: clients, isSuccess, refetch } = useQuery({
+    queryKey: ["clientManagers", view, searchQuery],
+    queryFn: getAllClientManagers,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    cacheTime: 1000 * 60 * 10, // 10 minutes
+    select: (data) => data,
+  });
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
@@ -138,28 +149,34 @@ const VesselClientManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this client/manager?")) {
+    if (
+      window.confirm("Are you sure you want to delete this client/manager?")
+    ) {
       try {
         await deleteClientManager(id); // You'll need to create this API call
-        setClients(prev => ({
-          ...prev,
-          data: prev.data.filter(client => client.id !== id),
-        }));
+        queryClient.invalidateQueries(['genericData', 'clientManagers']);
+        queryClient.refetchQueries(['genericData', 'clientManagers']);
       } catch (err) {
         console.error("Delete failed:", err);
       }
     }
   };
 
-
-  const filteredClients = (clients?.data || [])
-    .filter(client => view === "clients" ? client.isClient === true : client.isClient === false)
-    .filter(client =>
-      (client.companyName && client.companyName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (client.verifaviaId && String(client.verifaviaId).toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredClients = isSuccess && clients.data
+    .filter((client) =>
+      view === "clients" ? client.isClient === true : client.isClient === false
+    )
+    .filter(
+      (client) =>
+        (client.companyName &&
+          client.companyName
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())) ||
+        (client.verifaviaId &&
+          String(client.verifaviaId)
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()))
     );
-
-
 
   return (
     <OPPageContainer>
@@ -221,7 +238,11 @@ const VesselClientManager = () => {
         <Box
           p={3}
           display="grid"
-          gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }}
+          gridTemplateColumns={{
+            xs: "1fr",
+            sm: "1fr 1fr",
+            md: "1fr 1fr 1fr 1fr",
+          }}
           gap={3}
         >
           {filteredClients.length > 0 ? (
@@ -237,14 +258,12 @@ const VesselClientManager = () => {
                 onEdit={handleEditClick}
                 onDelete={handleDelete}
               />
-
             ))
           ) : (
             <Typography variant="body2" color="text.secondary">
               No {view === "clients" ? "clients" : "managers"} found.
             </Typography>
           )}
-
         </Box>
       </Box>
       <AddEditClientManagerDrawer
@@ -255,6 +274,5 @@ const VesselClientManager = () => {
     </OPPageContainer>
   );
 };
-
 
 export default VesselClientManager;

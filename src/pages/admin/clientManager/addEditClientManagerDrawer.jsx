@@ -14,9 +14,13 @@ import {
 import OPPageContainer from "../../../components/OPPageContainer";
 import { FormControlLabel } from "@mui/material";
 import OPDivider from "../../../components/OPDivider";
-import { createClientManagers, updateClientManager } from "../../../api/services/clientManager";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import {
+  createClientManagers,
+  updateClientManager,
+} from "../../../api/services/clientManager";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
   const [role, setRole] = useState("manager");
@@ -31,6 +35,7 @@ const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [errors, setErrors] = useState({});
+  const queryClient = useQueryClient();
 
   // Use clientData to pre-fill the form when editing
   useEffect(() => {
@@ -50,28 +55,30 @@ const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
   const handleRoleChange = (event, newRole) => {
     if (newRole !== null) {
       setRole(newRole);
-      setFormData(prevData => ({
+      setFormData((prevData) => ({
         ...prevData,
-        isClient: newRole === "client"
+        isClient: newRole === "client",
       }));
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
+    setFormData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }));
   };
 
-
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.companyName) newErrors.companyName = "Company Name is required";
+    if (!formData.companyName)
+      newErrors.companyName = "Company Name is required";
     if (!formData.address) newErrors.address = "Address is required";
-    if (!formData.contactDetails) newErrors.contactDetails = "Contact Details are required";
-    if (!formData.verifaviaId) newErrors.verifaviaId = "Verifavia ID is required";
+    if (!formData.contactDetails)
+      newErrors.contactDetails = "Contact Details are required";
+    if (!formData.verifaviaId)
+      newErrors.verifaviaId = "Verifavia ID is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -88,9 +95,9 @@ const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
       if (clientData && clientData.id) {
         // Update existing client manager
         response = await updateClientManager(clientData.id, formData);
-        if(clientData.isClient==true){
+        if (clientData.isClient == true) {
           toast.success("Client Updated Successfully!");
-        }else{
+        } else {
           toast.success("Manager Updated Successfully!");
         }
       } else {
@@ -98,10 +105,9 @@ const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
         toast.success("New Manager Created Successfully!");
       }
 
+      queryClient.invalidateQueries(["genericData", "clientManagers"]);
+      queryClient.refetchQueries(["genericData", "clientManagers"]);
       onClose();
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong.");
     } finally {
@@ -114,7 +120,12 @@ const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
       <Drawer anchor="right" open={open} onClose={onClose}>
         <Box sx={{ width: isSmallScreen ? "100vw" : 800, padding: 9 }}>
           {/* Header */}
-          <Box display="flex" alignItems="center" justifyContent="space-between" marginBottom={2}>
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            marginBottom={2}
+          >
             <Typography variant="h5" sx={{ fontWeight: "bold" }}>
               {clientData ? "Edit Client/Manager" : "Add Client/Manager"}
             </Typography>
@@ -203,7 +214,11 @@ const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
           </Box>
 
           {/* Footer */}
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <Button variant="contained" color="primary" onClick={handleSubmit}>
               {clientData ? "Update" : "Submit"}
             </Button>
@@ -217,6 +232,5 @@ const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
     </OPPageContainer>
   );
 };
-
 
 export default AddEditClientManagerDrawer;
