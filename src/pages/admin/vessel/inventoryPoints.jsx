@@ -232,6 +232,7 @@ const InventoryPoints = () => {
 
   // Get items and meta from API response
   const filteredClients = pinsListing.isSuccess ? pinsListing.data.data : [];
+  const VesselInventoryImage = pinsListing.isSuccess ? pinsListing.data.VesselInventoryImage : null;
   const meta = pinsListing.isSuccess ? pinsListing.data.meta : { page: 1, total: { pages: 1, items: 0 } };
 
   // ReactPaginate handler
@@ -306,6 +307,9 @@ const InventoryPoints = () => {
                 key={index}
                 inventoryPointName={inventoryPoint?.subLocation?.name}
                 avatarSrc={
+                  !!VesselInventoryImage && VesselInventoryImage.isMain ?
+                  import.meta.env.VITE_API_URL +
+                  "/uploads/" + VesselInventoryImage.url :
                   import.meta.env.VITE_API_URL +
                   "/uploads/" +
                   inventoryPoint?.PinImages[0]?.url
