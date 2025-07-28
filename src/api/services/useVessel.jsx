@@ -52,6 +52,8 @@ export default function useVessel() {
           imoNumber: vessel.imoNumber,
           clientName: vessel.clientName,
           managerName: vessel.vesselManager,
+          clientName2: vessel.Client?.companyName ?? "-",  // <-- fixed
+          managerName2: vessel.Manager?.companyName ?? "-", // optional if you want Manager name
           vesselType: vessel.vesselType,
         })),
     });

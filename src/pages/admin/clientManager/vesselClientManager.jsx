@@ -48,8 +48,9 @@ const ClientCard = ({
             {verifaviaId}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Vessel Client
+            {isClient ? "Vessel Client" : "Manager"}
           </Typography>
+
         </Box>
         <Button
           variant="outlined"

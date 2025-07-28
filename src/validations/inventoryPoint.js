@@ -3,7 +3,7 @@ import Joi from "joi";
 export const inventoryPointSchema = Joi.object({
   subLocationId: Joi.string().required().label("Sub Location"),
   equipmentId: Joi.string().required().label("Equipment"),
-  compartmentId: Joi.string().required().label("Compartment"),
+  compartmentId: Joi.string().allow("").label("Compartment"),
   objectId: Joi.string().required().label("Object"),
   description: Joi.string().allow("").label("Description"),
   inventoryId: Joi.string().required().label("Inventory Class"),

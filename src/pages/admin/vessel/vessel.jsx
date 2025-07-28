@@ -152,7 +152,7 @@ const Vessel = () => {
     };
 
     const filteredClients = isSuccess ? data : [];
-
+    
     return (
         <OPPageContainer>
             <Box>
@@ -214,8 +214,8 @@ const Vessel = () => {
                             avatarSrc={client.avatarSrc}
                             imoNumber={client.imoNumber}
                             vessel={client.vessel}
-                            clientName={client.clientName}
-                            managerName={client.managerName}
+                            clientName={client.clientName2}  // <-- use company name
+                            managerName={client.managerName2}
                             vesselType={client.vesselType}
                         />
                     ))}

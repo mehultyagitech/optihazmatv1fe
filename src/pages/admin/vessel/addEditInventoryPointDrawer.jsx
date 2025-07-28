@@ -750,7 +750,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                               ))}
                             </Select>
                           </TableCell>
-
+    
                           {/* Total Mass */}
                           <TableCell>
                             <TextField
