@@ -12,6 +12,7 @@ import EditLocations from './pages/admin/editLocations.jsx';
 import EditObjectName from './pages/admin/editObjects.jsx';
 import EditSubLocations from './pages/admin/editSubLocations.jsx';
 import EditEquipmentName from './pages/admin/editEquipmentName.jsx';
+import AllPoItems from './pages/admin/allPoItems.jsx';
 import EditDocumentTypeName from './pages/admin/editDocumentTypeName.jsx';
 import EditCompartment from './pages/admin/editCompartment.jsx';
 import OverviewCard from './pages/admin/dashboard.jsx';
@@ -110,6 +111,10 @@ const router = createBrowserRouter([
           {
             path: "/vessels/new-area",
             element: <CropLocationDiagram />,
+          },
+          {
+            path: "/all-po-items",
+            element: <AllPoItems />,
           },
         ]
       },

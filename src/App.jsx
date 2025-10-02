@@ -22,6 +22,7 @@ import { commonVesselViewState } from "./utils/States/Vessel";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "./api/axiosInstance";
 import genericState, { DocumentTypeSelector } from "./utils/States/Generic";
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 
 const NAVIGATION = [
   {
@@ -101,6 +102,18 @@ const NAVIGATION = [
     segment: "edit-objects",
     title: "Edit Objects",
     icon: <StorageIcon />,
+  },
+  {  
+    kind: "divider",
+  },
+  {
+    kind: "header",
+    title: "PO Items",
+  },
+  {
+    segment: "all-po-items",
+    title: "All PO Items",
+    icon: <ShoppingCartIcon />,
   },
   {
     kind: "divider",
