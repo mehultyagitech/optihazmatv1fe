@@ -37,41 +37,50 @@ const ClientCard = ({
 
   return (
     <OPCard sx={{ width: "100%" }}>
-      <Box display="flex" alignItems="center" gap={2}>
-        <Avatar src={randomAvatar} sx={{ width: 60, height: 60 }} />
-        <Box>
+      <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+        <Avatar
+          src={randomAvatar}
+          sx={{ width: 60, height: 60, flexShrink: 0 }}
+        />
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
           <Typography
             variant="subtitle1"
             fontWeight="bold"
-            sx={{ color: "#1976d2" }}
+            sx={{ color: "#1976d2", wordBreak: "break-word" }}
           >
             {verifaviaId}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {isClient ? "Vessel Client" : "Manager"}
           </Typography>
-
         </Box>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<EditIcon />}
-          sx={{ textTransform: "none", marginLeft: "auto" }}
-          onClick={() =>
-            onEdit({ id, verifaviaId, companyName, address, contactDetails })
-          }
+        <Box
+          display="flex"
+          gap={1}
+          flexWrap="wrap"
+          sx={{ ml: "auto" }}
         >
-          Edit
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          color="error"
-          sx={{ textTransform: "none" }}
-          onClick={() => onDelete(id)} // call onDelete with ID
-        >
-          Delete
-        </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<EditIcon />}
+            sx={{ textTransform: "none" }}
+            onClick={() =>
+              onEdit({ id, verifaviaId, companyName, address, contactDetails })
+            }
+          >
+            Edit
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            color="error"
+            sx={{ textTransform: "none" }}
+            onClick={() => onDelete(id)} // call onDelete with ID
+          >
+            Delete
+          </Button>
+        </Box>
       </Box>
       <OPDivider />
       <Box>
@@ -95,7 +104,7 @@ const ClientCard = ({
         >
           Address
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" mb={2}>
           {address}
         </Typography>
         <Typography

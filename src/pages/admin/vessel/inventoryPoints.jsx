@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -37,13 +37,13 @@ const InventoryPointCard = ({
   onDelete,
 }) => (
   <OPCard sx={{ width: "100%" }}>
-    <Box display="flex" alignItems="center" gap={2}>
-      <Avatar src={avatarSrc} sx={{ width: 60, height: 60 }} />
-      <Box>
+    <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+      <Avatar src={avatarSrc} sx={{ width: 60, height: 60, flexShrink: 0 }} />
+      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <Typography
           variant="subtitle1"
           fontWeight="bold"
-          sx={{ color: "#1976d2" }}
+          sx={{ color: "#1976d2", wordBreak: "break-word" }}
         >
           {inventoryPointName}
         </Typography>
@@ -181,57 +181,68 @@ const InventoryPoints = () => {
   
 
 
-  const handleSearch = () => {
-    const selectedFilters = filters.reduce((acc, filter) => {
-      acc[filter.name] = filter.value;
-      return acc;
-    }, {});
-  };
-
-  const [filters, setFilters] = useState([
-    {
-      name: "client",
-      value: "",
-      placeholder: "Client",
-      options: [
-        { label: "Client 1", value: "client1" },
-        { label: "Client 2", value: "client2" },
-      ],
-    },
-    {
-      name: "fleetManager",
-      value: "",
-      placeholder: "Fleet Manager",
-      options: [
-        { label: "Manager 1", value: "manager1" },
-        { label: "Manager 2", value: "manager2" },
-      ],
-    },
-    {
-      name: "vessel",
-      value: "",
-      placeholder: "Vessel",
-      options: [
-        { label: "Vessel 1", value: "vessel1" },
-        { label: "Vessel 2", value: "vessel2" },
-      ],
-    },
-  ]);
+  // Client-side dropdown filters over the loaded inventory points.
+  const [selectedFilters, setSelectedFilters] = useState({
+    inventoryType: "",
+    status: "",
+    subLocation: "",
+  });
 
   const handleFilterChange = (name, value) => {
-    setFilters((prevFilters) =>
-      prevFilters.map((filter) =>
-        filter.name === name ? { ...filter, value } : filter
-      )
-    );
+    setSelectedFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSearch = () => {
+    // Filtering is applied live; the Search button also forces a refetch.
+    pinsListing.refetch();
   };
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
+    setPage(1);
   };
 
-  // Get items and meta from API response
-  const filteredClients = pinsListing.isSuccess ? pinsListing.data.data : [];
+  // Raw items from API response
+  const items = pinsListing.isSuccess ? pinsListing.data.data : [];
+
+  const optionsFrom = (values) =>
+    [...new Set(values.filter((v) => v !== null && v !== undefined && v !== ""))]
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .map((v) => ({ label: String(v), value: String(v) }));
+
+  const filters = useMemo(
+    () => [
+      {
+        name: "inventoryType",
+        value: selectedFilters.inventoryType,
+        placeholder: "Inventory Type",
+        options: optionsFrom(items.map((i) => i?.inventoryType)),
+      },
+      {
+        name: "status",
+        value: selectedFilters.status,
+        placeholder: "Status",
+        options: optionsFrom(items.map((i) => i?.status)),
+      },
+      {
+        name: "subLocation",
+        value: selectedFilters.subLocation,
+        placeholder: "Sub-Location",
+        options: optionsFrom(items.map((i) => i?.subLocation?.name)),
+      },
+    ],
+    [items, selectedFilters]
+  );
+
+  // Apply the dropdown filters client-side
+  const filteredClients = items.filter(
+    (i) =>
+      (!selectedFilters.inventoryType ||
+        String(i?.inventoryType) === selectedFilters.inventoryType) &&
+      (!selectedFilters.status || String(i?.status) === selectedFilters.status) &&
+      (!selectedFilters.subLocation ||
+        String(i?.subLocation?.name) === selectedFilters.subLocation)
+  );
   const VesselInventoryImage = pinsListing.isSuccess ? pinsListing.data.VesselInventoryImage : null;
   const meta = pinsListing.isSuccess ? pinsListing.data.meta : { page: 1, total: { pages: 1, items: 0 } };
 

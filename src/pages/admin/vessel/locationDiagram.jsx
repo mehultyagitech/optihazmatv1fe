@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -146,58 +146,64 @@ const Vessel = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const handleSearch = () => {
-    const selectedFilters = filters.reduce((acc, filter) => {
-      acc[filter.name] = filter.value;
-      return acc;
-    }, {});
-  };
-
-  const [filters, setFilters] = useState([
-    {
-      name: "client",
-      value: "",
-      placeholder: "Client",
-      options: [
-        { label: "Client 1", value: "client1" },
-        { label: "Client 2", value: "client2" },
-      ],
-    },
-    {
-      name: "fleetManager",
-      value: "",
-      placeholder: "Fleet Manager",
-      options: [
-        { label: "Manager 1", value: "manager1" },
-        { label: "Manager 2", value: "manager2" },
-      ],
-    },
-    {
-      name: "vessel",
-      value: "",
-      placeholder: "Vessel",
-      options: [
-        { label: "Vessel 1", value: "vessel1" },
-        { label: "Vessel 2", value: "vessel2" },
-      ],
-    },
-  ]);
+  // Client-side dropdown filters over the loaded location diagrams.
+  const [selectedFilters, setSelectedFilters] = useState({
+    location: "",
+    subLocation: "",
+    vesselType: "",
+  });
 
   const handleFilterChange = (name, value) => {
-    setFilters((prevFilters) =>
-      prevFilters.map((filter) =>
-        filter.name === name ? { ...filter, value } : filter
-      )
-    );
+    setSelectedFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSearch = () => {
+    locationDiagrams.refetch();
   };
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
+    setPage(1);
   };
 
-  const filteredClients = !locationDiagrams.isPending
-    ? locationDiagrams.data
-    : [];
+  const items = !locationDiagrams.isPending ? locationDiagrams.data ?? [] : [];
+
+  const optionsFrom = (values) =>
+    [...new Set(values.filter((v) => v !== null && v !== undefined && v !== ""))]
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .map((v) => ({ label: String(v), value: String(v) }));
+
+  const filters = useMemo(
+    () => [
+      {
+        name: "location",
+        value: selectedFilters.location,
+        placeholder: "Location",
+        options: optionsFrom(items.map((i) => i?.locationName)),
+      },
+      {
+        name: "subLocation",
+        value: selectedFilters.subLocation,
+        placeholder: "Sub-Location",
+        options: optionsFrom(items.map((i) => i?.subLocationName)),
+      },
+      {
+        name: "vesselType",
+        value: selectedFilters.vesselType,
+        placeholder: "Vessel Type",
+        options: optionsFrom(items.map((i) => i?.vesselType)),
+      },
+    ],
+    [items, selectedFilters]
+  );
+
+  const filteredClients = items.filter(
+    (i) =>
+      (!selectedFilters.location || i?.locationName === selectedFilters.location) &&
+      (!selectedFilters.subLocation ||
+        i?.subLocationName === selectedFilters.subLocation) &&
+      (!selectedFilters.vesselType || i?.vesselType === selectedFilters.vesselType)
+  );
 
   return (
     <OPPageContainer sx={{ px: 2, pt: 2 }}>

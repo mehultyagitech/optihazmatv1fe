@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Button, Card, CardContent, Typography, Grid, Tabs  } from "@mui/material";
+import { Box, Button, Card, CardContent, Typography, Grid, Tabs, Paper, Divider  } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { BarChart } from "@mui/x-charts/BarChart";
 import InfoIcon from "@mui/icons-material/Info";
@@ -11,11 +11,28 @@ import { useRecoilValue } from "recoil";
 import { commonVesselViewState } from "../../../utils/States/Vessel";
 import ClientCard from "./vesselDasboardCard"; // adjust path as needed
 import AddEditVesselDrawer from "./addEditVesselDrawer";
+import { downloadIHMMaintenanceCertificate } from "../../../utils/ihmCertificate";
 const VesselDashboard = () => {
 
   const [isDrawerOpen, setDrawerOpen] = React.useState(false);
 
   const vessel = useRecoilValue(commonVesselViewState);
+
+  // Fetch the full vessel record and generate the IHM Maintenance Certificate
+  // PDF, mapping the dynamic fields (name, IMO, ship type, GRT, period, etc.).
+  const certificateMutation = useMutation({
+    mutationFn: async () => {
+      const response = await axiosInstance.get(`/vessels/${vessel.id}`);
+      return response.data.data;
+    },
+    onSuccess: (vesselData) => {
+      downloadIHMMaintenanceCertificate(vesselData);
+    },
+    onError: (error) => {
+      console.error("Failed to generate IHM Maintenance Certificate:", error);
+      alert("Could not generate the certificate. Please try again.");
+    },
+  });
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['vesselDashboard'],
     queryFn: async () => {
@@ -84,7 +101,14 @@ const VesselDashboard = () => {
 </Button>
 
 
-        <Button startIcon={<AssignmentIcon />} variant="outlined">IHM Maintenance Certificate</Button>
+        <Button
+          startIcon={<AssignmentIcon />}
+          variant="outlined"
+          onClick={() => certificateMutation.mutate()}
+          disabled={!vessel?.id || certificateMutation.isPending}
+        >
+          {certificateMutation.isPending ? "Generating..." : "IHM Maintenance Certificate"}
+        </Button>
         <Button startIcon={<FileCopyIcon />} variant="contained">IHM Report</Button>
         <Box sx={{ flexGrow: 1 }} />
         <Button startIcon={<InfoIcon />} variant="outlined" color="primary">Vessel</Button>
@@ -135,11 +159,38 @@ const VesselDashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Box mt={5} p={3}>
-          <Typography variant="subtitle1" fontWeight="600" mb={2}>
-            IHM Part 1 Summary Data (Initial IHM Part 1 + Installed Items - Replaced Items - Removed Items)
-          </Typography>
-
+        <Paper
+          elevation={0}
+          sx={{
+            width: "100%",
+            mt: 4,
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            sx={{
+              px: 3,
+              py: 1.5,
+              bgcolor: "#e3f2fd",
+              borderLeft: "5px solid #2196F3",
+              display: "flex",
+              alignItems: "baseline",
+              flexWrap: "wrap",
+              columnGap: 1,
+            }}
+          >
+            <Typography variant="subtitle1" fontWeight={700} sx={{ color: "#0d47a1" }}>
+              IHM Part 1 Summary Data
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              (Initial IHM Part 1 + Installed Items - Replaced Items - Removed Items)
+            </Typography>
+          </Box>
+          <Divider />
+          <Box sx={{ p: 3 }}>
           <Grid container mt={0} spacing={9}>
             {/* Card 1 */}
             <Grid item xs={12} sm={6} md={2.4} display="flex">
@@ -253,19 +304,50 @@ const VesselDashboard = () => {
 
             </Grid>
           </Grid>
-        </Box>
+          </Box>
+        </Paper>
 
-<Box mt={5} p={3}>
-  <Typography variant="subtitle1" fontWeight="600" mb={2}>
-    Location Diagrams (Initial IHM Part 1 + Installed Items containing Hazmat)
-  </Typography>
+<Paper
+  elevation={0}
+  sx={{
+    width: "100%",
+    mt: 4,
+    borderRadius: 2,
+    border: "1px solid",
+    borderColor: "divider",
+    overflow: "hidden",
+  }}
+>
+  <Box
+    sx={{
+      px: 3,
+      py: 1.5,
+      bgcolor: "#e8f5e9",
+      borderLeft: "5px solid #8BC34A",
+      display: "flex",
+      alignItems: "baseline",
+      flexWrap: "wrap",
+      columnGap: 1,
+    }}
+  >
+    <Typography variant="subtitle1" fontWeight={700} sx={{ color: "#33691e" }}>
+      Location Diagrams
+    </Typography>
+    <Typography variant="body2" color="text.secondary">
+      (Initial IHM Part 1 + Installed Items containing Hazmat)
+    </Typography>
+  </Box>
+  <Divider />
+  <Box sx={{ p: 3 }}>
   <Grid container spacing={2}>
     {filteredClients.map((client) => (
       <Grid item key={client.id}>
         <ClientCard
           id={client.id}
           avatarSrc={
-            import.meta.env.REACT_APP_API_URL + "/uploads/" + client.imageUrl
+            client.imageUrl
+              ? `${import.meta.env.VITE_API_URL}/uploads/${client.imageUrl}`
+              : undefined
           }
           name={client.locationName}
           survey={client.i1Count ?? 0}
@@ -276,7 +358,8 @@ const VesselDashboard = () => {
       </Grid>
     ))}
   </Grid>
-</Box>
+  </Box>
+</Paper>
 
 
       </Grid>

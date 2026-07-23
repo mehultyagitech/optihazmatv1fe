@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import {
     Box,
     Typography,
@@ -151,12 +151,54 @@ const Vessel = () => {
         debouncedSetSearch(newValue);
     };
 
-    const filteredClients = isSuccess ? data : [];
-    
+    // Dropdown filters (client-side, over the loaded vessels)
+    const [dropdownFilters, setDropdownFilters] = useState({
+        client: "",
+        manager: "",
+        vesselType: "",
+    });
+
+    const handleDropdownFilterChange = (name, value) => {
+        setDropdownFilters((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const vessels = isSuccess ? data : [];
+
+    const uniqueSorted = (arr) =>
+        [...new Set(arr.filter((v) => v && v !== "-"))].sort((a, b) =>
+            String(a).localeCompare(String(b))
+        );
+
+    const clientOptions = useMemo(
+        () => uniqueSorted(vessels.map((v) => v.clientName2)),
+        [vessels]
+    );
+    const managerOptions = useMemo(
+        () => uniqueSorted(vessels.map((v) => v.managerName2)),
+        [vessels]
+    );
+    const typeOptions = useMemo(
+        () => uniqueSorted(vessels.map((v) => v.vesselType)),
+        [vessels]
+    );
+
+    const filteredClients = vessels.filter(
+        (v) =>
+            (!dropdownFilters.client || v.clientName2 === dropdownFilters.client) &&
+            (!dropdownFilters.manager || v.managerName2 === dropdownFilters.manager) &&
+            (!dropdownFilters.vesselType || v.vesselType === dropdownFilters.vesselType)
+    );
+
     return (
         <OPPageContainer>
             <Box>
-                <VesselTopBar />
+                <VesselTopBar
+                    clientOptions={clientOptions}
+                    managerOptions={managerOptions}
+                    typeOptions={typeOptions}
+                    filters={dropdownFilters}
+                    onFilterChange={handleDropdownFilterChange}
+                />
                 <Box
                     display="flex"
                     alignItems="center"

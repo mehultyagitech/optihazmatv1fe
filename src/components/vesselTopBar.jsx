@@ -18,11 +18,14 @@ import AddEditVesselDrawer from "../pages/admin/vessel/addEditVesselDrawer";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { vesselSearchMetaState, vesselState } from "../utils/States/Vessel";
 
-const VesselTopBar = () => {
+const VesselTopBar = ({
+    clientOptions = [],
+    managerOptions = [],
+    typeOptions = [],
+    filters = { client: "", manager: "", vesselType: "" },
+    onFilterChange = () => {},
+}) => {
     const isMobile = useMediaQuery("(max-width:600px)");
-    const [selectedClient, setSelectedClient] = React.useState('');
-    const [selectedMiscellaneous, setSelectedMiscellaneous] = React.useState('');
-    const [selectedFleetManager, setSelectedFleetManager ] = React.useState('');
     const setVessel = useSetRecoilState(vesselState);
     const vesselMeta = useRecoilValue(vesselSearchMetaState);
 
@@ -71,30 +74,34 @@ const VesselTopBar = () => {
                         <Select
                             labelId="clients-filter-label"
                             id="clients-filter"
-                            value={selectedClient}
-                            onChange={(e) => setSelectedClient(e.target.value)} // Handle state here
+                            label="Clients"
+                            value={filters.client}
+                            onChange={(e) => onFilterChange("client", e.target.value)}
                         >
-                            <MenuItem value="client1">Client 1</MenuItem>
-                            <MenuItem value="client2">Client 2</MenuItem>
-                            <MenuItem value="client3">Client 3</MenuItem>
+                            <MenuItem value="">All Clients</MenuItem>
+                            {clientOptions.map((opt) => (
+                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                            ))}
                         </Select>
                     </FormControl>
 
-                    {/* Filters for Miscellaneous */}
+                    {/* Filters for Vessel Type */}
                     <FormControl
                         sx={{ minWidth: 150 }}
                         size={isMobile ? "small" : "medium"}
                     >
-                        <InputLabel id="miscellaneous-filter-label">Miscellaneous</InputLabel>
+                        <InputLabel id="type-filter-label">Vessel Type</InputLabel>
                         <Select
-                            labelId="miscellaneous-filter-label"
-                            id="miscellaneous-filter"
-                            value={selectedMiscellaneous}
-                            onChange={(e) => setSelectedMiscellaneous(e.target.value)} // Handle state here
+                            labelId="type-filter-label"
+                            id="type-filter"
+                            label="Vessel Type"
+                            value={filters.vesselType}
+                            onChange={(e) => onFilterChange("vesselType", e.target.value)}
                         >
-                            <MenuItem value="misc1">Misc 1</MenuItem>
-                            <MenuItem value="misc2">Misc 2</MenuItem>
-                            <MenuItem value="misc3">Misc 3</MenuItem>
+                            <MenuItem value="">All Types</MenuItem>
+                            {typeOptions.map((opt) => (
+                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                            ))}
                         </Select>
                     </FormControl>
 
@@ -107,12 +114,14 @@ const VesselTopBar = () => {
                         <Select
                             labelId="fleet-manager-filter-label"
                             id="fleet-manager-filter"
-                            value={selectedFleetManager}
-                            onChange={(e) => setSelectedFleetManager(e.target.value)} // Handle state here
+                            label="Fleet Manager"
+                            value={filters.manager}
+                            onChange={(e) => onFilterChange("manager", e.target.value)}
                         >
-                            <MenuItem value="manager1">Manager 1</MenuItem>
-                            <MenuItem value="manager2">Manager 2</MenuItem>
-                            <MenuItem value="manager3">Manager 3</MenuItem>
+                            <MenuItem value="">All Managers</MenuItem>
+                            {managerOptions.map((opt) => (
+                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                            ))}
                         </Select>
                     </FormControl>
                     <Button

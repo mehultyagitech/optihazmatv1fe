@@ -67,59 +67,46 @@ const Dashboard = () => {
         },
     ];
 
+    const rows = [
+        { id: 1, supplierNotCooperatingDetails: 'IT Rack UPS 1 (Next Gen and NET SWAN)', emailCommunications: 'test@gmail.com', status: false, client: 'ACECHEM Shipping Pte Ltd', fleetManager: 'Neptune Ship Management', vessel: 'A LA MARINE' },
+        { id: 2, supplierNotCooperatingDetails: 'IT Rack UPS 2 (Next Gen and NET SWAN)', emailCommunications: 'test@gmail.com', status: true, client: 'ACECHEM Shipping Pte Ltd', fleetManager: 'Neptune Ship Management', vessel: 'A LA MARINE' },
+        { id: 3, supplierNotCooperatingDetails: 'Battery- Auxiliary Engine 1', emailCommunications: 'test@gmail.com', status: false, client: 'Blue Ocean Chemicals', fleetManager: 'Anchor Marine Mgmt', vessel: 'PACIFIC NAVIGATOR' },
+    ];
+
+    const [selectedFilters, setSelectedFilters] = useState({ client: '', fleetManager: '', vessel: '' });
+
     const handleFilterChange = (name, value) => {
-        setFilters((prevFilters) =>
-            prevFilters.map((filter) =>
-                filter.name === name ? { ...filter, value } : filter
-            )
-        );
+        setSelectedFilters((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSearch = () => {
-        const selectedFilters = filters.reduce((acc, filter) => {
-            acc[filter.name] = filter.value;
-            return acc;
-        }, {});
+        // Filtering is applied live as selections change.
     };
 
-    const [filters, setFilters] = useState([
-        {
-            name: "client",
-            value: "",
-            placeholder: "Client",
-            options: [
-                { label: "Client 1", value: "client1" },
-                { label: "Client 2", value: "client2" },
-            ],
-        },
-        {
-            name: "fleetManager",
-            value: "",
-            placeholder: "Fleet Manager",
-            options: [
-                { label: "Manager 1", value: "manager1" },
-                { label: "Manager 2", value: "manager2" },
-            ],
-        },
-        {
-            name: "vessel",
-            value: "",
-            placeholder: "Vessel",
-            options: [
-                { label: "Vessel 1", value: "vessel1" },
-                { label: "Vessel 2", value: "vessel2" },
-            ],
-        },
-    ]);
-    const rows = [
-        { id: 1, supplierNotCooperatingDetails: 'IT Rack UPS 1 (Next Gen and NET SWAN)', emailCommunications: 'test@gmail.com', status: false },
-        { id: 2, supplierNotCooperatingDetails: 'IT Rack UPS 2 (Next Gen and NET SWAN)', emailCommunications: 'test@gmail.com', status: true },
-        { id: 3, supplierNotCooperatingDetails: 'Battery- Auxiliary Engine 1', emailCommunications: 'test@gmail.com', status: false },
+    const optionsFrom = (values) =>
+        [...new Set(values.filter(Boolean))]
+            .sort((a, b) => String(a).localeCompare(String(b)))
+            .map((v) => ({ label: v, value: v }));
+
+    const filters = [
+        { name: 'client', value: selectedFilters.client, placeholder: 'Client', options: optionsFrom(rows.map((r) => r.client)) },
+        { name: 'fleetManager', value: selectedFilters.fleetManager, placeholder: 'Fleet Manager', options: optionsFrom(rows.map((r) => r.fleetManager)) },
+        { name: 'vessel', value: selectedFilters.vessel, placeholder: 'Vessel', options: optionsFrom(rows.map((r) => r.vessel)) },
     ];
+
+    const displayedRows = rows.filter(
+        (r) =>
+            (!selectedFilters.client || r.client === selectedFilters.client) &&
+            (!selectedFilters.fleetManager || r.fleetManager === selectedFilters.fleetManager) &&
+            (!selectedFilters.vessel || r.vessel === selectedFilters.vessel)
+    );
+
     const columns = [
-        { field: 'supplierNotCooperatingDetails', headerName: 'Supplier Not Cooperating Details', width: 400 },
-        { field: 'emailCommunications', headerName: 'Email Communications', width: 280 },
-        { field: 'status', headerName: 'Status', width: 200 },
+        { field: 'vessel', headerName: 'Vessel', width: 180 },
+        { field: 'client', headerName: 'Client', width: 200 },
+        { field: 'supplierNotCooperatingDetails', headerName: 'Supplier Not Cooperating Details', width: 340 },
+        { field: 'emailCommunications', headerName: 'Email Communications', width: 240 },
+        { field: 'status', headerName: 'Status', width: 120 },
         {
             field: 'action',
             headerName: 'Action',
@@ -196,13 +183,12 @@ const Dashboard = () => {
                             showQuickFilter: true,
                         },
                     }}
-                    rows={rows}
+                    rows={displayedRows}
                     columns={columns}
                     pageSize={5}
                     rowsPerPageOptions={[5]}
                     checkboxSelection
-                    disableSelectionOnClick
-                    onRowClick={(params) => handleOpenDrawer(params.row)}
+                    disableRowSelectionOnClick
                 />
             </Box>
         </OPPageContainer>

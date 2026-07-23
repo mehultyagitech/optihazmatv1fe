@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DataGrid, GridToolbar } from '@mui/x-data-grid';
+import { DataGrid, GridToolbar, useGridApiRef } from '@mui/x-data-grid';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -153,6 +153,15 @@ export default function AllPoItems() {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
+  const apiRef = useGridApiRef();
+
+  // Real counts derived from the data
+  const poCount = new Set(rows.map((r) => r.po)).size;
+  const itemCount = rows.length;
+  const hazmatCount = rows.filter((r) => r.isHazmat && r.isHazmat !== 'not-containing').length;
+  const expectedCount = rows.filter((r) => String(r.isHazmatExpected).toUpperCase() === 'YES').length;
+  const docReceivedCount = rows.filter((r) => r.docStatus && r.docStatus !== 'not_started').length;
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -281,16 +290,21 @@ const handleOpenDialog = (row) => {
       >
         {/* Left Side */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton size="small" color="default">
+          <IconButton
+            size="small"
+            color="default"
+            title="Open filters"
+            onClick={() => apiRef.current?.showFilterPanel()}
+          >
             <FilterListIcon />
           </IconButton>
           <Typography variant="body2" fontWeight="bold">PO-</Typography>
-          <Box sx={{ bgcolor: 'red', color: 'white', px: 1, borderRadius: 1 }}>0</Box>
+          <Box sx={{ bgcolor: 'red', color: 'white', px: 1, borderRadius: 1 }}>{poCount}</Box>
           <Typography variant="body2" fontWeight="bold">Item-</Typography>
-          <Box sx={{ bgcolor: 'grey', color: 'white', px: 1, borderRadius: 1 }}>0</Box>
-          <Box sx={{ bgcolor: 'orange', color: 'white', px: 1, borderRadius: 1 }}>0</Box>
-          <Box sx={{ bgcolor: 'blue', color: 'white', px: 1, borderRadius: 1 }}>0</Box>
-          <Box sx={{ bgcolor: 'green', color: 'white', px: 1, borderRadius: 1 }}>0</Box>
+          <Box sx={{ bgcolor: 'grey', color: 'white', px: 1, borderRadius: 1 }}>{itemCount}</Box>
+          <Box sx={{ bgcolor: 'orange', color: 'white', px: 1, borderRadius: 1 }}>{hazmatCount}</Box>
+          <Box sx={{ bgcolor: 'blue', color: 'white', px: 1, borderRadius: 1 }}>{expectedCount}</Box>
+          <Box sx={{ bgcolor: 'green', color: 'white', px: 1, borderRadius: 1 }}>{docReceivedCount}</Box>
         </Box>
 
         {/* Right Side */}
@@ -311,6 +325,7 @@ const handleOpenDialog = (row) => {
       {/* DataGrid */}
       <Box >
         <DataGrid
+          apiRef={apiRef}
           slots={{ toolbar: GridToolbar }}
           slotProps={{ toolbar: { showQuickFilter: true } }}
           rows={rows}
