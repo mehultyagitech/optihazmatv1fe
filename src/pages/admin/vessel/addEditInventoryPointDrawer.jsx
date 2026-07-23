@@ -372,7 +372,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       const form = new FormData();
 
       form.append("compartment", data.compartmentId);
-      form.append("description", data.description);
+      form.append("description", data.description || "");
       form.append("equipment", data.equipmentId);
       form.append("inventory", data.inventoryId);
       form.append("isPCHM", data.isPCHM);
@@ -410,10 +410,10 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
         form.append("hazmats", JSON.stringify(updatedHazmats));
       }
 
-      form.append("manufacturerBrand", data.manufacturerBrand);
+      form.append("manufacturerBrand", data.manufacturerBrand || "");
       form.append("object", data.objectId);
-      form.append("referenceNo", data.referenceNo);
-      form.append("remarks", data.remarks);
+      form.append("referenceNo", data.referenceNo || "");
+      form.append("remarks", data.remarks || "");
       form.append("saveWithoutImage", data.saveWithoutImage);
       form.append("installationDate", data.installationDate || "");
       form.append("subLocation", data.subLocationId);
