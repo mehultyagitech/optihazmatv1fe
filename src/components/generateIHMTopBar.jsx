@@ -2,11 +2,57 @@ import React, { useState } from "react";
 import { Grid, Typography, TextField, Button, Checkbox, FormControlLabel, Box } from "@mui/material";
 import DownloadIcon from '@mui/icons-material/Download';
 import SaveIcon from '@mui/icons-material/Save';
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "../api/axiosInstance";
 
-const GenerateIHMTopBar = () => {
-    const [reportDate, setReportDate] = useState("2025-02-23");
+const MONTHS = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+const pad2 = (n) => String(n).padStart(2, "0");
+
+// "04-Jul-2017"
+const formatDate = (iso) => {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "-";
+    return `${pad2(d.getDate())}-${MONTHS[d.getMonth()]}-${d.getFullYear()}`;
+};
+
+// today's date as YYYY-MM-DD for a date input
+const todayISO = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+};
+
+const roleLabel = (roles) => {
+    if (!roles) return "-";
+    return roles === "ADMIN" ? "IHM Maintenance Manager" : "User";
+};
+
+const GenerateIHMTopBar = ({ onGenerate = () => {}, generating = false }) => {
+    const [reportDate, setReportDate] = useState(todayISO());
     const [reportVersion, setReportVersion] = useState(1);
     const [useSortOrder, setUseSortOrder] = useState(false);
+
+    // Current logged-in user (Designated Person) from the session.
+    // Shares the cache with App.jsx's ["userData"] query, so no extra fetch.
+    const { data: user } = useQuery({
+        queryKey: ["userData"],
+        queryFn: async () => (await axiosInstance.get("/users/me")).data,
+        staleTime: 1000 * 60 * 5,
+        select: (data) => data.data,
+    });
+
+    const dpName = user?.name || "-";
+    const dpPosition = roleLabel(user?.roles);
+    const dpEffectiveFrom = formatDate(user?.createdAt);
+    const dpInitials = (user?.name || "")
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 3)
+        .toUpperCase();
 
     return (
         <Box
@@ -33,9 +79,13 @@ const GenerateIHMTopBar = () => {
                             alignItems: "center",
                             justifyContent: "center",
                             margin: "auto",
+                            fontStyle: "italic",
+                            fontFamily: "cursive",
+                            fontSize: 22,
+                            color: "#333",
                         }}
                     >
-                        <img src="https://via.placeholder.com/150x50" alt="DP Signature" style={{ maxWidth: "100%", maxHeight: "100%" }} />
+                        {dpInitials || "—"}
                     </Box>
                 </Grid>
 
@@ -44,15 +94,15 @@ const GenerateIHMTopBar = () => {
                     <Grid container spacing={1}>
                         <Grid item xs={6}>
                             <Typography variant="subtitle2" color="green">DP Name</Typography>
-                            <Typography variant="body1">Siddharth Ahluwalia</Typography>
+                            <Typography variant="body1">{dpName}</Typography>
                         </Grid>
                         <Grid item xs={6}>
                             <Typography variant="subtitle2" color="green">DP Effective From Date</Typography>
-                            <Typography variant="body1">04-Jul-2017</Typography>
+                            <Typography variant="body1">{dpEffectiveFrom}</Typography>
                         </Grid>
                         <Grid item xs={6}>
                             <Typography variant="subtitle2" color="green">DP Position</Typography>
-                            <Typography variant="body1">IHM Maintenance Manager</Typography>
+                            <Typography variant="body1">{dpPosition}</Typography>
                         </Grid>
                         <Grid item xs={6}>
                             <Typography variant="subtitle2" color="green">Report Version</Typography>
@@ -86,7 +136,18 @@ const GenerateIHMTopBar = () => {
                         sx={{ mb: 1 }}
                         InputLabelProps={{ shrink: true }}
                     />
-                    <Button startIcon={<DownloadIcon />} variant="contained" color="primary" fullWidth>Generate Report</Button>
+                    <Button
+                        startIcon={<DownloadIcon />}
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        disabled={generating}
+                        onClick={() =>
+                            onGenerate({ version: String(reportVersion), periodToDate: reportDate })
+                        }
+                    >
+                        {generating ? 'Generating…' : 'Generate Report'}
+                    </Button>
                 </Grid>
             </Grid>
         </Box>

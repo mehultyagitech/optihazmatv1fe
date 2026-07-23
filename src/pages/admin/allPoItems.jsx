@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DataGrid, GridToolbar, useGridApiRef } from '@mui/x-data-grid';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
@@ -11,6 +11,10 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import OPPageContainer from '../../components/OPPageContainer';
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import DownloadIcon from '@mui/icons-material/Download';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import * as XLSX from 'xlsx';
+import { getPurchaseOrders, uploadPurchaseOrders, mapPosToGrid } from '../../api/services/poService';
 import {
   Dialog,
   DialogTitle,
@@ -75,78 +79,6 @@ const productColumns = [
   { field: 'productDesc', headerName: 'Product Desc', width: 200 },
 ];
 
-const productRows = [
-  { id: 1, supplierName: 'Mares Shipping GmbH', brandName: 'NONE', hazMat: 'NONE', hazMatMass: 0, isOfflanded: 'NO', isInstalled: 'NO', installedQty: '-', replacedQty: 0, removedQty: 0, productDesc: 'BersonUVlamp40VIMod' },
-  { id: 2, supplierName: 'Mares Shipping GmbH', brandName: 'NONE', hazMat: 'NONE', hazMatMass: 0, isOfflanded: 'NO', isInstalled: 'NO', installedQty: '-', replacedQty: 0, removedQty: 0, productDesc: 'ORINGSEAL' },
-  { id: 3, supplierName: 'Mares Shipping GmbH', brandName: 'NONE', hazMat: 'NONE', hazMatMass: 0, isOfflanded: 'NO', isInstalled: 'NO', installedQty: '-', replacedQty: 0, removedQty: 0, productDesc: 'ORing' },
-];
-
-const rows = [
-  {
-    id: 1,
-    clientName: 'HAMMONIA',
-    shipName: 'KOGA RANGER',
-    po: '01482478011924',
-    supplierName: 'Mares Shipping GmbH',
-    vdrive: '📂',
-    docStatus: 'not_started',
-    isHazmat: 'not-containing',
-    isHazmatExpected: 'NO',
-    poRcvdate: '31-Dec-2024',
-    uploadDate: '27-Jan-2025',
-    docRcvdDate: '01-Jan-2000',
-    refNo: 'KN/IN24-12889',
-    shipImo: '9277280',
-  },
-  {
-    id: 2,
-    clientName: 'HAMMONIA',
-    shipName: 'KOGA ROYAL',
-    po: '01262482012671',
-    supplierName: 'Mares Shipping GmbH',
-    vdrive: '📂',
-    docStatus: 'not_started',
-    isHazmat: 'not-containing',
-    isHazmatExpected: 'NO',
-    poRcvdate: '31-Dec-2024',
-    uploadDate: '27-Jan-2025',
-    docRcvdDate: '01-Jan-2000',
-    refNo: 'RI/IN24-13094',
-    shipImo: '9267754',
-  },
-  {
-    id: 3,
-    clientName: 'HAMMONIA',
-    shipName: 'KOGA ROYAL',
-    po: '01262482012671',
-    supplierName: 'Mares Shipping GmbH',
-    vdrive: '📂',
-    docStatus: 'not_started',
-    isHazmat: 'not-containing',
-    isHazmatExpected: 'NO',
-    poRcvdate: '31-Dec-2024',
-    uploadDate: '27-Jan-2025',
-    docRcvdDate: '01-Jan-2000',
-    refNo: 'RI/IN24-13094',
-    shipImo: '9267754',
-  },
-  {
-    id: 4,
-    clientName: 'HAMMONIA',
-    shipName: 'KOGA ROYAL',
-    po: '01262482012671',
-    supplierName: 'Mares Shipping GmbH',
-    vdrive: '📂',
-    docStatus: 'not_started',
-    isHazmat: 'not-containing',
-    isHazmatExpected: 'NO',
-    poRcvdate: '31-Dec-2024',
-    uploadDate: '27-Jan-2025',
-    docRcvdDate: '01-Jan-2000',
-    refNo: 'RI/IN24-13094',
-    shipImo: '9267754',
-  },
-];
 
 export default function AllPoItems() {
 
@@ -155,9 +87,118 @@ export default function AllPoItems() {
 
   const apiRef = useGridApiRef();
 
-  // Real counts derived from the data
-  const poCount = new Set(rows.map((r) => r.po)).size;
-  const itemCount = rows.length;
+  const [rows, setRows] = useState([]);
+  const [itemsByPo, setItemsByPo] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  // Load persisted purchase orders from the backend.
+  const loadPurchaseOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await getPurchaseOrders();
+      const { rows: mappedRows, itemsByPo: mappedItems } = mapPosToGrid(
+        res?.data?.purchaseOrders ?? []
+      );
+      setRows(mappedRows);
+      setItemsByPo(mappedItems);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to load purchase orders');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPurchaseOrders();
+  }, [loadPurchaseOrders]);
+
+  // Download the blank PO Excel template (the sample format).
+  const handleDownloadTemplate = () => {
+    const link = document.createElement('a');
+    link.href = '/templates/PO_data_Sample_Format_IHM_MTC.xlsx';
+    link.download = 'PO data Sample_Format(IHM_MTC).xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Parse an uploaded PO Excel (matching the sample format) and persist it.
+  const handleUploadExcel = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+        // Normalise header keys so parenthetical notes / spacing don't matter
+        const norm = (s) =>
+          String(s).toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, '');
+
+        const uploadRows = json
+          .map((raw) => {
+            const r = {};
+            Object.keys(raw).forEach((k) => {
+              r[norm(k)] = raw[k];
+            });
+            return {
+              poNumber: String(r.ponumber || r.po || ''),
+              shipName: String(r.shipname || ''),
+              shipImo: String(r.shipimo || ''),
+              clientName: String(r.clientname || r.client || ''),
+              supplier: String(r.supplier || r.suppliername || ''),
+              supplierEmail1: String(r.supplieremail1 || ''),
+              supplierEmail2: String(r.supplieremail2 || ''),
+              supplierEmail3: String(r.supplieremail3 || ''),
+              supplierPhone1: String(r.supplierphone1 || ''),
+              supplierPhone2: String(r.supplierphone2 || ''),
+              orderDate: String(r.orderdate || ''),
+              orderRcvDate: String(r.orderrcvdate || r.orderdate || ''),
+              referenceNumber: String(r.referencenumber || ''),
+              emailType: String(r.emailtype || ''),
+              currencyCode: String(r.currencycode || ''),
+              // item / product level fields
+              product: String(r.product || ''),
+              brand: String(r.brand || ''),
+              partDescription: String(r.partdescription || ''),
+              partExecution: String(r.partexecution || ''),
+              qtyRcv: String(r.qtyrcv || r.qty || ''),
+              unit: String(r.unit || ''),
+              remarks: String(r.remarks || ''),
+              itemDiscountPer: String(r.itemdiscountper || ''),
+              priceUnit: String(r.priceunit || ''),
+              canContainHazmat: String(r.cancontainhazmat || 'NO'),
+            };
+          })
+          .filter((it) => it.shipName || it.poNumber || it.supplier);
+
+        if (uploadRows.length === 0) {
+          toast.error('No PO data rows found in the Excel file');
+          return;
+        }
+
+        const result = await uploadPurchaseOrders(uploadRows);
+        await loadPurchaseOrders();
+        const { poCreated = 0, itemCreated = uploadRows.length } =
+          result?.data || {};
+        toast.success(`Imported ${itemCreated} item(s) across ${poCreated} PO(s)`);
+      } catch (err) {
+        console.error('Excel upload error:', err);
+        toast.error(
+          err?.message || 'Failed to import the Excel file. Please use the sample format.'
+        );
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    event.target.value = '';
+  };
+
+  // Real counts derived from the data (rows are PO-level)
+  const poCount = rows.length;
+  const itemCount = rows.reduce((n, r) => n + (r.itemCount || 1), 0);
   const hazmatCount = rows.filter((r) => r.isHazmat && r.isHazmat !== 'not-containing').length;
   const expectedCount = rows.filter((r) => String(r.isHazmatExpected).toUpperCase() === 'YES').length;
   const docReceivedCount = rows.filter((r) => r.docStatus && r.docStatus !== 'not_started').length;
@@ -194,6 +235,7 @@ const columns = [
     ),
   },
   
+  { field: 'itemCount', headerName: 'Items', width: 90 },
   { field: 'supplierName', headerName: 'Supplier Name', width: 200 },
   { field: 'vdrive', headerName: 'VDrive', width: 150 },
   { field: 'docStatus', headerName: 'Doc Status', width: 200 },
@@ -232,11 +274,13 @@ const handleOpenDialog = (row) => {
   return (
     <OPPageContainer sx={{ p: 2 }}>
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="lg">
-  <DialogTitle>Product List (PO: {selectedPo})</DialogTitle>
+  <DialogTitle>
+    Product List (PO: {selectedPo}) — {(itemsByPo[selectedPo] || []).length} item(s)
+  </DialogTitle>
   <DialogContent>
     <Box sx={{ height: 400 }}>
       <DataGrid
-        rows={productRows}
+        rows={itemsByPo[selectedPo] || []}
         columns={productColumns}
         pageSize={5}
         rowsPerPageOptions={[5, 10, 20]}
@@ -316,8 +360,29 @@ const handleOpenDialog = (row) => {
           >
             OTD
           </Button>
-          <Button variant="contained" size="small" color="primary">
+          <Button
+            variant="contained"
+            size="small"
+            color="primary"
+            startIcon={<DownloadIcon />}
+            onClick={handleDownloadTemplate}
+          >
             Download Excel
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            color="primary"
+            startIcon={<UploadFileIcon />}
+            component="label"
+          >
+            Upload Excel
+            <input
+              type="file"
+              accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              hidden
+              onChange={handleUploadExcel}
+            />
           </Button>
         </Box>
       </Box>
@@ -326,6 +391,7 @@ const handleOpenDialog = (row) => {
       <Box >
         <DataGrid
           apiRef={apiRef}
+          loading={loading}
           slots={{ toolbar: GridToolbar }}
           slotProps={{ toolbar: { showQuickFilter: true } }}
           rows={rows}
@@ -376,42 +442,7 @@ const handleOpenDialog = (row) => {
     Update Supplier
   </Button>
 </Box>
-<Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="lg">
-        <DialogTitle>Product List (PO: {selectedPo})</DialogTitle>
-        <DialogContent>
-          <Box sx={{ height: 400 }}>
-            <DataGrid
-              rows={productRows}
-              columns={productColumns}
-              pageSize={5}
-              rowsPerPageOptions={[5, 10, 20]}
-              checkboxSelection
-              disableRowSelectionOnClick
-            />
-          </Box>
-
-          {/* Footer Buttons */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              mt: 2,
-              p: 1,
-              bgcolor: '#f5f5f5',
-              borderTop: '1px solid #ddd',
-            }}
-          >
-            <Button variant="contained" size="small" color="error">Remove</Button>
-            <Button variant="contained" size="small" color="info">Hazmat</Button>
-            <Button variant="contained" size="small" color="warning">Is-OffLanded</Button>
-            <Button variant="contained" size="small" color="success">Is-Installed</Button>
-            <Button variant="contained" size="small" sx={{ bgcolor: 'green', color: 'white' }}>
-              Upload Document (Green)
-            </Button>
-          </Box>
-        </DialogContent>
-      </Dialog>
+      <ToastContainer position="top-right" autoClose={2500} />
     </OPPageContainer>
   );
 }

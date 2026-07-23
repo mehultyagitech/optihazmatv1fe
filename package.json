@@ -41,7 +41,8 @@
     "react-zoom-pan-pinch": "^3.7.0",
     "recoil": "^0.7.7",
     "recoil-persist": "^5.1.0",
-    "toastr": "^2.1.4"
+    "toastr": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/preset-react": "^7.27.1",

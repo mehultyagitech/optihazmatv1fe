@@ -23,7 +23,8 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "../../../api/axiosInstance";
 import ReactPaginate from 'react-paginate';
 import './../../../components/pagination.css';
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const InventoryPointCard = ({
   inventoryPointName,
@@ -372,6 +373,7 @@ const InventoryPoints = () => {
         )}
       </Box>
       {drawer.open && <AddEditInventoryPointDrawer />}
+      <ToastContainer position="top-right" autoClose={2500} />
     </OPPageContainer>
   );
 };

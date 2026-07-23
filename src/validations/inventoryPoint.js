@@ -13,6 +13,7 @@ export const inventoryPointSchema = Joi.object({
   remarks: Joi.string().allow("").label("Remarks"),
   saveWithoutImage: Joi.boolean(),
   useCommonImage: Joi.boolean(),
+  installationDate: Joi.string().allow("").label("Installation Date"),
   isRemovedFromIHM: Joi.boolean(),
   isReplaced: Joi.boolean(),
   removedDate: Joi.when("isRemovedFromIHM", {

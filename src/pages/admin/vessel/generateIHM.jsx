@@ -1,58 +1,147 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
-import { Button, Drawer, Box, Typography, Divider, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Checkbox } from '@mui/material';
+import { Button, Box, Typography, Divider, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Checkbox } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DeleteIcon from "@mui/icons-material/Delete";
-import OPPageContainer from "../../../components/OPPageContainer";
-import InventoryPointTopBar  from "../../../components/inventoryPointTopBar";
-import GenerateIHMTopBar  from "../../../components/generateIHMTopBar";
 import GetAppIcon from '@mui/icons-material/GetApp';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import OPPageContainer from "../../../components/OPPageContainer";
+import GenerateIHMTopBar from "../../../components/generateIHMTopBar";
 import OPDivider from '../../../components/OPDivider';
+import { useRecoilValue } from "recoil";
+import { commonVesselViewState } from "../../../utils/States/Vessel";
+import {
+    getIHMReports,
+    generateIHMReport,
+    updateIHMReport,
+    deleteIHMReport,
+} from "../../../api/services/ihmReport";
 
+const fmt = (d) => {
+    if (!d) return '-';
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
 
 export default function GenerateIHM() {
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const [selectedRow, setSelectedRow] = useState(null);
+    const theme = useTheme();
+    const vessel = useRecoilValue(commonVesselViewState);
+
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [generating, setGenerating] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [selectedReportId, setSelectedReportId] = useState(null);
-    const [tableRows, setTableRows] = useState([
-        { id: 1, creationDate: '31-Jan-2025', reportPeriodToDate: '31-Dec-2024', downloadReport: 'IHM Report in PDF(v1)', replacePdfReport: 'IHM Report in PDF(v1)', approval: false, disabled: false },
-        { id: 2, creationDate: '31-Jan-2025', reportPeriodToDate: '31-Dec-2024', downloadReport: 'IHM Report in PDF(v1)', replacePdfReport: 'IHM Report in PDF(v1)', approval: true, disabled: true },
-        { id: 3, creationDate: '31-Jan-2025', reportPeriodToDate: '31-Dec-2024', downloadReport: 'IHM Report in PDF(v1)', replacePdfReport: 'IHM Report in PDF(v1)', approval: false, disabled: false },
-    ]);
-    
-    const theme = useTheme();
 
-    // Handle checkbox toggle
-    const handleApprovalChange = (id) => {
-        setSelectedReportId(id);
-        setOpenModal(true);
+    const loadReports = useCallback(async () => {
+        if (!vessel?.id) {
+            setReports([]);
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await getIHMReports(vessel.id);
+            const list = (res?.data?.reports ?? []).map((r) => ({
+                id: r.id,
+                creationDate: fmt(r.createdAt),
+                reportPeriodToDate: fmt(r.periodToDate),
+                ihmReportNumber: r.ihmReportNumber || '-',
+                downloadReport: `IHM Report PDF (v${r.version})`,
+                fileUrl: r.fileUrl,
+                fileName: r.fileName,
+                approval: r.approved,
+                disabled: r.disabled ? 'Yes' : 'No',
+            }));
+            setReports(list);
+        } catch (err) {
+            toast.error(err?.message || 'Failed to load reports');
+        } finally {
+            setLoading(false);
+        }
+    }, [vessel?.id]);
+
+    useEffect(() => {
+        loadReports();
+    }, [loadReports]);
+
+    const handleGenerate = async ({ version, periodToDate }) => {
+        if (!vessel?.id) {
+            toast.error('Select a vessel first (open a vessel and click View).');
+            return;
+        }
+        setGenerating(true);
+        try {
+            await generateIHMReport(vessel.id, { version, periodToDate });
+            toast.success('IHM Report generated');
+            await loadReports();
+        } catch (err) {
+            toast.error(err?.message || 'Failed to generate report');
+        } finally {
+            setGenerating(false);
+        }
     };
 
-    // Confirm Un-Approval
-    const handleConfirmUnapprove = () => {
-        setTableRows(prevRows => prevRows.map(row => row.id === selectedReportId ? { ...row, approval: false } : row));
-        setOpenModal(false);
+    const handleDownload = (row) => {
+        if (!row.fileUrl) return;
+        window.open(`${import.meta.env.VITE_API_URL}/uploads/${row.fileUrl}`, '_blank');
     };
 
-    // Cancel action
+    const handleApprovalChange = async (row) => {
+        if (row.approval) {
+            // Un-approving needs confirmation
+            setSelectedReportId(row.id);
+            setOpenModal(true);
+            return;
+        }
+        try {
+            await updateIHMReport(row.id, { approved: true });
+            await loadReports();
+        } catch (err) {
+            toast.error(err?.message || 'Failed to update report');
+        }
+    };
+
+    const handleConfirmUnapprove = async () => {
+        try {
+            await updateIHMReport(selectedReportId, { approved: false });
+            toast.success('Report un-approved');
+            await loadReports();
+        } catch (err) {
+            toast.error(err?.message || 'Failed to update report');
+        } finally {
+            setOpenModal(false);
+            setSelectedReportId(null);
+        }
+    };
+
     const handleCancelUnapprove = () => {
         setOpenModal(false);
+        setSelectedReportId(null);
     };
 
-    // Handle closing the drawer
-    const handleCloseDrawer = () => {
-        setDrawerOpen(false);
-        setSelectedRow(null);
+    const handleDelete = async (row) => {
+        if (!window.confirm('Delete this IHM report?')) return;
+        try {
+            await deleteIHMReport(row.id);
+            toast.success('Report deleted');
+            await loadReports();
+        } catch (err) {
+            toast.error(err?.message || 'Failed to delete report');
+        }
     };
 
     const columns = [
-        { field: 'creationDate', headerName: 'Creation Date', width: 150 },
-        { field: 'reportPeriodToDate', headerName: 'Report Period To Date', width: 180 },
-        { 
-            field: 'downloadReport', 
-            headerName: 'Download Report', 
-            width: 220,
+        { field: 'creationDate', headerName: 'Creation Date', flex: 1, minWidth: 120 },
+        { field: 'reportPeriodToDate', headerName: 'Report Period To Date', flex: 1.2, minWidth: 150 },
+        { field: 'ihmReportNumber', headerName: 'Report No', flex: 1, minWidth: 120 },
+        {
+            field: 'downloadReport',
+            headerName: 'Download Report',
+            flex: 1.6,
+            minWidth: 200,
+            sortable: false,
             renderCell: (params) => (
                 <Button
                     variant="contained"
@@ -65,29 +154,32 @@ export default function GenerateIHM() {
                 </Button>
             ),
         },
-        { field: 'replacePdfReport', headerName: 'Replace PDF Report', width: 180 },
-        { 
-            field: 'approval', 
-            headerName: 'Approved', 
-            width: 150,
+        {
+            field: 'approval',
+            headerName: 'Approved',
+            flex: 0.7,
+            minWidth: 100,
+            sortable: false,
             renderCell: (params) => (
                 <Checkbox
-                    checked={params.row.approval} 
-                    onChange={() => handleApprovalChange(params.row.id)}
+                    checked={!!params.row.approval}
+                    onChange={() => handleApprovalChange(params.row)}
                     color="primary"
                 />
             )
         },
-        { field: 'disabled', headerName: 'Disabled', width: 150 },
+        { field: 'disabled', headerName: 'Disabled', flex: 0.6, minWidth: 90 },
         {
             field: 'action',
             headerName: 'Action',
-            width: 120,
+            flex: 0.8,
+            minWidth: 110,
+            sortable: false,
             renderCell: (params) => (
                 <Button
                     variant="outlined"
                     size="small"
-                    onClick={() => params.api.publishEvent('rowEdit', params.row)}
+                    onClick={() => handleDelete(params.row)}
                     color="error"
                     startIcon={<DeleteIcon />}
                 >
@@ -96,72 +188,29 @@ export default function GenerateIHM() {
             ),
         },
     ];
-    const [filters, setFilters] = useState([
-        {
-            name: "client",
-            value: "",
-            placeholder: "Client",
-            options: [
-                { label: "Client 1", value: "client1" },
-                { label: "Client 2", value: "client2" },
-            ],
-        },
-        {
-            name: "fleetManager",
-            value: "",
-            placeholder: "Fleet Manager",
-            options: [
-                { label: "Manager 1", value: "manager1" },
-                { label: "Manager 2", value: "manager2" },
-            ],
-        },
-        {
-            name: "vessel",
-            value: "",
-            placeholder: "Vessel",
-            options: [
-                { label: "Vessel 1", value: "vessel1" },
-                { label: "Vessel 2", value: "vessel2" },
-            ],
-        },
-    ]);
-    const handleFilterChange = (name, value) => {
-        setFilters((prevFilters) =>
-            prevFilters.map((filter) =>
-                filter.name === name ? { ...filter, value } : filter
-            )
-        );
-    };
-    const handleSearch = () => {
-        const selectedFilters = filters.reduce((acc, filter) => {
-            acc[filter.name] = filter.value;
-            return acc;
-        }, {});
-    };
 
     return (
         <OPPageContainer sx={{ px: 2, pt: 2 }}>
-             <InventoryPointTopBar filters={filters} onFilterChange={handleFilterChange} onSearch={handleSearch} />
             <Typography variant='h5' component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                Generate IHM
+                Generate IHM{vessel?.name ? ` : ${vessel.name}` : ""}
             </Typography>
             <OPDivider sx={{ my: 2, mx: 2 }} />
-            <GenerateIHMTopBar />
+            <GenerateIHMTopBar onGenerate={handleGenerate} generating={generating} />
             <Divider sx={{ my: 2 }} />
-            <Box>
+            <Box sx={{ width: '100%' }}>
                 <DataGrid
+                    autoHeight
+                    loading={loading}
+                    sx={{ width: '100%' }}
                     slots={{ toolbar: GridToolbar }}
-                    slotProps={{
-                        toolbar: {
-                            showQuickFilter: true,
-                        },
-                    }}
-                    rows={tableRows}
+                    slotProps={{ toolbar: { showQuickFilter: true } }}
+                    rows={reports}
                     columns={columns}
-                    pageSize={5}
-                    rowsPerPageOptions={[5]}
+                    getRowId={(row) => row.id}
+                    pageSizeOptions={[5, 10, 25]}
+                    initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
                     checkboxSelection
-                    disableSelectionOnClick
+                    disableRowSelectionOnClick
                 />
             </Box>
 
@@ -178,6 +227,7 @@ export default function GenerateIHM() {
                     <Button onClick={handleConfirmUnapprove} variant='outlined' color="error" autoFocus>Yes</Button>
                 </DialogActions>
             </Dialog>
+            <ToastContainer position="top-right" autoClose={2500} />
         </OPPageContainer>
     );
 }

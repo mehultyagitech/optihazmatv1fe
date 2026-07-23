@@ -35,6 +35,7 @@ import {
   locationPointState,
 } from "../../../utils/States/LocationDiagram";
 import axiosInstance from "../../../api/axiosInstance";
+import { toast } from "react-toastify";
 
 const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const theme = useTheme();
@@ -106,7 +107,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   });
 
   useEffect(() => {
-    if (pinDataById.isSuccess && !!pinDataById?.data) {
+    if (open && pinId && pinDataById.isSuccess && !!pinDataById?.data) {
       const { PinAttachments, PinImages, PinAttachmentLink, PinHazmat, ...pinData } =
         pinDataById?.data;
       const formData = {
@@ -120,6 +121,9 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
         manufacturerBrand: pinData.manufacturerBrand || "",
         referenceNo: pinData.referenceNo || "",
         remarks: pinData.remarks || "",
+        installationDate: pinData.installationDate
+          ? pinData.installationDate.split("T")[0]
+          : "",
         saveWithoutImage: pinData.saveWithoutImage || false,
         useCommonImage: pinData.useCommonImage || false,
         isRemovedFromIHM: pinData.isRemovedFromIHM || false,
@@ -165,11 +169,11 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
         status: "Uploaded",
       }));
 
-      setImages(formattedImages);
-      setAttachments(formattedAttachments);
+      setImages(formattedImages || []);
+      setAttachments(formattedAttachments || []);
       setForm(formData);
     }
-  }, [pinDataById.isSuccess]);
+  }, [open, pinId, pinDataById.isSuccess, pinDataById.data]);
 
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [tabIndex, setTabIndex] = useState(0);
@@ -188,17 +192,27 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     setTabIndex(index);
   };
 
-  // Image upload handler for multiple images
+  // Single-image upload handler. Selecting a new image replaces the current one;
+  // an already-uploaded image is queued for deletion so the replacement sticks.
   const handleImageUpload = (event) => {
     const files = Array.from(event.target.files);
-    const newImages = files.map((file) => ({
+    if (!files.length) return;
+    const file = files[0];
+    const newImage = {
       id: Date.now() + Math.random(),
       file,
       url: URL.createObjectURL(file),
       name: file.name,
       status: "New",
-    }));
-    setImages((prev) => [...prev, ...newImages]);
+    };
+
+    const alreadyUploaded = images.filter((img) => img.status === "Uploaded");
+    if (alreadyUploaded.length) {
+      setDeletedImages((prev) => [...prev, ...alreadyUploaded]);
+    }
+    setImages([newImage]);
+    // Allow re-selecting the same file again later
+    event.target.value = "";
   };
 
   const handleImageDelete = (file) => {
@@ -315,6 +329,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       errors[detail.path[0]] = detail.message;
     });
     setFormErrors(errors);
+    toast.error(error.details[0]?.message || "Please fix the highlighted fields");
     return false;
   };
 
@@ -400,6 +415,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       form.append("referenceNo", data.referenceNo);
       form.append("remarks", data.remarks);
       form.append("saveWithoutImage", data.saveWithoutImage);
+      form.append("installationDate", data.installationDate || "");
       form.append("subLocation", data.subLocationId);
       form.append("useCommonImage", data.useCommonImage);
 
@@ -448,7 +464,14 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     onSuccess: (data) => {
       queryClient.invalidateQueries(["pinData", pinId]);
       queryClient.invalidateQueries(["pinsListing"]);
+      toast.success(pinId ? "Inventory point updated" : "Inventory point created");
       handleClose();
+    },
+    onError: (error) => {
+      console.error("Failed to save inventory point:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to save inventory point"
+      );
     },
   });
 
@@ -664,6 +687,15 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                     rows={2}
                     value={form.remarks || ""}
                     onChange={handleFormChange}
+                  />
+                  <TextField
+                    label="Installation Date"
+                    type="date"
+                    fullWidth
+                    name="installationDate"
+                    value={form.installationDate || ""}
+                    onChange={handleFormChange}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Box>
               </Box>
@@ -957,9 +989,8 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                   sx={{ textTransform: "none", borderRadius: "8px" }}
                   startIcon={<AddIcon />}
                   component="label"
-                  disabled={images.length >= 1}
                 >
-                  Add Image
+                  {images.length >= 1 ? "Replace Image" : "Add Image"}
                   <input
                     type="file"
                     accept="image/*"
@@ -1105,6 +1136,9 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                     value={form.removedDate || ""}
                     onChange={handleFormChange}
                     fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    error={!!formErrors.removedDate}
+                    helperText={formErrors.removedDate || ""}
                   />
 
                   <TextField
@@ -1116,6 +1150,8 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                     value={form.removedRemarks || ""}
                     onChange={handleFormChange}
                     fullWidth
+                    error={!!formErrors.removedRemarks}
+                    helperText={formErrors.removedRemarks || ""}
                   />
                 </>
               )}
