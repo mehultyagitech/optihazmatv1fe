@@ -93,6 +93,25 @@ const CropLocationDiagram = () => {
     },
   });
 
+  // Without a crop, cropData is still null and gets posted as the string
+  // "null", which multer does not see as a file -- the API then answers
+  // "Image is required". Catch it here so the user gets told what to do.
+  const handleSaveArea = () => {
+    if (!imageCropper.cropData) {
+      toast.error("Please crop the image before saving the area.");
+      return;
+    }
+    if (!locationCategory) {
+      toast.error("Please select a location category.");
+      return;
+    }
+    if (mode === "create" && !location) {
+      toast.error("Please select a location.");
+      return;
+    }
+    mutate();
+  };
+
   const {
     data: docTypeDetails,
     isLoading: loadingDocType,
@@ -279,10 +298,10 @@ const CropLocationDiagram = () => {
             <Button
               variant="outlined"
               fullWidth
-              onClick={mutate}
+              onClick={handleSaveArea}
               disabled={isPending}
             >
-              Save Area
+              {isPending ? "Saving..." : "Save Area"}
             </Button>
           </Box>
         </Box>
