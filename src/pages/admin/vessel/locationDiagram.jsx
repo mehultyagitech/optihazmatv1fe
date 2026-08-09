@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -18,7 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "../../../api/axiosInstance";
 import { useRecoilValue } from "recoil";
 import { commonVesselViewState } from "../../../utils/States/Vessel";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ClientCard = ({
   id,
@@ -113,6 +115,19 @@ const Vessel = () => {
   const vessel = useRecoilValue(commonVesselViewState);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // "Save Area" redirects here and passes its confirmation along, since the
+  // crop page is gone by the time the toast would render.
+  const routerLocation = useLocation();
+  const pageNavigate = useNavigate();
+  const flash = routerLocation.state?.flash;
+
+  useEffect(() => {
+    if (!flash) return;
+    toast.success(flash);
+    // Drop it from history so a refresh or Back does not replay the message.
+    pageNavigate(routerLocation.pathname, { replace: true, state: null });
+  }, [flash, pageNavigate, routerLocation.pathname]);
 
   const locationDiagrams = useQuery({
     queryKey: ["locationDiagrams", page, searchQuery],
@@ -282,6 +297,7 @@ const Vessel = () => {
           ))}
         </Box>
       </Box>
+      <ToastContainer position="top-right" autoClose={3000} />
     </OPPageContainer>
   );
 };

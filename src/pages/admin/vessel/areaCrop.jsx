@@ -27,12 +27,17 @@ import {
 import { useRecoilValue } from "recoil";
 import { commonVesselViewState } from "../../../utils/States/Vessel";
 import axiosInstance from "../../../api/axiosInstance";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useImageCropper from "../../../hooks/useImageCropper";
 import { useTheme } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CropLocationDiagram = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [mode, setMode] = useState("create");
   const documentTypes = useRecoilValue(DocumentTypeSelector);
   const vesselView = useRecoilValue(commonVesselViewState);
@@ -57,22 +62,34 @@ const CropLocationDiagram = () => {
       formData.append("attachmentId", openedImage?.attachmentId);
       formData.append("image", imageCropper.cropData);
 
-      try {
-        const response = await axiosInstance.post(
-          `${import.meta.env.VITE_API_URL}/api/location-diagrams/${vesselView?.id}`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-      } catch (error) {
-        console.error(error);
-      }
+      // No try/catch here on purpose: swallowing the error made every failed
+      // save run onSuccess, so a broken save looked exactly like a good one.
+      const response = await axiosInstance.post(
+        `${import.meta.env.VITE_API_URL}/api/location-diagrams/${vesselView?.id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      return response.data;
     },
-    onSuccess: (data) => {
-      console.log("Image saved successfully", data);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["locationDiagrams"] });
+      // The message is handed to the diagram list rather than shown here,
+      // because this page unmounts the moment we navigate away.
+      navigate("/vessels/location-diagram", {
+        state: { flash: "Area saved successfully!" },
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Could not save the area. Please try again."
+      );
     },
   });
 
@@ -360,6 +377,7 @@ const CropLocationDiagram = () => {
           <Button onClick={() => setOpenModal(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
+      <ToastContainer position="top-right" autoClose={3000} />
     </OPPageContainer>
   );
 };
