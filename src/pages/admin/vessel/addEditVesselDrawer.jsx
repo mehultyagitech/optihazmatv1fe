@@ -98,6 +98,14 @@ const AddEditVesselDrawer = ({ onClose }) => {
   // Discontinue Remarks is mandatory only while this is ticked.
   const isDiscontinued = !!watch("discontinued");
 
+  // IHM Survey End Date is mandatory and validation runs before onSubmit
+  // copies the start date across, so while "Same as Survey End Dt" is ticked
+  // keep the end date equal to the start date in the form itself.
+  const ihmSurveyStart = watch("ihmSurveyStartDate");
+  useEffect(() => {
+    if (surveySameAsStart) setValue("ihmSurveyEndDate", ihmSurveyStart ?? "");
+  }, [surveySameAsStart, ihmSurveyStart, setValue]);
+
   const { data: vesselData, isLoading: isLoadingVessel } =
     getVesselById(vesselId);
 
@@ -535,23 +543,24 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         label: "IMO Number",
                         required: true,
                       },
-                      { name: "vesselType", label: "Vessel Type" },
+                      { name: "vesselType", label: "Vessel Type", required: true },
                       // 4th slot of the 2-column grid = directly below IMO Number
                       {
                         name: "callSign",
                         label: "Call Sign/Distinctive Number",
                         required: true,
                       },
-                      { name: "flag", label: "Flag" },
-                      { name: "classSociety", label: "Class Society" },
-                      { name: "portOfRegistry", label: "Port of Registry" },
+                      { name: "flag", label: "Flag", required: true },
+                      { name: "classSociety", label: "Class Society", required: true },
+                      { name: "portOfRegistry", label: "Port of Registry", required: true },
                       {
                         name: "grossTonnageMT",
                         label: "Gross Tonnage MT",
                         type: "number",
+                        required: true,
                       },
-                      { name: "lbd", label: "L*B*D" },
-                      { name: "registeredOwner", label: "Registered Owner" },
+                      { name: "lbd", label: "L*B*D", required: true },
+                      { name: "registeredOwner", label: "Registered Owner", required: true },
                       // { name: "vesselManager", label: "Vessel Manager" },
                       // { name: "clientName", label: "Client Name" },
                     ].map(({ name, label, required, type = "text" }) => (
@@ -651,6 +660,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         <TextField
                           {...field}
                           label="Registered Owner Address"
+                          required
                           fullWidth
                           multiline
                           rows={2}
@@ -674,14 +684,16 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         name: "deliveryDate",
                         label: "Delivery Date",
                         type: "date",
+                        required: true,
                       },
                       {
                         name: "keelLaidDate",
                         label: "Keel Laid Date",
                         type: "date",
+                        required: true,
                       },
-                      { name: "shipYardName", label: "Ship Yard Name" },
-                    ].map(({ name, label, type = "text" }) => (
+                      { name: "shipYardName", label: "Ship Yard Name", required: true },
+                    ].map(({ name, label, required, type = "text" }) => (
                       <Controller
                         key={name}
                         name={name}
@@ -691,6 +703,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                             {...field}
                             label={label}
                             type={type}
+                            required={required}
                             InputLabelProps={
                               type === "date" ? { shrink: true } : {}
                             }
@@ -708,6 +721,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         <TextField
                           {...field}
                           label="Ship Yard Address"
+                          required
                           fullWidth
                           multiline
                           rows={2}
@@ -731,16 +745,27 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       control={control}
                       defaultValue={""}
                       render={({ field }) => (
-                        <Select
-                          {...field}
-                          displayEmpty
+                        <FormControl
                           fullWidth
+                          required
                           error={!!errors.ihmClass}
                         >
-                          <MenuItem value="">IHM Class</MenuItem>
-                          <MenuItem value="Class A">Class A</MenuItem>
-                          <MenuItem value="Class B">Class B</MenuItem>
-                        </Select>
+                          <InputLabel id="ihm-class-label">IHM Class</InputLabel>
+                          <Select
+                            {...field}
+                            labelId="ihm-class-label"
+                            label="IHM Class"
+                          >
+                            <MenuItem value="">
+                              <em>Select IHM Class</em>
+                            </MenuItem>
+                            <MenuItem value="Class A">Class A</MenuItem>
+                            <MenuItem value="Class B">Class B</MenuItem>
+                          </Select>
+                          {errors.ihmClass && (
+                            <FormHelperText>{errors.ihmClass.message}</FormHelperText>
+                          )}
+                        </FormControl>
                       )}
                     />
                     <Controller
@@ -750,6 +775,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         <TextField
                           {...field}
                           label="IHM Survey Start Date"
+                          required
                           type="date"
                           InputLabelProps={{ shrink: true }}
                           fullWidth
@@ -777,6 +803,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         <TextField
                           {...field}
                           label="IHM Survey End Date"
+                          required
                           type="date"
                           InputLabelProps={{ shrink: true }}
                           fullWidth
@@ -841,6 +868,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         <TextField
                           {...field}
                           label="Maintenance Start Date"
+                          required
                           type="date"
                           InputLabelProps={{ shrink: true }}
                           fullWidth

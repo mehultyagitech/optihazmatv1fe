@@ -1,5 +1,15 @@
 import Joi from "joi";
 
+// One wording for every way a mandatory field can be blank: missing, an empty
+// or whitespace string, an empty date input, a non-number, or no option picked.
+const REQUIRED = {
+  "any.required": "{{#label}} is required",
+  "string.empty": "{{#label}} is required",
+  "date.base": "{{#label}} is required",
+  "number.base": "{{#label}} is required",
+  "any.only": "{{#label}} is required",
+};
+
 const vesselSchema = Joi.object({
   vesselName: Joi.string().required().label("Vessel Name"),
   imoNumber: Joi.string().required().label("IMO Number"),
@@ -10,26 +20,26 @@ const vesselSchema = Joi.object({
     .messages({
       "string.pattern.base": "Call Sign/Distinctive Number must contain only letters and numbers",
     }),
-  vesselType: Joi.string().label("Vessel Type"),
-  flag: Joi.string().optional().label("Flag"),
-  classSociety: Joi.string().optional().label("Vessel class"),
-  portOfRegistry: Joi.string().optional().label("Port of Registry"),
-  grossTonnageMT: Joi.number().optional().label("Gross Tonnage MT"),
-  lbd: Joi.string().optional().label("L*B*D"),
-  registeredOwner: Joi.string().optional().label("Registered Owner"),
-  registeredOwnerAddress: Joi.string().optional().label("Registered Owner Address"),
+  vesselType: Joi.string().trim().required().label("Vessel Type").messages(REQUIRED),
+  flag: Joi.string().trim().required().label("Flag").messages(REQUIRED),
+  classSociety: Joi.string().trim().required().label("Class Society").messages(REQUIRED),
+  portOfRegistry: Joi.string().trim().required().label("Port of Registry").messages(REQUIRED),
+  grossTonnageMT: Joi.number().integer().required().label("Gross Tonnage MT").messages({ ...REQUIRED, "number.integer": "{{#label}} must be a whole number" }),
+  lbd: Joi.string().trim().required().label("L*B*D").messages(REQUIRED),
+  registeredOwner: Joi.string().trim().required().label("Registered Owner").messages(REQUIRED),
+  registeredOwnerAddress: Joi.string().trim().required().label("Registered Owner Address").messages(REQUIRED),
   vesselManager: Joi.number().optional().label("Vessel Manager"),
   clientName: Joi.number().required().label("Client Name").messages({
     "number.base": "Client Name is required",
     "any.required": "Client Name is required",
   }),
-  deliveryDate: Joi.date().optional().label("Delivery Date"),
-  keelLaidDate: Joi.date().optional().label("Keel Laid Date"),
-  shipYardName: Joi.string().optional().label("Ship Yard Name"),
-  shipYardAddress: Joi.string().optional().label("Ship Yard Address"),
-  ihmClass: Joi.string().valid("Class A", "Class B", "Class C").optional().label("IHM Class"),
-  ihmSurveyStartDate: Joi.date().optional().label("IHM Survey Start Date"),
-  ihmSurveyEndDate: Joi.date().optional().label("IHM Survey End Date"),
+  deliveryDate: Joi.date().required().label("Delivery Date").messages(REQUIRED),
+  keelLaidDate: Joi.date().required().label("Keel Laid Date").messages(REQUIRED),
+  shipYardName: Joi.string().trim().required().label("Ship Yard Name").messages(REQUIRED),
+  shipYardAddress: Joi.string().trim().required().label("Ship Yard Address").messages(REQUIRED),
+  ihmClass: Joi.string().valid("Class A", "Class B", "Class C").required().label("IHM Class").messages(REQUIRED),
+  ihmSurveyStartDate: Joi.date().required().label("IHM Survey Start Date").messages(REQUIRED),
+  ihmSurveyEndDate: Joi.date().required().label("IHM Survey End Date").messages(REQUIRED),
   socIssueDate: Joi.date().optional().label("SOC Expiry Date"),
   readyForMaintenance: Joi.boolean().optional().label("Ready For Maintenance"),
   readyForMaintenanceDate: Joi.date()
@@ -39,7 +49,7 @@ const vesselSchema = Joi.object({
       "date.base": "Ready For Maintenance Date is required",
       "any.required": "Ready For Maintenance Date is required",
     }),
-  maintenanceStartDate: Joi.date().optional().label("Maintenance Start Date"),
+  maintenanceStartDate: Joi.date().required().label("Maintenance Start Date").messages(REQUIRED),
   showVesselToOwnerManager: Joi.boolean().optional().label("Show Vessel to Owner/Manager"),
   vesselEmailId: Joi.string()
     .email({ tlds: { allow: false } }) // Disable TLD validation
