@@ -12,6 +12,8 @@ import {
 import ContactPageIcon from "@mui/icons-material/ContactPage";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AddEditVesselDrawer from "../pages/admin/vessel/addEditVesselDrawer";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { vesselSearchMetaState, vesselState } from "../utils/States/Vessel";
 
@@ -122,6 +124,9 @@ const VesselTopBar = ({
 
             {/* Drawer Component */}
             <AddEditVesselDrawer />
+            {/* Toasts from the drawer and its save (useVessel) render here;
+                this page had no container, so they were never shown. */}
+            <ToastContainer position="top-right" autoClose={3000} />
         </>
     );
 };

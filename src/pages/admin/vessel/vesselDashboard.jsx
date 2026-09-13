@@ -11,6 +11,8 @@ import { useRecoilValue } from "recoil";
 import { commonVesselViewState } from "../../../utils/States/Vessel";
 import ClientCard from "./vesselDasboardCard"; // adjust path as needed
 import AddEditVesselDrawer from "./addEditVesselDrawer";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { downloadIHMMaintenanceCertificate } from "../../../utils/ihmCertificate";
 const VesselDashboard = () => {
 
@@ -369,6 +371,9 @@ const VesselDashboard = () => {
     onClose={() => setDrawerOpen(false)}
   />
 )}
+    {/* Outside the drawer: it unmounts on save, and the success toast
+        must outlive it. */}
+    <ToastContainer position="top-right" autoClose={3000} />
 
   </>
   
