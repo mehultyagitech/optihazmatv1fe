@@ -164,8 +164,10 @@ const VesselClientManager = () => {
     ) {
       try {
         await deleteClientManager(id); // You'll need to create this API call
-        queryClient.invalidateQueries(['genericData', 'clientManagers']);
-        queryClient.refetchQueries(['genericData', 'clientManagers']);
+        // v5 filters object; the array form never refetched ["genericData"],
+        // so a deleted client/manager lingered in the vessel filters.
+        queryClient.invalidateQueries({ queryKey: ['genericData'] });
+        queryClient.invalidateQueries({ queryKey: ['clientManagers'] });
       } catch (err) {
         console.error("Delete failed:", err);
       }

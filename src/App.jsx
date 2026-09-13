@@ -163,7 +163,10 @@ function App() {
         throw error;
       }
     },
-    enabled: false,
+    // Enabled (not `false` + manual refetch) so invalidating ["genericData"]
+    // after adding a client/manager actually refetches it: React Query v5
+    // skips disabled queries on invalidate and refetch.
+    enabled: !!user,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     cacheTime: 1000 * 60 * 10, // 10 minutes
@@ -216,7 +219,7 @@ function App() {
 
   useEffect(() => {
     if (user) {
-      generics.refetch();
+      // genericData now fetches by itself once `user` is set (enabled: !!user).
       setSession(() => {
         return {
           user : {
@@ -248,7 +251,9 @@ function App() {
         };
       });
     }
-  }, [generics.isSuccess])
+    // `data` too: isSuccess stays true across refetches, so depending on it
+    // alone never copied a refreshed client/manager list into Recoil.
+  }, [generics.isSuccess, generics.data])
 
   // Create authentication as an object instead of a function
   const authentication = {

@@ -15,7 +15,8 @@ import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
 import useVessel from "../../../api/services/useVessel";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { ClientSelector, ManagerSelector } from "../../../utils/States/Generic";
 import { searchState } from "../../../utils/States/Search";
 import debounce from "lodash.debounce";
 import { useSetRecoilState } from "recoil";
@@ -162,6 +163,10 @@ const Vessel = () => {
         setDropdownFilters((prev) => ({ ...prev, [name]: value }));
     };
 
+    // Full client/manager lists from /generics, refreshed after adds/deletes.
+    const allClients = useRecoilValue(ClientSelector);
+    const allManagers = useRecoilValue(ManagerSelector);
+
     const vessels = isSuccess ? data : [];
 
     const uniqueSorted = (arr) =>
@@ -169,13 +174,24 @@ const Vessel = () => {
             String(a).localeCompare(String(b))
         );
 
+    // Built from the client/manager lists, not just the loaded vessels, so a
+    // newly added client or manager shows up before it has any vessel. Vessel
+    // names are merged in so the options never go empty while those load.
     const clientOptions = useMemo(
-        () => uniqueSorted(vessels.map((v) => v.clientName2)),
-        [vessels]
+        () =>
+            uniqueSorted([
+                ...allClients.map((c) => c.companyName),
+                ...vessels.map((v) => v.clientName2),
+            ]),
+        [allClients, vessels]
     );
     const managerOptions = useMemo(
-        () => uniqueSorted(vessels.map((v) => v.managerName2)),
-        [vessels]
+        () =>
+            uniqueSorted([
+                ...allManagers.map((m) => m.companyName),
+                ...vessels.map((v) => v.managerName2),
+            ]),
+        [allManagers, vessels]
     );
     const typeOptions = useMemo(
         () => uniqueSorted(vessels.map((v) => v.vesselType)),

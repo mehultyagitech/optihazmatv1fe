@@ -105,8 +105,11 @@ const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
         toast.success("New Manager Created Successfully!");
       }
 
-      queryClient.invalidateQueries(["genericData", "clientManagers"]);
-      queryClient.refetchQueries(["genericData", "clientManagers"]);
+      // v5 takes a filters object. The old array form matched no key in
+      // particular, and skipped ["genericData"] entirely, so the client and
+      // manager lists used by the vessel screens stayed stale until reload.
+      queryClient.invalidateQueries({ queryKey: ["genericData"] });
+      queryClient.invalidateQueries({ queryKey: ["clientManagers"] });
       onClose();
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong.");
