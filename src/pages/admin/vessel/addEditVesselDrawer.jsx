@@ -341,8 +341,10 @@ const AddEditVesselDrawer = ({ onClose }) => {
     }
 
     data.grossTonnageMT = parseFloat(data.grossTonnageMT);
+    // The checkbox field holds a real boolean. Comparing it to the string
+    // "true" stored every save as unticked, even for already-ticked vessels.
     data.readyForMaintenance =
-      data.readyForMaintenance === "true" ? true : false;
+      data.readyForMaintenance === true || data.readyForMaintenance === "true";
 
     Object.keys(data).forEach((key) => {
       if (data[key] !== undefined) {
@@ -360,12 +362,15 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
     console.log("Submitting data:", data);
 
+    // Close only once the save succeeds. onSettled also closed on a rejected
+    // save, silently discarding the edits; useVessel now shows the error and
+    // the form stays open so it can be fixed and saved again.
     if (!vesselId) {
       formData.append("data", JSON.stringify(data));
       vesselMutation.mutate(formData, {
-        onSettled: () => {
+        onSuccess: () => {
           handleOnClose();
-          queryClient.invalidateQueries(["vessels"]);
+          queryClient.invalidateQueries({ queryKey: ["vessels"] });
         },
       });
     } else {
@@ -374,8 +379,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
       vesselMutation.mutate(
         { id: vesselId, data: formData },
         {
-          onSettled: () => {
-            queryClient.invalidateQueries(["vessel", vesselId]);
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["vessel", vesselId] });
             handleOnClose();
           },
         }

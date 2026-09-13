@@ -120,6 +120,19 @@ export default function useVessel() {
     });
   };
 
+  // The API answers validation failures as
+  // { success: false, message: "Validation error", data: { field: "message" } }
+  // and other failures with just a message (or { error } for a 404).
+  const getVesselErrorMessage = (error, fallback) => {
+    const payload = error?.response?.data;
+    const fieldMessages =
+      payload?.data && typeof payload.data === "object"
+        ? Object.values(payload.data).filter((m) => typeof m === "string")
+        : [];
+    if (fieldMessages.length > 0) return fieldMessages.join("; ");
+    return payload?.message || payload?.error || error?.message || fallback;
+  };
+
   const createVessel = () => {
     return useMutation({
       mutationFn: async (data) => {
@@ -133,6 +146,9 @@ export default function useVessel() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["vessels"] });
         toast.success("Vessel created successfully!");
+      },
+      onError: (error) => {
+        toast.error(getVesselErrorMessage(error, "Could not create the vessel."));
       },
     });
   };
@@ -151,6 +167,9 @@ export default function useVessel() {
         queryClient.invalidateQueries({ queryKey: ["vessels"] });
         queryClient.invalidateQueries({ queryKey: ["vessel", variables.id] });
         toast.success("Vessel saved successfully!");
+      },
+      onError: (error) => {
+        toast.error(getVesselErrorMessage(error, "Could not save the vessel."));
       },
     });
   };
