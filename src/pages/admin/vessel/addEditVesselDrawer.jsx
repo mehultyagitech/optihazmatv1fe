@@ -83,10 +83,14 @@ const AddEditVesselDrawer = ({ onClose }) => {
     formState: { errors },
     setValue,
     reset,
+    watch,
   } = useForm({
     resolver: joiResolver(vesselSchema),
     defaultValues: {},
   });
+
+  // Discontinue Remarks is mandatory only while this is ticked.
+  const isDiscontinued = !!watch("discontinued");
 
   const { data: vesselData, isLoading: isLoadingVessel } =
     getVesselById(vesselId);
@@ -153,6 +157,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
           name: att.fileName,
           filename: att.fileName,
           docType: att.documentTypeId || defaultDocumentType,
+          useInReport: !!att.useInReport,
           status: "Uploaded",
           url: att.url,
         }));
@@ -192,6 +197,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
       id: crypto.randomUUID(),
       name: file.name,
       docType: defaultDocumentType || "",
+      useInReport: false,
       filename: file.name,
       status: "Not Uploaded",
       file: file,
@@ -310,6 +316,12 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const handleAttachmentDocTypeChange = (index, value) => {
     setAttachments((prev) =>
       prev.map((att, i) => (i === index ? { ...att, docType: value } : att))
+    );
+  };
+
+  const handleAttachmentUseInReportChange = (index, checked) => {
+    setAttachments((prev) =>
+      prev.map((att, i) => (i === index ? { ...att, useInReport: checked } : att))
     );
   };
 
@@ -438,6 +450,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
           sx={{
             width: isSmallScreen ? "100vw" : 900,
             padding: isSmallScreen ? 3 : 4,
+            // Mandatory-field stars in red, for every required input here.
+            "& .MuiFormLabel-asterisk": { color: "error.main" },
           }}
         >
           <Typography sx={{ fontWeight: "bold" }} variant="h5" gutterBottom>
@@ -488,7 +502,11 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
           <OPDivider />
 
-          <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
+          {/* noValidate: `required` on inputs is only for the red stars. Left to
+              the browser, a required field on the visible tab (e.g. Discontinue
+              Remarks) cancelled the submit before react-hook-form ran, so the
+              Joi message and toast never appeared. Joi owns all validation. */}
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
             {tabIndex === 0 && (
               <Box display="flex" flexDirection="column" gap={3} p={3}>
                 <Box border={1} borderColor="green" p={2} borderRadius={2}>
@@ -517,7 +535,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         required: true,
                       },
                       { name: "flag", label: "Flag" },
-                      { name: "classSociety", label: "Vessel class" },
+                      { name: "classSociety", label: "Class Society" },
                       { name: "portOfRegistry", label: "Port of Registry" },
                       {
                         name: "grossTonnageMT",
@@ -872,6 +890,9 @@ const AddEditVesselDrawer = ({ onClose }) => {
                             <b>Status</b>
                           </TableCell>
                           <TableCell>
+                            <b>Use in Report</b>
+                          </TableCell>
+                          <TableCell>
                             <b>Del</b>
                           </TableCell>
                           <TableCell>
@@ -905,6 +926,18 @@ const AddEditVesselDrawer = ({ onClose }) => {
                             </TableCell>
                             <TableCell>{att.filename}</TableCell>
                             <TableCell>{att.status}</TableCell>
+                            <TableCell>
+                              <Checkbox
+                                checked={!!att.useInReport}
+                                onChange={(e) =>
+                                  handleAttachmentUseInReportChange(
+                                    index,
+                                    e.target.checked
+                                  )
+                                }
+                                inputProps={{ "aria-label": `Use ${att.name} in report` }}
+                              />
+                            </TableCell>
                             <TableCell>
                               <Button
                                 variant="outlined"
@@ -1003,9 +1036,13 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
             {tabIndex === 2 && (
               <Box display="flex" flexDirection="column" gap={2} p={2}>
-                <Button variant="outlined" sx={{ alignSelf: "start" }}>
-                  Assign New DP
-                </Button>
+                <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+                  <Button variant="outlined">Assign New DP</Button>
+                  <Typography variant="body2" color="text.secondary">
+                    #Note: This data will not save here, but used to update all
+                    the Inventory Pts using the button next to this.
+                  </Typography>
+                </Box>
                 <Paper sx={{ overflow: "auto" }}>
                   <Table>
                     <TableHead>
@@ -1171,6 +1208,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                           <TextField
                             {...field}
                             label="Discontinue Remarks"
+                            required={isDiscontinued}
                             multiline
                             rows={3}
                             fullWidth
@@ -1209,14 +1247,27 @@ const AddEditVesselDrawer = ({ onClose }) => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
+                          {/* Field names match VesselHistory: discontinuedDate /
+                              discontinuedRemarks (the "discontinue*" spelling was
+                              always blank), and clientName is a ClientManager id. */}
+                          {(statusHistoryData ?? []).length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={6} align="center">
+                                No status changes recorded yet
+                              </TableCell>
+                            </TableRow>
+                          )}
                           {(statusHistoryData ?? []).map((row, idx) => (
                             <TableRow key={idx}>
-                              <TableCell>{row.entryDate}</TableCell>
-                              <TableCell>{row.activeDate}</TableCell>
-                              <TableCell>{row.discontinueDate}</TableCell>
+                              <TableCell>{formatAuditDate(row.entryDate)}</TableCell>
+                              <TableCell>{formatAuditDate(row.activeDate)}</TableCell>
+                              <TableCell>{formatAuditDate(row.discontinuedDate)}</TableCell>
                               <TableCell>{row.activeRemarks}</TableCell>
-                              <TableCell>{row.discontinueRemarks}</TableCell>
-                              <TableCell>{row.clientName}</TableCell>
+                              <TableCell>{row.discontinuedRemarks}</TableCell>
+                              <TableCell>
+                                {clients.find((c) => c.id === row.clientName)
+                                  ?.companyName ?? row.clientName}
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

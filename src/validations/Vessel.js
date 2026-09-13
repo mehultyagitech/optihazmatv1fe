@@ -50,7 +50,16 @@ const vesselSchema = Joi.object({
   poDataGapDisclaimer: Joi.string().max(500).optional().label("PO Data Gap FreeText Disclaimer"),
   commonReferenceNo: Joi.string().optional().label("Common Reference No/ Drawing No"),
   discontinued: Joi.boolean().optional(),
-  discontinueRemarks: Joi.string().max(500).optional(),
+  // Mandatory only while the vessel is marked Discontinued.
+  discontinueRemarks: Joi.when("discontinued", {
+    is: true,
+    then: Joi.string().trim().max(500).required().messages({
+      "string.empty": "Discontinue Remarks is required when the vessel is discontinued",
+      "any.required": "Discontinue Remarks is required when the vessel is discontinued",
+      "string.base": "Discontinue Remarks is required when the vessel is discontinued",
+    }),
+    otherwise: Joi.string().max(500).allow("", null).optional(),
+  }).label("Discontinue Remarks"),
 });
 
 export default vesselSchema;
