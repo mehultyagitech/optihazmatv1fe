@@ -383,6 +383,32 @@ const AddEditVesselDrawer = ({ onClose }) => {
     }
   };
 
+  // Tab that renders each validated field; everything not listed is on
+  // Vessel Details (0). Only the active tab is mounted, so without this an
+  // error on another tab stayed invisible and Update silently did nothing.
+  const FIELD_TAB = {
+    headerFreeTextCaption: 3,
+    headerFreeTextValue: 3,
+    poDataGapDisclaimer: 3,
+    commonReferenceNo: 3,
+    discontinued: 4,
+    discontinueRemarks: 4,
+    vesselEmailId: 4,
+  };
+
+  const onInvalid = (formErrors) => {
+    const entries = Object.entries(formErrors);
+    if (entries.length === 0) return;
+
+    const firstTab = Math.min(...entries.map(([name]) => FIELD_TAB[name] ?? 0));
+    setTabIndex(firstTab);
+
+    const messages = entries.map(([, error]) => error?.message).filter(Boolean);
+    toast.error(
+      `Please fix on "${tabSections[firstTab]}" before saving: ${messages.join("; ")}`
+    );
+  };
+
   const handleOnClose = () => {
     setTabIndex(0);
     setAttachments([]);
@@ -457,7 +483,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
           <OPDivider />
 
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
             {tabIndex === 0 && (
               <Box display="flex" flexDirection="column" gap={3} p={3}>
                 <Box border={1} borderColor="green" p={2} borderRadius={2}>
