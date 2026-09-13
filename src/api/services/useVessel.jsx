@@ -71,6 +71,9 @@ export default function useVessel() {
         // id: data.data.id,
         vesselName: data.data.vesselName,
         imoNumber: data.data.imoNumber,
+        // "" not null: existing vessels have no call sign yet, and a null
+        // value would make the text field uncontrolled.
+        callSign: data.data.callSign ?? "",
         vesselType: data.data.vesselType,
         flag: data.data.flag,
         classSociety: data.data.classSociety,

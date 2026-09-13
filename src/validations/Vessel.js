@@ -3,6 +3,13 @@ import Joi from "joi";
 const vesselSchema = Joi.object({
   vesselName: Joi.string().required().label("Vessel Name"),
   imoNumber: Joi.string().required().label("IMO Number"),
+  callSign: Joi.string()
+    .pattern(/^[A-Za-z0-9]+$/)
+    .required()
+    .label("Call Sign/Distinctive Number")
+    .messages({
+      "string.pattern.base": "Call Sign/Distinctive Number must contain only letters and numbers",
+    }),
   vesselType: Joi.string().label("Vessel Type"),
   flag: Joi.string().optional().label("Flag"),
   classSociety: Joi.string().optional().label("Vessel class"),

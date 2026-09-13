@@ -455,6 +455,12 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         required: true,
                       },
                       { name: "vesselType", label: "Vessel Type" },
+                      // 4th slot of the 2-column grid = directly below IMO Number
+                      {
+                        name: "callSign",
+                        label: "Call Sign/Distinctive Number",
+                        required: true,
+                      },
                       { name: "flag", label: "Flag" },
                       { name: "classSociety", label: "Vessel class" },
                       { name: "portOfRegistry", label: "Port of Registry" },
