@@ -19,7 +19,10 @@ const vesselSchema = Joi.object({
   registeredOwner: Joi.string().optional().label("Registered Owner"),
   registeredOwnerAddress: Joi.string().optional().label("Registered Owner Address"),
   vesselManager: Joi.number().optional().label("Vessel Manager"),
-  clientName: Joi.number().optional().label("Client Name"),
+  clientName: Joi.number().required().label("Client Name").messages({
+    "number.base": "Client Name is required",
+    "any.required": "Client Name is required",
+  }),
   deliveryDate: Joi.date().optional().label("Delivery Date"),
   keelLaidDate: Joi.date().optional().label("Keel Laid Date"),
   shipYardName: Joi.string().optional().label("Ship Yard Name"),
@@ -29,7 +32,15 @@ const vesselSchema = Joi.object({
   ihmSurveyEndDate: Joi.date().optional().label("IHM Survey End Date"),
   socIssueDate: Joi.date().optional().label("SOC Expiry Date"),
   readyForMaintenance: Joi.boolean().optional().label("Ready For Maintenance"),
+  readyForMaintenanceDate: Joi.date()
+    .required()
+    .label("Ready For Maintenance Date")
+    .messages({
+      "date.base": "Ready For Maintenance Date is required",
+      "any.required": "Ready For Maintenance Date is required",
+    }),
   maintenanceStartDate: Joi.date().optional().label("Maintenance Start Date"),
+  showVesselToOwnerManager: Joi.boolean().optional().label("Show Vessel to Owner/Manager"),
   vesselEmailId: Joi.string()
     .email({ tlds: { allow: false } }) // Disable TLD validation
     .label("Vessel Email ID")

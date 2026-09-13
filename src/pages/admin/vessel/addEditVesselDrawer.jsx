@@ -18,6 +18,9 @@ import {
   TableBody,
   Paper,
   Grid,
+  FormControl,
+  InputLabel,
+  FormHelperText,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -61,6 +64,19 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const [deletedAttachments, setDeletedAttachments] = useState([]);
   const [statusHistoryData, setStatusHistoryData] = useState([]);
 
+  // Created/updated info for the footer, filled from the loaded vessel.
+  const [audit, setAudit] = useState(null);
+
+  // "25-Nov-2020". Built by hand: en-GB toLocaleDateString now writes "Sept".
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const formatAuditDate = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${String(date.getDate()).padStart(2, "0")}-${MONTHS[date.getMonth()]}-${date.getFullYear()}`;
+  };
+  const auditUserName = (user) => user?.name || user?.email || null;
+
   const {
     control,
     handleSubmit,
@@ -89,8 +105,16 @@ const AddEditVesselDrawer = ({ onClose }) => {
         VesselAttachments,
         VesselHistory,
         VesselInventoryImages,
+        // Display-only audit fields: kept out of the form so neither Joi nor
+        // the save payload ever sees them.
+        createdAt,
+        updatedAt,
+        createdByUser,
+        updatedByUser,
         ...restVesselData
       } = vesselData;
+
+      setAudit({ createdAt, updatedAt, createdByUser, updatedByUser });
 
       Object.keys(restVesselData).forEach((key) => {
         if (key.endsWith("Date") && restVesselData[key]) {
@@ -491,22 +515,38 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         )}
                       />
                     ))}
+                    {/* A Select's `label` only reserves the notch; the text
+                        itself needs an InputLabel inside a FormControl. */}
                     <Controller
                       name="vesselManager"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
-                        <Select {...field} label="Vessel Manager" fullWidth>
-                          <MenuItem value="">
-                            <em>Select Manager</em>
-                          </MenuItem>
-                          {managers.length > 0 &&
-                            managers.map((manager) => (
-                              <MenuItem key={manager.id} value={manager.id}>
-                                {manager.companyName}
-                              </MenuItem>
-                            ))}
-                        </Select>
+                        <FormControl fullWidth error={!!errors.vesselManager}>
+                          <InputLabel id="vessel-manager-label">
+                            Vessel Manager
+                          </InputLabel>
+                          <Select
+                            {...field}
+                            labelId="vessel-manager-label"
+                            label="Vessel Manager"
+                          >
+                            <MenuItem value="">
+                              <em>Select Manager</em>
+                            </MenuItem>
+                            {managers.length > 0 &&
+                              managers.map((manager) => (
+                                <MenuItem key={manager.id} value={manager.id}>
+                                  {manager.companyName}
+                                </MenuItem>
+                              ))}
+                          </Select>
+                          {errors.vesselManager && (
+                            <FormHelperText>
+                              {errors.vesselManager.message}
+                            </FormHelperText>
+                          )}
+                        </FormControl>
                       )}
                     />
 
@@ -515,17 +555,35 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
-                        <Select {...field} label="Client Name" fullWidth>
-                          <MenuItem value="">
-                            <em>Select Client</em>
-                          </MenuItem>
-                          {clients.length > 0 &&
-                            clients.map((client) => (
-                              <MenuItem key={client.id} value={client.id}>
-                                {client.companyName}
-                              </MenuItem>
-                            ))}
-                        </Select>
+                        <FormControl
+                          fullWidth
+                          required
+                          error={!!errors.clientName}
+                        >
+                          <InputLabel id="client-name-label">
+                            Client Name
+                          </InputLabel>
+                          <Select
+                            {...field}
+                            labelId="client-name-label"
+                            label="Client Name"
+                          >
+                            <MenuItem value="">
+                              <em>Select Client</em>
+                            </MenuItem>
+                            {clients.length > 0 &&
+                              clients.map((client) => (
+                                <MenuItem key={client.id} value={client.id}>
+                                  {client.companyName}
+                                </MenuItem>
+                              ))}
+                          </Select>
+                          {errors.clientName && (
+                            <FormHelperText>
+                              {errors.clientName.message}
+                            </FormHelperText>
+                          )}
+                        </FormControl>
                       )}
                     />
 
@@ -653,7 +711,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                           }
                         />
                       }
-                      label="Survey End Dt same as Start Dt"
+                      label="Same as Survey End Dt"
                     />
                     <Controller
                       name="ihmSurveyEndDate"
@@ -703,6 +761,23 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       label="Ready For Maintenance"
                     />
                     <Controller
+                      name="readyForMaintenanceDate"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          value={field.value ?? ""}
+                          label="Ready For Maintenance Date"
+                          type="date"
+                          required
+                          InputLabelProps={{ shrink: true }}
+                          fullWidth
+                          error={!!errors.readyForMaintenanceDate}
+                          helperText={errors.readyForMaintenanceDate?.message}
+                        />
+                      )}
+                    />
+                    <Controller
                       name="maintenanceStartDate"
                       control={control}
                       render={({ field }) => (
@@ -716,6 +791,23 @@ const AddEditVesselDrawer = ({ onClose }) => {
                           helperText={errors.maintenanceStartDate?.message}
                         />
                       )}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Controller
+                          name="showVesselToOwnerManager"
+                          control={control}
+                          defaultValue={false}
+                          render={({ field: { onChange, value, ...rest } }) => (
+                            <Checkbox
+                              checked={Boolean(value)}
+                              onChange={(e) => onChange(e.target.checked)}
+                              {...rest}
+                            />
+                          )}
+                        />
+                      }
+                      label="Show Vessel to Owner/Manager"
                     />
                   </Box>
                 </Box>
@@ -1127,6 +1219,22 @@ const AddEditVesselDrawer = ({ onClose }) => {
                     )}
                   />
                 </Paper>
+              </Box>
+            )}
+
+            {/* Edit mode only, straight from the loaded vessel. Vessels
+                updated before this was recorded have no editor, so the name
+                falls back to "—" but the date is still real. */}
+            {vesselId && audit && (
+              <Box mt={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Created By: {auditUserName(audit.createdByUser) || "—"}{" "}
+                  [{formatAuditDate(audit.createdAt)}]
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Last Updated By: {auditUserName(audit.updatedByUser) || "—"}{" "}
+                  [{formatAuditDate(audit.updatedAt)}]
+                </Typography>
               </Box>
             )}
 
