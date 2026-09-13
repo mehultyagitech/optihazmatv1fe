@@ -50,13 +50,20 @@ const vesselSchema = Joi.object({
   poDataGapDisclaimer: Joi.string().max(500).optional().label("PO Data Gap FreeText Disclaimer"),
   commonReferenceNo: Joi.string().optional().label("Common Reference No/ Drawing No"),
   discontinued: Joi.boolean().optional(),
-  // Mandatory only while the vessel is marked Discontinued.
+  // Mandatory only when the vessel is being discontinued now: ticked, and not
+  // already discontinued when the form loaded ($wasDiscontinued, passed by the
+  // drawer as react-hook-form context). Unticking needs no remarks; any given
+  // are saved as the Active history remarks.
   discontinueRemarks: Joi.when("discontinued", {
     is: true,
-    then: Joi.string().trim().max(500).required().messages({
-      "string.empty": "Discontinue Remarks is required when the vessel is discontinued",
-      "any.required": "Discontinue Remarks is required when the vessel is discontinued",
-      "string.base": "Discontinue Remarks is required when the vessel is discontinued",
+    then: Joi.when("$wasDiscontinued", {
+      is: true,
+      then: Joi.string().max(500).allow("", null).optional(),
+      otherwise: Joi.string().trim().max(500).required().messages({
+        "string.empty": "Discontinue Remarks is required when the vessel is discontinued",
+        "any.required": "Discontinue Remarks is required when the vessel is discontinued",
+        "string.base": "Discontinue Remarks is required when the vessel is discontinued",
+      }),
     }),
     otherwise: Joi.string().max(500).allow("", null).optional(),
   }).label("Discontinue Remarks"),

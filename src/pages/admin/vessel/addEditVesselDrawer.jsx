@@ -67,6 +67,10 @@ const AddEditVesselDrawer = ({ onClose }) => {
   // Created/updated info for the footer, filled from the loaded vessel.
   const [audit, setAudit] = useState(null);
 
+  // Status when the vessel loaded: remarks are required only when it is
+  // being discontinued now, not on every edit of an already-discontinued one.
+  const [wasDiscontinued, setWasDiscontinued] = useState(false);
+
   // "25-Nov-2020". Built by hand: en-GB toLocaleDateString now writes "Sept".
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const formatAuditDate = (value) => {
@@ -87,6 +91,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
   } = useForm({
     resolver: joiResolver(vesselSchema),
     defaultValues: {},
+    // Read by the Joi rule as $wasDiscontinued.
+    context: { wasDiscontinued },
   });
 
   // Discontinue Remarks is mandatory only while this is ticked.
@@ -119,6 +125,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
       } = vesselData;
 
       setAudit({ createdAt, updatedAt, createdByUser, updatedByUser });
+      setWasDiscontinued(!!restVesselData.discontinued);
 
       Object.keys(restVesselData).forEach((key) => {
         if (key.endsWith("Date") && restVesselData[key]) {
@@ -428,6 +435,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
 
   const handleOnClose = () => {
     setTabIndex(0);
+    setWasDiscontinued(false);
     setAttachments([]);
     setImage(null);
     setCommonInventoryImage(null);
@@ -1208,7 +1216,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                           <TextField
                             {...field}
                             label="Discontinue Remarks"
-                            required={isDiscontinued}
+                            required={isDiscontinued && !wasDiscontinued}
                             multiline
                             rows={3}
                             fullWidth
