@@ -58,7 +58,9 @@ const vesselSchema = Joi.object({
   headerFreeTextCaption: Joi.string().max(20).optional().label("Header FreeText Caption"),
   headerFreeTextValue: Joi.string().max(40).optional().label("Header FreeText Value"),
   poDataGapDisclaimer: Joi.string().max(500).optional().label("PO Data Gap FreeText Disclaimer"),
-  commonReferenceNo: Joi.string().optional().label("Common Reference No/ Drawing No"),
+  // Optional: blank (typed then cleared) and null (vessels saved without one)
+  // are both fine.
+  commonReferenceNo: Joi.string().allow("", null).optional().label("Common Reference No/ Drawing No"),
   discontinued: Joi.boolean().optional(),
   // Mandatory only when the vessel is being discontinued now: ticked, and not
   // already discontinued when the form loaded ($wasDiscontinued, passed by the

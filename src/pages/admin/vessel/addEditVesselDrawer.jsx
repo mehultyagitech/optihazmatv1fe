@@ -98,6 +98,9 @@ const AddEditVesselDrawer = ({ onClose }) => {
   // Discontinue Remarks is mandatory only while this is ticked.
   const isDiscontinued = !!watch("discontinued");
 
+  // Ready For Maintenance Date is locked (read-only) once the box is ticked.
+  const isReadyForMaintenance = !!watch("readyForMaintenance");
+
   // IHM Survey End Date is mandatory and validation runs before onSubmit
   // copies the start date across, so while "Same as Survey End Dt" is ticked
   // keep the end date equal to the start date in the form itself.
@@ -794,7 +797,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                           }
                         />
                       }
-                      label="Same as Survey End Dt"
+                      label="Survey End Dt same as Start Dt"
                     />
                     <Controller
                       name="ihmSurveyEndDate"
@@ -851,6 +854,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         <TextField
                           {...field}
                           value={field.value ?? ""}
+                          disabled={isReadyForMaintenance}
                           label="Ready For Maintenance Date"
                           type="date"
                           required
@@ -1369,8 +1373,14 @@ const AddEditVesselDrawer = ({ onClose }) => {
               >
                 Previous
               </Button>
+              {/* Distinct keys: without them React reuses the same <button> and
+                  flips it to type="submit" while the Next click on Common
+                  Settings is still being handled, so the browser submitted
+                  the form and validation errors (e.g. Call Sign) popped up. */}
               {tabIndex < 4 ? (
                 <Button
+                  key="next-tab"
+                  type="button"
                   variant="contained"
                   onClick={() => setTabIndex(tabIndex + 1)}
                 >
