@@ -172,10 +172,39 @@ const MetricRow = ({ label, value, color, dot, loading }) => (
 const span = (breakpoints) =>
   Object.fromEntries(Object.entries(breakpoints).map(([bp, n]) => [bp, `span ${n}`]));
 
-const selectSx = {
-  minWidth: 180,
-  "& .MuiOutlinedInput-root": { bgcolor: "#fff", borderRadius: 2 },
-};
+// Label above the select, not floating in its border: a floating label sat on
+// the blue header with dark text and couldn't be read.
+const FilterSelect = ({ label, value, onChange, allLabel, options }) => (
+  <Box sx={{ flex: { xs: "1 1 100%", sm: "0 1 230px" }, minWidth: 0 }}>
+    <Typography
+      variant="caption"
+      component="div"
+      sx={{ mb: 0.5, fontWeight: 600, letterSpacing: 0.3, color: "rgba(255,255,255,0.9)" }}
+    >
+      {label}
+    </Typography>
+    <TextField
+      select
+      fullWidth
+      size="small"
+      value={value}
+      onChange={onChange}
+      SelectProps={{ displayEmpty: true }}
+      inputProps={{ "aria-label": label }}
+      sx={{
+        "& .MuiOutlinedInput-root": { bgcolor: "#fff", borderRadius: 2 },
+        "& .MuiOutlinedInput-notchedOutline": { border: 0 },
+      }}
+    >
+      <MenuItem value="">{allLabel}</MenuItem>
+      {options.map((option) => (
+        <MenuItem key={option.value} value={option.value}>
+          {option.label}
+        </MenuItem>
+      ))}
+    </TextField>
+  </Box>
+);
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -301,7 +330,7 @@ const Dashboard = () => {
           background: "linear-gradient(135deg, #0d47a1 0%, #1976d2 60%, #26a69a 100%)",
         }}
       >
-        <Box display="flex" flexWrap="wrap" alignItems="flex-end" justifyContent="space-between" gap={2}>
+        <Box display="flex" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={2}>
           <Box>
             <Typography variant="h5" fontWeight={700}>
               Fleet Dashboard
@@ -310,42 +339,81 @@ const Dashboard = () => {
               IHM status across {hasFilters ? "the selected" : "all"} vessels
             </Typography>
           </Box>
-          <Box display="flex" flexWrap="wrap" gap={1.5} alignItems="center">
-            <TextField select size="small" label="Client" value={filters.clientId} onChange={setFilter("clientId")} sx={selectSx}>
-              <MenuItem value="">All Clients</MenuItem>
-              {clients.map((c) => (
-                <MenuItem key={c.id} value={c.id}>{c.companyName}</MenuItem>
-              ))}
-            </TextField>
-            <TextField select size="small" label="Fleet Manager" value={filters.managerId} onChange={setFilter("managerId")} sx={selectSx}>
-              <MenuItem value="">All Fleet Managers</MenuItem>
-              {managers.map((m) => (
-                <MenuItem key={m.id} value={m.id}>{m.companyName}</MenuItem>
-              ))}
-            </TextField>
-            <TextField select size="small" label="Vessel" value={filters.vesselId} onChange={setFilter("vesselId")} sx={selectSx}>
-              <MenuItem value="">All Vessels</MenuItem>
-              {(data?.filterOptions?.vessels ?? []).map((v) => (
-                <MenuItem key={v.id} value={v.id}>{v.name}</MenuItem>
-              ))}
-            </TextField>
-            {hasFilters && (
-              <Button
-                startIcon={<RestartAltIcon />}
-                onClick={() => setFilters({ clientId: "", managerId: "", vesselId: "" })}
-                sx={{ color: "#fff", textTransform: "none", fontWeight: 600 }}
-              >
-                Reset
-              </Button>
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
+            disabled={!vesselList.length}
+            onClick={exportVesselList}
+            sx={{
+              bgcolor: "#fff",
+              color: "#0d47a1",
+              textTransform: "none",
+              fontWeight: 700,
+              "&:hover": { bgcolor: "#e3f2fd" },
+              "&.Mui-disabled": { bgcolor: "rgba(255,255,255,0.3)", color: "rgba(255,255,255,0.8)" },
+            }}
+          >
+            Vessel List
+          </Button>
+        </Box>
+
+        {/* Filters */}
+        <Box
+          sx={{
+            mt: 2.5,
+            p: 2,
+            borderRadius: 2.5,
+            bgcolor: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "flex-end",
+            gap: 2,
+          }}
+        >
+          <FilterSelect
+            label="Client"
+            allLabel="All Clients"
+            value={filters.clientId}
+            onChange={setFilter("clientId")}
+            options={clients.map((c) => ({ value: c.id, label: c.companyName }))}
+          />
+          <FilterSelect
+            label="Fleet Manager"
+            allLabel="All Fleet Managers"
+            value={filters.managerId}
+            onChange={setFilter("managerId")}
+            options={managers.map((m) => ({ value: m.id, label: m.companyName }))}
+          />
+          <FilterSelect
+            label="Vessel"
+            allLabel="All Vessels"
+            value={filters.vesselId}
+            onChange={setFilter("vesselId")}
+            options={(data?.filterOptions?.vessels ?? []).map((v) => ({ value: v.id, label: v.name }))}
+          />
+          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 1.5, ml: { sm: "auto" } }}>
+            {hasFilters && !overview.isFetching && !vesselList.length && (
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                No vessels match these filters
+              </Typography>
             )}
             <Button
-              variant="contained"
-              startIcon={<DownloadIcon />}
-              disabled={!vesselList.length}
-              onClick={exportVesselList}
-              sx={{ bgcolor: "#fff", color: "#0d47a1", textTransform: "none", fontWeight: 700, "&:hover": { bgcolor: "#e3f2fd" } }}
+              variant="outlined"
+              startIcon={<RestartAltIcon />}
+              disabled={!hasFilters}
+              onClick={() => setFilters({ clientId: "", managerId: "", vesselId: "" })}
+              sx={{
+                height: 40,
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.6)",
+                textTransform: "none",
+                fontWeight: 600,
+                "&:hover": { borderColor: "#fff", bgcolor: "rgba(255,255,255,0.12)" },
+                "&.Mui-disabled": { color: "rgba(255,255,255,0.5)", borderColor: "rgba(255,255,255,0.25)" },
+              }}
             >
-              Vessel List
+              Reset filters
             </Button>
           </Box>
         </Box>
