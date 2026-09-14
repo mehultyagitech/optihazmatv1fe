@@ -3,11 +3,8 @@ import {
   Box,
   Typography,
   Button,
-  Avatar,
   TextField,
   IconButton,
-  Grid,
-  Checkbox,
   Tooltip,
   Dialog,
   DialogTitle,
@@ -21,7 +18,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import LocationDiagramTopBar from "../../../components/locationDiagramTopBar";
 import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
-import OPCard from "../../../components/OPCard";
+import InfoCard from "../../../components/InfoCard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../../../api/axiosInstance";
 import { useRecoilValue } from "recoil";
@@ -45,79 +42,49 @@ const COUNT_LABELS = [
 const DiagramCard = ({ diagram, avatarSrc, selected, onToggle, onDelete }) => {
   const navigate = useNavigate();
   const counts = diagram.pinCounts ?? {};
+  const openPoints = () => navigate(`/vessels/inventory-points/${diagram.id}`);
 
   return (
-    <OPCard
-      sx={{ width: "100%", outline: selected ? "2px solid #1976d2" : "none" }}
-    >
-      <Box display="flex" alignItems="center" gap={1}>
-        <Checkbox
-          checked={selected}
-          onChange={() => onToggle(diagram.id)}
-          inputProps={{
-            "aria-label": `Select ${diagram.locationName} / ${diagram.subLocationName}`,
-          }}
-        />
-        <Box
-          display="flex"
-          alignItems="center"
-          gap={2}
-          flexGrow={1}
-          sx={{ cursor: "pointer", minWidth: 0 }}
-          onClick={() => navigate(`/vessels/inventory-points/${diagram.id}`)}
-        >
-          <Avatar src={avatarSrc} sx={{ width: 60, height: 60 }} />
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              variant="subtitle1"
-              fontWeight="bold"
-              sx={{ color: "#1976d2" }}
-              noWrap
+    <InfoCard
+      selectable
+      selected={selected}
+      onToggle={() => onToggle(diagram.id)}
+      avatarSrc={avatarSrc}
+      avatarVariant="rounded"
+      title={diagram.locationName}
+      subtitle={diagram.subLocationName}
+      onOpen={openPoints}
+      fields={COUNT_LABELS.map(([key, label]) => ({ label, value: counts[key] ?? 0 }))}
+      actions={
+        <>
+          <Button size="small" sx={{ textTransform: "none", mr: "auto" }} onClick={openPoints}>
+            Open points
+          </Button>
+          <Tooltip title="Update this diagram">
+            <IconButton
+              size="small"
+              color="primary"
+              aria-label="Update diagram"
+              onClick={() =>
+                navigate(`/vessels/new-area?mode=update&diagram=${diagram.id}`)
+              }
             >
-              {diagram.locationName}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
-              {diagram.subLocationName}
-            </Typography>
-          </Box>
-        </Box>
-        <Tooltip title="Update this diagram">
-          <IconButton
-            size="small"
-            color="primary"
-            aria-label="Update diagram"
-            onClick={() =>
-              navigate(`/vessels/new-area?mode=update&diagram=${diagram.id}`)
-            }
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Delete this diagram">
-          <IconButton
-            size="small"
-            color="error"
-            aria-label="Delete diagram"
-            onClick={() => onDelete(diagram)}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Box>
-      <OPDivider />
-      <Grid container spacing={2} mt={2}>
-        {COUNT_LABELS.map(([key, label]) => (
-          <Grid item xs={6} key={key}>
-            <Typography variant="body2" color="text.secondary" mb={0.5}>
-              {label}
-            </Typography>
-            <Typography fontWeight="bold" variant="body2" color="text.primary">
-              {counts[key] ?? 0}
-            </Typography>
-          </Grid>
-        ))}
-      </Grid>
-    </OPCard>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete this diagram">
+            <IconButton
+              size="small"
+              color="error"
+              aria-label="Delete diagram"
+              onClick={() => onDelete(diagram)}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </>
+      }
+    />
   );
 };
 
@@ -390,11 +357,7 @@ const LocationDiagramPage = () => {
         <Box
           p={3}
           display="grid"
-          gridTemplateColumns={{
-            xs: "1fr",
-            sm: "1fr 1fr",
-            md: "1fr 1fr 1fr 1fr",
-          }}
+          gridTemplateColumns="repeat(auto-fill, minmax(min(100%, 280px), 1fr))"
           gap={3}
         >
           {filteredDiagrams.map((diagram) => (

@@ -3,17 +3,15 @@ import {
     Box,
     Typography,
     Button,
-    Avatar,
     TextField,
     IconButton,
-    Grid
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
 import VesselTopBar from "../../../components/vesselTopBar";
 import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
-import OPCard from "../../../components/OPCard";
+import InfoCard from "../../../components/InfoCard";
 import useVessel from "../../../api/services/useVessel";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { ClientSelector, ManagerSelector } from "../../../utils/States/Generic";
@@ -41,27 +39,23 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
     }
 
     return (
-        <OPCard sx={{ width: "100%" }}>
-            <Box display="flex" alignItems="center" gap={2}>
-                <Avatar src={avatarSrc} sx={{ width: 60, height: 60 }} />
-                <Box>
-                    <Typography
-                        variant="subtitle1"
-                        fontWeight="bold"
-                        sx={{ color: "#1976d2" }}
-                    >
-                        {vessel}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Vessel
-                    </Typography>
-                </Box>
-                <Box>
+        <InfoCard
+            avatarSrc={avatarSrc}
+            title={vessel}
+            subtitle="Vessel"
+            fields={[
+                { label: "IMO Number", value: imoNumber },
+                { label: "Client Name", value: clientName },
+                { label: "Manager Name", value: managerName },
+                { label: "Vessel Type", value: vesselType },
+            ]}
+            actions={
+                <>
                     <Button
                         variant="outlined"
                         size="small"
                         startIcon={<ShopTwo />}
-                        sx={{ textTransform: "none", marginLeft: "auto" }}
+                        sx={{ textTransform: "none" }}
                         onClick={() => setCommonVesselViewState({ id: clientId, name: vessel })}
                     >
                         View
@@ -70,65 +64,14 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
                         variant="outlined"
                         size="small"
                         startIcon={<EditIcon />}
-                        sx={{ textTransform: "none", marginLeft: "auto" }}
+                        sx={{ textTransform: "none" }}
                         onClick={() => handleEdit()}
                     >
                         Edit
                     </Button>
-                </Box>
-            </Box>
-            <OPDivider />
-            <Grid container spacing={2} mt={2}>
-                <Grid item xs={6}>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        mb={0.5}
-                    >
-                        IMO Number
-                    </Typography>
-                    <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
-                        {imoNumber}
-                    </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        mb={0.5}
-                    >
-                        Client Name
-                    </Typography>
-                    <Typography fontWeight="bold"  variant="body2" color="text.primary" mb={2}>
-                        {clientName}
-                    </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        mb={0.5}
-                    >
-                        Manager Name
-                    </Typography>
-                    <Typography fontWeight="bold" variant="body2" color="text.primary" mb={2}>
-                        {managerName}
-                    </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        mb={0.5}
-                    >
-                        Vessel Type
-                    </Typography>
-                    <Typography fontWeight="bold" variant="body2" color="text.primary">
-                        {vesselType}
-                    </Typography>
-                </Grid>
-            </Grid>
-        </OPCard>
+                </>
+            }
+        />
     );
 };
 
@@ -262,7 +205,7 @@ const Vessel = () => {
                 <Box
                     p={3}
                     display="grid"
-                    gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }}
+                    gridTemplateColumns="repeat(auto-fill, minmax(min(100%, 280px), 1fr))"
                     gap={3}
                 >
                     {filteredClients.map((client) => (

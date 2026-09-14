@@ -3,10 +3,8 @@ import {
   Box,
   Typography,
   Button,
-  Avatar,
   TextField,
   IconButton,
-  Grid,
   Checkbox,
   FormControlLabel,
   Menu,
@@ -24,7 +22,7 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import InventoryPointTopBar from "../../../components/inventoryPointTopBar";
 import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
-import OPCard from "../../../components/OPCard";
+import InfoCard from "../../../components/InfoCard";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
@@ -87,7 +85,6 @@ const toExcelRow = (point) => ({
 const InventoryPointCard = ({
   inventoryPointName,
   avatarSrc,
-  location,
   inventoryPointNumber,
   hazmats,
   status,
@@ -97,112 +94,34 @@ const InventoryPointCard = ({
   onEdit,
   onDelete,
 }) => (
-  <OPCard sx={{ width: "100%", boxSizing: "border-box" }}>
-    <Box display="flex" alignItems="center" gap={1.5}>
-      <Checkbox
-        checked={selected}
-        onChange={onToggle}
-        sx={{ p: 0 }}
-        inputProps={{ "aria-label": `Select ${inventoryPointName}` }}
-      />
-      <Avatar src={avatarSrc} sx={{ width: 52, height: 52, flexShrink: 0 }} />
-      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-        <Typography
-          variant="subtitle1"
-          fontWeight="bold"
-          sx={{ color: "#1976d2", wordBreak: "break-word" }}
-        >
-          {inventoryPointName}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Inventory Point
-        </Typography>
-      </Box>
-      <Box display="flex" flexDirection="column" ml="auto">
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<EditIcon />}
-          sx={{ textTransform: "none", mb: 1 }}
-          onClick={() =>
-            onEdit({
-              avatarSrc,
-              location,
-              inventoryPointNumber,
-              hazmats,
-              status,
-              inventoryType,
-            })
-          }
-        >
+  <InfoCard
+    selectable
+    selected={selected}
+    onToggle={onToggle}
+    avatarSrc={avatarSrc}
+    title={inventoryPointName}
+    subtitle="Inventory Point"
+    fields={[
+      { label: "Inventory Point", value: inventoryPointNumber },
+      { label: "Hazmats", value: hazmats },
+      { label: "Inventory Type", value: inventoryType },
+      {
+        label: "Status",
+        value: status,
+        color: status && status !== "Active" ? "error.main" : undefined,
+      },
+    ]}
+    actions={
+      <>
+        <Button variant="outlined" size="small" startIcon={<EditIcon />} sx={{ textTransform: "none" }} onClick={onEdit}>
           Edit
         </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<DeleteIcon />}
-          sx={{
-            textTransform: "none",
-            color: "error.main",
-            borderColor: "error.main",
-          }}
-          onClick={onDelete}
-        >
+        <Button variant="outlined" size="small" color="error" startIcon={<DeleteIcon />} sx={{ textTransform: "none" }} onClick={onDelete}>
           Delete
         </Button>
-      </Box>
-    </Box>
-    <OPDivider />
-    <Grid container spacing={2} mt={2}>
-      <Grid item xs={6}>
-        <Typography variant="body2" color="text.secondary" mb={0.5}>
-          Inventory Point
-        </Typography>
-        <Typography
-          fontWeight="bold"
-          variant="body2"
-          color="text.primary"
-          mb={2}
-        >
-          {inventoryPointNumber}
-        </Typography>
-      </Grid>
-      <Grid item xs={6}>
-        <Typography variant="body2" color="text.secondary" mb={0.5}>
-          Hazmats
-        </Typography>
-        <Typography
-          fontWeight="bold"
-          variant="body2"
-          color="text.primary"
-          mb={2}
-        >
-          {hazmats}
-        </Typography>
-      </Grid>
-      <Grid item xs={6}>
-        <Typography variant="body2" color="text.secondary" mb={0.5}>
-          Inventory Type
-        </Typography>
-        <Typography fontWeight="bold" variant="body2" color="text.primary">
-          {inventoryType}
-        </Typography>
-      </Grid>
-      <Grid item xs={6}>
-        <Typography variant="body2" color="text.secondary" mb={0.5}>
-          Status
-        </Typography>
-        <Typography
-          fontWeight="bold"
-          variant="body2"
-          color={status === "Active" ? "text.primary" : "error.main"}
-          mb={2}
-        >
-          {status}
-        </Typography>
-      </Grid>
-    </Grid>
-  </OPCard>
+      </>
+    }
+  />
 );
 
 const InventoryPoints = () => {
@@ -503,13 +422,8 @@ const InventoryPoints = () => {
         <Box
           p={3}
           display="grid"
-          // minmax(0, 1fr): long names must not push cards into each other.
-          gridTemplateColumns={{
-            xs: "minmax(0, 1fr)",
-            sm: "repeat(2, minmax(0, 1fr))",
-            md: "repeat(3, minmax(0, 1fr))",
-            lg: "repeat(4, minmax(0, 1fr))",
-          }}
+          // As many 280px+ columns as fit, so cards never get squeezed.
+          gridTemplateColumns="repeat(auto-fill, minmax(min(100%, 280px), 1fr))"
           gap={3}
         >
           {pinsListing.isSuccess && filteredClients.length === 0 && (
