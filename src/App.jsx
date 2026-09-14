@@ -24,6 +24,7 @@ import axiosInstance from "./api/axiosInstance";
 import genericState, { DocumentTypeSelector } from "./utils/States/Generic";
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import logout from "./utils/logout";
+import BrandMark from "./components/brand/BrandMark";
 
 const NAVIGATION = [
   {
@@ -277,9 +278,10 @@ function App() {
         gap: 2,
       }}
     >
-      <CircularProgress size={60} />
-      <Box sx={{ mt: 2, color: "text.secondary" }}>
-        Loading application...
+      <BrandMark size={72} title="OptiHazmat" />
+      <CircularProgress size={28} />
+      <Box sx={{ color: "text.secondary" }}>
+        Loading OptiHazmat...
       </Box>
     </Box>
   );

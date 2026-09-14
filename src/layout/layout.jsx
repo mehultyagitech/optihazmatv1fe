@@ -1,11 +1,11 @@
 import React from "react";
 import { DashboardLayout, ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 import { Outlet } from "react-router-dom";
-import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
-import CloudCircleIcon from '@mui/icons-material/CloudCircle';
+import { useTheme } from '@mui/material/styles';
+import BrandLogo from '../components/brand/BrandLogo';
 import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 
@@ -47,12 +47,9 @@ function ToolbarActionsSearch() {
 }
 
 function CustomAppTitle() {
-  return (
-    <Stack direction="row" alignItems="center" spacing={2}>
-      <CloudCircleIcon fontSize="large" color="primary" />
-      <Typography variant="h6">Optihazmat</Typography>
-    </Stack>
-  );
+  // The toolbar follows the theme switcher, so the logo does too.
+  const theme = useTheme();
+  return <BrandLogo size="sm" variant={theme.palette.mode === "dark" ? "dark" : "light"} />;
 }
 
 export default function Layout(props) {

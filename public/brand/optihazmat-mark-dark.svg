@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="OptiHazmat">
+  <!-- For dark backgrounds: white hull, lighter placard orange. -->
+  <path d="M20 33H9Q6 33 6 36V52Q6 55 9 55H36C47 55 55 51 60 44C55 37 47 33 36 33H32" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M26 6L36 16L26 26L16 16Z" fill="#FFA726" stroke="#FFA726" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M26 26V41" fill="none" stroke="#FFA726" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="26" cy="44" r="4" fill="#FFA726"/>
+</svg>

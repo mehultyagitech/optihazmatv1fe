@@ -9,7 +9,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import SailingIcon from "@mui/icons-material/Sailing";
+import BrandLogo from "../../components/brand/BrandLogo";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -27,28 +27,8 @@ const FEATURES = [
   { icon: VerifiedOutlinedIcon, text: "IHM reports and maintenance certificates in a click" },
 ];
 
-const Brand = ({ light }) => (
-  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-    <Box
-      sx={{
-        width: 42,
-        height: 42,
-        borderRadius: 2.5,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#fff",
-        background: light ? "rgba(255,255,255,0.16)" : "linear-gradient(135deg, #0d47a1, #26a69a)",
-        border: light ? "1px solid rgba(255,255,255,0.3)" : "none",
-      }}
-    >
-      <SailingIcon />
-    </Box>
-    <Typography variant="h6" fontWeight={800} sx={{ color: light ? "#fff" : "#0d47a1", letterSpacing: 0.3 }}>
-      OptiHazmat
-    </Typography>
-  </Box>
-);
+// `light` = on the dark brand panel.
+const Brand = ({ light }) => <BrandLogo size="md" variant={light ? "dark" : "light"} />;
 
 // Stylised cargo ship on the sea, drawn inline so the page needs no extra files.
 const ShipIllustration = () => (
@@ -57,7 +37,17 @@ const ShipIllustration = () => (
     viewBox="0 0 800 260"
     preserveAspectRatio="xMidYMax slice"
     aria-hidden="true"
-    sx={{ position: "absolute", left: 0, right: 0, bottom: 0, width: "100%", height: { md: 220, lg: 260 } }}
+    // In the flow at the bottom of the panel (bleeding into its padding), so
+    // on short windows it moves down instead of covering the feature list.
+    sx={{
+      display: "block",
+      flexShrink: 0,
+      mt: "auto",
+      mx: { md: -6, lg: -8 },
+      mb: { md: -6, lg: -8 },
+      width: { md: "calc(100% + 96px)", lg: "calc(100% + 128px)" },
+      height: { md: 200, lg: 240 },
+    }}
   >
     <g opacity="0.9">
       {/* hull */}
@@ -153,7 +143,7 @@ export default function LoginPage() {
             pointerEvents: "none",
           }}
         />
-        <Box sx={{ position: "relative", zIndex: 1, maxWidth: 560 }}>
+        <Box sx={{ position: "relative", zIndex: 1, maxWidth: 560, mb: 4 }}>
           <Brand light />
           <Typography variant="h3" fontWeight={800} sx={{ mt: 6, lineHeight: 1.15, fontSize: { md: 36, lg: 44 } }}>
             Inventory of Hazardous Materials, managed in one place.

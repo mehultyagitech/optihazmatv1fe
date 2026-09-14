@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import logout from "../../utils/logout";
+import BrandMark from "../../components/brand/BrandMark";
 
 // The sidebar's "Logout" item links here.
 export default function Logout() {
@@ -19,7 +20,8 @@ export default function Logout() {
         gap: 2,
       }}
     >
-      <CircularProgress />
+      <BrandMark size={56} title="OptiHazmat" />
+      <CircularProgress size={28} />
       <Typography color="text.secondary">Signing you out…</Typography>
     </Box>
   );

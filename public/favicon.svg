@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Heavier drawing of the mark so it holds up at 16-32px; follows the
+       browser's light/dark theme. -->
+  <style>
+    .hull { stroke: #0D47A1; }
+    .point { fill: #F57C00; stroke: #F57C00; }
+    @media (prefers-color-scheme: dark) {
+      .hull { stroke: #E3F2FD; }
+      .point { fill: #FFA726; stroke: #FFA726; }
+    }
+  </style>
+  <path class="hull" d="M18 34H7.5Q4 34 4 37.5V52.5Q4 56 7.5 56H37C48 56 56 52 61 45C56 38 48 34 37 34H34" fill="none" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="point" d="M26 3L38 15L26 27L14 15Z" stroke-width="2.5" stroke-linejoin="round"/>
+  <path class="point" d="M26 27V40" fill="none" stroke-width="4" stroke-linecap="round"/>
+  <circle class="point" cx="26" cy="45" r="5" stroke="none"/>
+</svg>
