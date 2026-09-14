@@ -92,7 +92,8 @@ export default function useVessel() {
         ihmClass: data.data.ihmClass,
         ihmSurveyStartDate: data.data.ihmSurveyStartDate,
         ihmSurveyEndDate: data.data.ihmSurveyEndDate,
-        socIssueDate: data.data.socIssueDate,
+        // socIssueDate is no longer on the form; leaving it out of the form
+        // values means saves no longer send (or overwrite) the stored date.
         readyForMaintenance: data.data.readyForMaintenance,
         readyForMaintenanceDate: data.data.readyForMaintenanceDate,
         maintenanceStartDate: data.data.maintenanceStartDate,

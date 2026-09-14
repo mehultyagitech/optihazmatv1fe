@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPDivider from "../../../components/OPDivider";
 import { Box, Typography, Button, Grid, useMediaQuery } from "@mui/material";
@@ -8,11 +8,20 @@ import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer";
 import ImageViewer from "../../../components/ImageViewer";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRecoilValue, useRecoilState } from "recoil";
-import locationPointState from "../../../utils/States/LocationDiagram";
+import locationPointState, {
+  selectedPinIdState,
+} from "../../../utils/States/LocationDiagram";
 import { commonVesselViewState } from "../../../utils/States/Vessel";
 import { locationPointAddDrawerState } from "../../../utils/States/LocationDiagram";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "../../../api/axiosInstance";
+
+const DetailRow = ({ label, children }) => (
+  <Box sx={{ mt: 1 }}>
+    <Typography sx={{ color: "#0073E6" }}>{label}</Typography>
+    <Typography sx={{ wordBreak: "break-word" }}>{children || "-"}</Typography>
+  </Box>
+);
 
 export default function LocationPoint() {
   const navigate = useNavigate();
@@ -21,6 +30,7 @@ export default function LocationPoint() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [locationPoint, setLocationPoint] = useRecoilState(locationPointState);
   const [drawer, setDrawer] = useRecoilState(locationPointAddDrawerState);
+  const [selectedPinId, setSelectedPinId] = useRecoilState(selectedPinIdState);
   const { locationDiagramId } = useParams();
   const commonVesselView = useRecoilValue(commonVesselViewState);
 
@@ -41,12 +51,27 @@ export default function LocationPoint() {
     select: (data) => data.data,
   });
 
+  // A selection belongs to one diagram; start clean when switching diagrams.
+  useEffect(() => {
+    setSelectedPinId("");
+  }, [locationDiagramId, setSelectedPinId]);
+
   const url =
     locationDiagram.isPending || locationDiagram.isError
       ? "#"
       : import.meta.env.VITE_API_URL +
         "/uploads/" +
         locationDiagram.data.LocationDiagramImage[0].url;
+
+  // Points come oldest first, so a point's position is its Check Point Number.
+  const pins = locationDiagram.isSuccess ? locationDiagram.data.Pins ?? [] : [];
+  const selectedIndex = pins.findIndex((p) => p.id === selectedPinId);
+  const selectedPin = selectedIndex >= 0 ? pins[selectedIndex] : null;
+
+  const hazmatText = (pin) =>
+    (pin?.PinHazmat ?? [])
+      .map((h) => `${h.hazmat?.name ?? "-"} [ ${h.totalMass ?? "-"} - ${h.unit?.name ?? "-"} ]`)
+      .join(", ");
 
   return (
     <OPPageContainer sx={{ px: 2, pt: 2 }}>
@@ -104,51 +129,47 @@ export default function LocationPoint() {
             borderTop: isMobile ? "2px solid #00AEEF" : "none",
             p: 2,
             textAlign: isMobile ? "center" : "left",
+            overflowY: "auto",
           }}
         >
-          <Typography key={7} sx={{ color: "#0073E6", mt: 1 }}>
-            Location Category :
-          </Typography>
-          <Typography key={8} sx={{ mt: 1 }}>
-            {locationDiagram.isSuccess
-              ? locationDiagram.data.location.name
-              : "N/A"}
-          </Typography>
-          <Typography key={9} sx={{ color: "#0073E6", mt: 1 }}>
-            Location :
-          </Typography>
-          <Typography key={10} sx={{ mt: 1 }}>
-            {locationDiagram.isSuccess
-              ? locationDiagram.data.subLocation.name
-              : "N/A"}
-          </Typography>
-          {[
-            "Check Point Number",
-            "Sub Location",
-            "Equipment",
-            "Compartment",
-            "Object",
-            "Hazmat [ Quantity - Unit ]",
-          ].map((text, index) => (
-            <Typography
-              key={index}
-              sx={{ color: "#0073E6", mt: index === 0 ? 1 : 0.5 }}
-            >
-              {text}
+          <DetailRow label="Location Category :">
+            {locationDiagram.isSuccess ? locationDiagram.data.location.name : "N/A"}
+          </DetailRow>
+          <DetailRow label="Location :">
+            {locationDiagram.isSuccess ? locationDiagram.data.subLocation.name : "N/A"}
+          </DetailRow>
+
+          <OPDivider sx={{ my: 2 }} />
+
+          {selectedPin ? (
+            <>
+              <DetailRow label="Check Point Number">{String(selectedIndex + 1)}</DetailRow>
+              <DetailRow label="Sub Location">{selectedPin.subLocation?.name}</DetailRow>
+              <DetailRow label="Equipment">{selectedPin.equipment?.name}</DetailRow>
+              <DetailRow label="Compartment">{selectedPin.compartment?.name}</DetailRow>
+              <DetailRow label="Object">{selectedPin.object?.name}</DetailRow>
+              <DetailRow label="Hazmat [ Quantity - Unit ]">{hazmatText(selectedPin)}</DetailRow>
+            </>
+          ) : (
+            <Typography color="text.secondary" sx={{ mt: 1 }}>
+              {pins.length
+                ? "Click an inventory point on the diagram to see its details."
+                : "No inventory points yet. Double-click the diagram to add one."}
             </Typography>
-          ))}
+          )}
 
           {/* Open Details Button */}
           <Button
             variant="outlined"
             fullWidth
+            disabled={!selectedPin}
             sx={{ mt: 3, borderColor: "#00AEEF", color: "#00AEEF" }}
             onClick={() => {
               setDrawer({
                 open: true,
-                x: 0,
-                y: 0,
-                pinId: "",
+                x: selectedPin.x,
+                y: selectedPin.y,
+                pinId: selectedPin.id,
               });
             }}
           >

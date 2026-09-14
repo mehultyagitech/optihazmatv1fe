@@ -36,6 +36,7 @@ import {
 } from "../../../utils/States/LocationDiagram";
 import axiosInstance from "../../../api/axiosInstance";
 import { toast } from "react-toastify";
+import MasterDataAutocomplete from "../../../components/MasterDataAutocomplete";
 
 const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const theme = useTheme();
@@ -546,70 +547,46 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                   gridTemplateColumns="repeat(2, 1fr)"
                   gap={2}
                 >
-                  <TextField
+                  <MasterDataAutocomplete
                     label="Sub Location"
-                    fullWidth
                     name="subLocationId"
-                    select
-                    value={form.subLocationId || ""}
+                    value={form.subLocationId}
+                    options={SubLocations}
+                    endpoint="/sub-locations"
                     onChange={handleFormChange}
                     error={!!formErrors.subLocationId}
                     helperText={formErrors.subLocationId || ""}
-                  >
-                    {SubLocations?.map((item) => (
-                      <MenuItem key={item.id} value={item.id}>
-                        {item.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
+                  />
+                  <MasterDataAutocomplete
                     label="Equipment"
-                    fullWidth
                     name="equipmentId"
-                    select
-                    value={form.equipmentId || ""}
+                    value={form.equipmentId}
+                    options={Equipments}
+                    endpoint="/equipments"
                     onChange={handleFormChange}
                     error={!!formErrors.equipmentId}
-                    helperText={formErrors.equipmentId}
-                  >
-                    {Equipments?.map((item) => (
-                      <MenuItem key={item.id} value={item.id}>
-                        {item.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
+                    helperText={formErrors.equipmentId || ""}
+                  />
+                  <MasterDataAutocomplete
                     label="Compartment"
-                    fullWidth
                     name="compartmentId"
-                    select
-                    value={form.compartmentId || ""}
+                    value={form.compartmentId}
+                    options={Compartments}
+                    endpoint="/compartments"
                     onChange={handleFormChange}
                     error={!!formErrors.compartmentId}
-                    helperText={formErrors.compartmentId}
-                  >
-                    {Compartments?.map((item) => (
-                      <MenuItem key={item.id} value={item.id}>
-                        {item.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
+                    helperText={formErrors.compartmentId || ""}
+                  />
+                  <MasterDataAutocomplete
                     label="Object"
-                    fullWidth
                     name="objectId"
-                    select
-                    value={form.objectId || ""}
+                    value={form.objectId}
+                    options={Objects}
+                    endpoint="/objects"
                     onChange={handleFormChange}
                     error={!!formErrors.objectId}
-                    helperText={formErrors.objectId}
-                  >
-                    {Objects?.map((item) => (
-                      <MenuItem key={item.id} value={item.id}>
-                        {item.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                    helperText={formErrors.objectId || ""}
+                  />
                   <TextField
                     label="Description"
                     fullWidth

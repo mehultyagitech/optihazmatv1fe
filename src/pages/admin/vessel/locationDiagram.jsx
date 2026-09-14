@@ -7,114 +7,130 @@ import {
   TextField,
   IconButton,
   Grid,
+  Checkbox,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
 import LocationDiagramTopBar from "../../../components/locationDiagramTopBar";
 import OPDivider from "../../../components/OPDivider";
 import OPPageContainer from "../../../components/OPPageContainer";
 import OPCard from "../../../components/OPCard";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../../../api/axiosInstance";
 import { useRecoilValue } from "recoil";
 import { commonVesselViewState } from "../../../utils/States/Vessel";
+import {
+  LocationSelector,
+  SubLocationSelector,
+} from "../../../utils/States/Generic";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const ClientCard = ({
-  id,
-  avatarSrc,
-  name,
-  Survey,
-  clientName,
-  remRep,
-  vesselType,
-  onEdit,
-}) => {
+// Inventory point counts shown on each card (computed by the API).
+const COUNT_LABELS = [
+  ["survey", "Survey"],
+  ["maintenance", "Maint"],
+  ["removedReplaced", "Rem/Rep"],
+  ["active", "Active"],
+];
+
+const DiagramCard = ({ diagram, avatarSrc, selected, onToggle, onDelete }) => {
   const navigate = useNavigate();
+  const counts = diagram.pinCounts ?? {};
 
   return (
-    <OPCard sx={{ width: "100%" }}>
-      <Box display="flex" alignItems="center" gap={2} onClick={() => navigate(`/vessels/inventory-points/${id}`)}>
-        <Avatar src={avatarSrc} sx={{ width: 60, height: 60 }} />
-        <Box>
-          <Typography
-            variant="subtitle1"
-            fontWeight="bold"
-            sx={{ color: "#1976d2" }}
-          >
-            {name}
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<EditIcon />}
-          sx={{ textTransform: "none", marginLeft: "auto" }}
-          onClick={() => onEdit({ vessel, clientName, vesselType })}
+    <OPCard
+      sx={{ width: "100%", outline: selected ? "2px solid #1976d2" : "none" }}
+    >
+      <Box display="flex" alignItems="center" gap={1}>
+        <Checkbox
+          checked={selected}
+          onChange={() => onToggle(diagram.id)}
+          inputProps={{
+            "aria-label": `Select ${diagram.locationName} / ${diagram.subLocationName}`,
+          }}
+        />
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={2}
+          flexGrow={1}
+          sx={{ cursor: "pointer", minWidth: 0 }}
+          onClick={() => navigate(`/vessels/inventory-points/${diagram.id}`)}
         >
-          Edit
-        </Button>
+          <Avatar src={avatarSrc} sx={{ width: 60, height: 60 }} />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              sx={{ color: "#1976d2" }}
+              noWrap
+            >
+              {diagram.locationName}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" noWrap>
+              {diagram.subLocationName}
+            </Typography>
+          </Box>
+        </Box>
+        <Tooltip title="Update this diagram">
+          <IconButton
+            size="small"
+            color="primary"
+            aria-label="Update diagram"
+            onClick={() =>
+              navigate(`/vessels/new-area?mode=update&diagram=${diagram.id}`)
+            }
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete this diagram">
+          <IconButton
+            size="small"
+            color="error"
+            aria-label="Delete diagram"
+            onClick={() => onDelete(diagram)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
       <OPDivider />
       <Grid container spacing={2} mt={2}>
-        <Grid item xs={6}>
-          <Typography variant="body2" color="text.secondary" mb={0.5}>
-            Survey
-          </Typography>
-          <Typography
-            fontWeight="bold"
-            variant="body2"
-            color="text.primary"
-            mb={2}
-          >
-            {Survey}
-          </Typography>
-        </Grid>
-        <Grid item xs={6}>
-          <Typography variant="body2" color="text.secondary" mb={0.5}>
-            Main
-          </Typography>
-          <Typography
-            fontWeight="bold"
-            variant="body2"
-            color="text.primary"
-            mb={2}
-          >
-            {clientName}
-          </Typography>
-        </Grid>
-        <Grid item xs={6}>
-          <Typography variant="body2" color="text.secondary" mb={0.5}>
-            Rem/Rep
-          </Typography>
-          <Typography
-            fontWeight="bold"
-            variant="body2"
-            color="text.primary"
-            mb={2}
-          >
-            {remRep}
-          </Typography>
-        </Grid>
-        <Grid item xs={6}>
-          <Typography variant="body2" color="text.secondary" mb={0.5}>
-            Active
-          </Typography>
-          <Typography fontWeight="bold" variant="body2" color="text.primary">
-            {vesselType}
-          </Typography>
-        </Grid>
+        {COUNT_LABELS.map(([key, label]) => (
+          <Grid item xs={6} key={key}>
+            <Typography variant="body2" color="text.secondary" mb={0.5}>
+              {label}
+            </Typography>
+            <Typography fontWeight="bold" variant="body2" color="text.primary">
+              {counts[key] ?? 0}
+            </Typography>
+          </Grid>
+        ))}
       </Grid>
     </OPCard>
   );
 };
 
-const Vessel = () => {
+const LocationDiagramPage = () => {
   const vessel = useRecoilValue(commonVesselViewState);
-  const [page, setPage] = useState(1);
+  const locationCategories = useRecoilValue(LocationSelector);
+  const locations = useRecoilValue(SubLocationSelector);
+  const queryClient = useQueryClient();
+  const [page] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
+  // { ids, label, points } while the delete confirmation is open
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   // "Save Area" redirects here and passes its confirmation along, since the
   // crop page is gone by the time the toast would render.
@@ -135,28 +151,24 @@ const Vessel = () => {
       const response = await axiosInstance.get(
         `/location-diagrams/${vessel.id}`,
         {
-          params: {
-            page: page,
-            search: searchQuery,
-          },
+          // All diagrams on one page, so Select All really covers them all.
+          params: { page, limit: 1000, search: searchQuery },
         }
       );
 
       return response.data;
     },
-    select: (data) => {
-      return data.data.locationDiagrams.map((diagram) => ({
+    select: (data) =>
+      data.data.locationDiagrams.map((diagram) => ({
         id: diagram.id,
         locationName: diagram.location.name,
         subLocationName: diagram.subLocation.name,
         imageId: diagram.LocationDiagramImage[0]?.id,
         imageUrl: diagram.LocationDiagramImage[0]?.url,
-        userName: diagram.user.name,
-        userEmail: diagram.user.email,
-        clientName: diagram.vessel.clientName,
+        userName: diagram.user?.name,
         vesselType: diagram.vessel.vesselType,
-      }));
-    },
+        pinCounts: diagram.pinCounts,
+      })),
     keepPreviousData: true,
     staleTime: 1000 * 60 * 5,
   });
@@ -178,7 +190,6 @@ const Vessel = () => {
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
-    setPage(1);
   };
 
   const items = !locationDiagrams.isPending ? locationDiagrams.data ?? [] : [];
@@ -188,19 +199,21 @@ const Vessel = () => {
       .sort((a, b) => String(a).localeCompare(String(b)))
       .map((v) => ({ label: String(v), value: String(v) }));
 
+  // Location Category / Location list every value from the master lists, not
+  // only the ones already used by a diagram.
   const filters = useMemo(
     () => [
       {
         name: "location",
         value: selectedFilters.location,
-        placeholder: "Location",
-        options: optionsFrom(items.map((i) => i?.locationName)),
+        placeholder: "Location Category",
+        options: optionsFrom((locationCategories ?? []).map((l) => l?.name)),
       },
       {
         name: "subLocation",
         value: selectedFilters.subLocation,
-        placeholder: "Sub-Location",
-        options: optionsFrom(items.map((i) => i?.subLocationName)),
+        placeholder: "Location",
+        options: optionsFrom((locations ?? []).map((l) => l?.name)),
       },
       {
         name: "vesselType",
@@ -209,16 +222,72 @@ const Vessel = () => {
         options: optionsFrom(items.map((i) => i?.vesselType)),
       },
     ],
-    [items, selectedFilters]
+    [items, selectedFilters, locationCategories, locations]
   );
 
-  const filteredClients = items.filter(
+  const filteredDiagrams = items.filter(
     (i) =>
       (!selectedFilters.location || i?.locationName === selectedFilters.location) &&
       (!selectedFilters.subLocation ||
         i?.subLocationName === selectedFilters.subLocation) &&
       (!selectedFilters.vesselType || i?.vesselType === selectedFilters.vesselType)
   );
+
+  // Select All / Unselect All / Delete Selected act on the diagrams on screen.
+  const visibleIds = filteredDiagrams.map((d) => d.id);
+  const visibleKey = visibleIds.join(",");
+
+  useEffect(() => {
+    // Forget selections that are filtered out or already deleted.
+    setSelectedIds((prev) => prev.filter((id) => visibleIds.includes(id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleKey]);
+
+  const toggleSelected = (id) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+
+  const askDelete = (diagrams) => {
+    if (diagrams.length === 0) return;
+    setPendingDelete({
+      ids: diagrams.map((d) => d.id),
+      points: diagrams.reduce((sum, d) => sum + (d.pinCounts?.total ?? 0), 0),
+      label:
+        diagrams.length === 1
+          ? `"${diagrams[0].locationName} / ${diagrams[0].subLocationName}"`
+          : `${diagrams.length} location diagrams`,
+    });
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (ids) => {
+      const response =
+        ids.length === 1
+          ? await axiosInstance.delete(`/location-diagrams/${vessel.id}/${ids[0]}`)
+          : await axiosInstance.post(`/location-diagrams/${vessel.id}/bulk-delete`, {
+              ids,
+            });
+      return response.data.data;
+    },
+    onSuccess: ({ deleted, inventoryPointsDeleted }) => {
+      toast.success(
+        `Deleted ${deleted} location diagram(s)` +
+          (inventoryPointsDeleted
+            ? ` and ${inventoryPointsDeleted} inventory point(s).`
+            : ".")
+      );
+      setSelectedIds([]);
+      setPendingDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["locationDiagrams"] });
+      queryClient.invalidateQueries({ queryKey: ["locationDiagramsForUpdate"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Could not delete the location diagram(s)."
+      );
+    },
+  });
 
   return (
     <OPPageContainer sx={{ px: 2, pt: 2 }}>
@@ -270,7 +339,54 @@ const Vessel = () => {
             />
           </Box>
         </Box>
+
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={1}
+          px={2}
+          pb={1}
+          flexWrap="wrap"
+        >
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => setSelectedIds(visibleIds)}
+            disabled={visibleIds.length === 0}
+          >
+            Select All
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => setSelectedIds([])}
+            disabled={selectedIds.length === 0}
+          >
+            Unselect All
+          </Button>
+          <Button
+            size="small"
+            variant="contained"
+            color="error"
+            startIcon={<DeleteIcon />}
+            disabled={selectedIds.length === 0}
+            onClick={() =>
+              askDelete(filteredDiagrams.filter((d) => selectedIds.includes(d.id)))
+            }
+          >
+            Delete Selected
+          </Button>
+          <Typography variant="body2" color="text.secondary">
+            {selectedIds.length} selected
+          </Typography>
+        </Box>
+
         <OPDivider />
+        {!locationDiagrams.isPending && filteredDiagrams.length === 0 && (
+          <Typography color="text.secondary" p={3}>
+            No location diagrams to show.
+          </Typography>
+        )}
         <Box
           p={3}
           display="grid"
@@ -281,25 +397,57 @@ const Vessel = () => {
           }}
           gap={3}
         >
-          {filteredClients.map((client, index) => (
-            <ClientCard
-              id={client.id}
-              key={client.id}
+          {filteredDiagrams.map((diagram) => (
+            <DiagramCard
+              key={diagram.id}
+              diagram={diagram}
               avatarSrc={
-                import.meta.env.VITE_API_URL + "/uploads/" + client.imageUrl
+                import.meta.env.VITE_API_URL + "/uploads/" + diagram.imageUrl
               }
-              Survey={"123456789"}
-              name={client.locationName}
-              clientName={client.clientName}
-              remRep={client.userName}
-              vesselType={client.vesselType}
+              selected={selectedIds.includes(diagram.id)}
+              onToggle={toggleSelected}
+              onDelete={(d) => askDelete([d])}
             />
           ))}
         </Box>
       </Box>
+
+      <Dialog
+        open={!!pendingDelete}
+        onClose={() => !deleteMutation.isPending && setPendingDelete(null)}
+      >
+        <DialogTitle>Delete {pendingDelete?.label}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {pendingDelete?.points
+              ? `This also permanently deletes ${pendingDelete.points} inventory point(s) on ${
+                  pendingDelete.ids.length === 1 ? "this diagram" : "these diagrams"
+                }, with their hazmat data, images and attachments. `
+              : "There are no inventory points on it. "}
+            This cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setPendingDelete(null)}
+            disabled={deleteMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => deleteMutation.mutate(pendingDelete.ids)}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <ToastContainer position="top-right" autoClose={3000} />
     </OPPageContainer>
   );
 };
 
-export default Vessel;
+export default LocationDiagramPage;

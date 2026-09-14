@@ -816,21 +816,6 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         />
                       )}
                     />
-                    <Controller
-                      name="socIssueDate"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="SOC Expiry Date"
-                          type="date"
-                          InputLabelProps={{ shrink: true }}
-                          fullWidth
-                          error={!!errors.socIssueDate}
-                          helperText={errors.socIssueDate?.message}
-                        />
-                      )}
-                    />
                     <FormControlLabel
                       control={
                         <Controller

@@ -10,6 +10,12 @@ const locationPointAddDrawerState = atom({
     },
 })
 
+// Inventory point clicked on the diagram; its details fill the side panel.
+const selectedPinIdState = atom({
+    key: 'selectedPinIdState',
+    default: '',
+});
+
 const locationPointState = atom({
     key: 'locationPointState',
     default: {
@@ -91,5 +97,6 @@ export {
     LocationSelector,
     SubLocationSelector,
     locationPointAddDrawerState,
-    locationPointState
+    locationPointState,
+    selectedPinIdState
 }

@@ -2,15 +2,17 @@ import React, { useState, useRef, useEffect } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import RoomIcon from "@mui/icons-material/Room";
 import axiosInstance from "../api/axiosInstance";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import {
   PinsSelector,
   locationPointAddDrawerState,
+  selectedPinIdState,
 } from "../utils/States/LocationDiagram";
 
 const ImageViewer = ({ imageUrl }) => {
   const pins = useRecoilValue(PinsSelector);
   const drawerState = useSetRecoilState(locationPointAddDrawerState);
+  const [selectedPinId, setSelectedPinId] = useRecoilState(selectedPinIdState);
   const [imageNaturalSize, setImageNaturalSize] = useState({
     width: 0,
     height: 0,
@@ -137,17 +139,20 @@ const ImageViewer = ({ imageUrl }) => {
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      drawerState({
-                        open: true,
-                        x: pin.x,
-                        y: pin.y,
-                        pinId: pin.id,
-                      });
+                      // Select it: the side panel shows its details and
+                      // "Open Details" opens it for editing.
+                      setSelectedPinId(pin.id);
+                    }}
+                    onDoubleClick={(e) => {
+                      // Shortcut to edit; also keeps the double-click from
+                      // reaching the image, which would add a new point.
+                      e.stopPropagation();
+                      drawerState({ open: true, x: pin.x, y: pin.y, pinId: pin.id });
                     }}
                   >
                     <RoomIcon
                       style={{
-                        color: "#31e040",
+                        color: pin.id === selectedPinId ? "#e53935" : "#31e040",
                         filter: "drop-shadow(1px 1px 1px rgba(0,0,0,0.5))",
                         transform: "translateY(-50%)",
                       }}

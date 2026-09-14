@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -30,7 +30,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useImageCropper from "../../../hooks/useImageCropper";
 import { useTheme } from "@mui/material/styles";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -38,7 +38,15 @@ const CropLocationDiagram = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState("create");
+  // A card's Edit on the Location Diagram page opens this page as
+  // ?mode=update&diagram=<id>, preselecting "Update Existing" and that diagram.
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState(
+    searchParams.get("mode") === "update" ? "update" : "create"
+  );
+  const [existingDiagramId, setExistingDiagramId] = useState(
+    searchParams.get("diagram") || ""
+  );
   const documentTypes = useRecoilValue(DocumentTypeSelector);
   const vesselView = useRecoilValue(commonVesselViewState);
   const locationSelector = useRecoilValue(LocationSelector);
@@ -51,6 +59,28 @@ const CropLocationDiagram = () => {
   const imageCropper = useImageCropper({ url: selectedImage });
   const [openedImage, setOpenedImage] = useState(null);
 
+  // This vessel's diagrams, to pick the one "Update Existing" replaces.
+  const existingDiagrams = useQuery({
+    queryKey: ["locationDiagramsForUpdate", vesselView?.id],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/location-diagrams/${vesselView.id}`,
+        { params: { limit: 1000 } }
+      );
+      return response.data.data.locationDiagrams;
+    },
+    enabled: mode === "update" && !!vesselView?.id,
+  });
+
+  // Picking a diagram fills in its current Location Category and Location.
+  useEffect(() => {
+    const diagram = existingDiagrams.data?.find((d) => d.id === existingDiagramId);
+    if (diagram) {
+      setLocationCategory(diagram.locationId);
+      setLocation(diagram.subLocationId);
+    }
+  }, [existingDiagramId, existingDiagrams.data]);
+
   // mutation for saving the cropped image
   const { isPending, mutate, reset } = useMutation({
     mutationFn: async () => {
@@ -58,14 +88,23 @@ const CropLocationDiagram = () => {
       formData.append("vesselId", vesselView.id);
       formData.append("location", locationCategory);
       formData.append("subLocationId", location);
-      formData.append("attachmentImageId", openedImage?.id);
-      formData.append("attachmentId", openedImage?.attachmentId);
-      formData.append("image", imageCropper.cropData);
+      if (openedImage?.id) {
+        formData.append("attachmentImageId", openedImage.id);
+        formData.append("attachmentId", openedImage.attachmentId);
+      }
+      // A new crop is optional when updating: without one only the Location
+      // Category and Location change.
+      if (imageCropper.cropData) {
+        formData.append("image", imageCropper.cropData);
+      }
+
+      const isUpdate = mode === "update";
+      const base = `${import.meta.env.VITE_API_URL}/api/location-diagrams/${vesselView?.id}`;
 
       // No try/catch here on purpose: swallowing the error made every failed
       // save run onSuccess, so a broken save looked exactly like a good one.
-      const response = await axiosInstance.post(
-        `${import.meta.env.VITE_API_URL}/api/location-diagrams/${vesselView?.id}`,
+      const response = await (isUpdate ? axiosInstance.put : axiosInstance.post)(
+        isUpdate ? `${base}/${existingDiagramId}` : base,
         formData,
         {
           headers: {
@@ -78,10 +117,17 @@ const CropLocationDiagram = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["locationDiagrams"] });
+      queryClient.invalidateQueries({ queryKey: ["locationDiagram"] });
+      queryClient.invalidateQueries({ queryKey: ["locationDiagramsForUpdate"] });
       // The message is handed to the diagram list rather than shown here,
       // because this page unmounts the moment we navigate away.
       navigate("/vessels/location-diagram", {
-        state: { flash: "Area saved successfully!" },
+        state: {
+          flash:
+            mode === "update"
+              ? "Area updated successfully!"
+              : "Area saved successfully!",
+        },
       });
     },
     onError: (error) => {
@@ -97,7 +143,11 @@ const CropLocationDiagram = () => {
   // "null", which multer does not see as a file -- the API then answers
   // "Image is required". Catch it here so the user gets told what to do.
   const handleSaveArea = () => {
-    if (!imageCropper.cropData) {
+    if (mode === "update" && !existingDiagramId) {
+      toast.error("Please select the diagram to update.");
+      return;
+    }
+    if (mode === "create" && !imageCropper.cropData) {
       toast.error("Please crop the image before saving the area.");
       return;
     }
@@ -105,7 +155,7 @@ const CropLocationDiagram = () => {
       toast.error("Please select a location category.");
       return;
     }
-    if (mode === "create" && !location) {
+    if (!location) {
       toast.error("Please select a location.");
       return;
     }
@@ -259,6 +309,25 @@ const CropLocationDiagram = () => {
               </RadioGroup>
             </FormControl>
 
+            {/* Diagram to replace, in Update Existing mode */}
+            {mode === "update" && (
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="existing-diagram-label">Diagram to Update</InputLabel>
+                <Select
+                  labelId="existing-diagram-label"
+                  value={existingDiagramId}
+                  label="Diagram to Update"
+                  onChange={(e) => setExistingDiagramId(e.target.value)}
+                >
+                  {(existingDiagrams.data ?? []).map((d) => (
+                    <MenuItem key={d.id} value={d.id}>
+                      {d.location?.name} / {d.subLocation?.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
             {/* Location Category Dropdown */}
             <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel id="category-label">Location Category</InputLabel>
@@ -276,24 +345,22 @@ const CropLocationDiagram = () => {
               </Select>
             </FormControl>
 
-            {/* Location Dropdown in Create Mode */}
-            {mode === "create" && (
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="location-label">Location</InputLabel>
-                <Select
-                  labelId="location-label"
-                  value={location}
-                  label="Location"
-                  onChange={(e) => setLocation(e.target.value)}
-                >
-                  {subLocationSelector.map((subLoc) => (
-                    <MenuItem key={subLoc.id} value={subLoc.id}>
-                      {subLoc.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+            {/* Location Dropdown (both modes) */}
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="location-label">Location</InputLabel>
+              <Select
+                labelId="location-label"
+                value={location}
+                label="Location"
+                onChange={(e) => setLocation(e.target.value)}
+              >
+                {subLocationSelector.map((subLoc) => (
+                  <MenuItem key={subLoc.id} value={subLoc.id}>
+                    {subLoc.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             <Button
               variant="outlined"
@@ -301,7 +368,7 @@ const CropLocationDiagram = () => {
               onClick={handleSaveArea}
               disabled={isPending}
             >
-              {isPending ? "Saving..." : "Save Area"}
+              {isPending ? "Saving..." : mode === "update" ? "Update Area" : "Save Area"}
             </Button>
           </Box>
         </Box>
