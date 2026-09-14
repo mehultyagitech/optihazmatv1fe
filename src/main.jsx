@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Layout from './layout/layout.jsx';
 import { PageContainer } from '@toolpad/core';
 import CredentialsSignInPage from './pages/admin/login.jsx';
+import Logout from './pages/admin/logout.jsx';
 import Users from './pages/admin/users.jsx';
 import NotFound from './pages/admin/notFound.jsx';
 import EditLocations from './pages/admin/editLocations.jsx';
@@ -122,6 +123,10 @@ const router = createBrowserRouter([
       {
         path: "/login",
         element: <CredentialsSignInPage />,
+      },
+      {
+        path: "/logout",
+        element: <Logout />,
       },
     ],
   },

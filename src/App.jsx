@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "./api/axiosInstance";
 import genericState, { DocumentTypeSelector } from "./utils/States/Generic";
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import logout from "./utils/logout";
 
 const NAVIGATION = [
   {
@@ -260,12 +261,8 @@ function App() {
     signIn: () => {
       refetch();
     },
-    signOut: async () => {
-      await axiosInstance.post("/auth/logout");
-      navigate("/login");
-      setSession(null);
-      refetch();
-    },
+    // Same as the sidebar's Logout item.
+    signOut: () => logout(),
   };
 
   // Create a loader component
