@@ -21,6 +21,7 @@ import {
   FormControl,
   InputLabel,
   FormHelperText,
+  CircularProgress,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -70,6 +71,12 @@ const AddEditVesselDrawer = ({ onClose }) => {
   // Status when the vessel loaded: remarks are required only when it is
   // being discontinued now, not on every edit of an already-discontinued one.
   const [wasDiscontinued, setWasDiscontinued] = useState(false);
+
+  // An existing vessel's form is shown only after its values are in the form.
+  // Fields that mount empty become uncontrolled inputs, and MUI then never
+  // lifts their labels when the values arrive, so on the first open the
+  // labels sat on top of the values.
+  const [formReady, setFormReady] = useState(false);
 
   // "25-Nov-2020". Built by hand: en-GB toLocaleDateString now writes "Sept".
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -181,6 +188,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
         }));
         setAttachments(formattedAttachments);
       }
+      setFormReady(true);
     }
   }, [vesselData, vesselId, isLoadingVessel, setValue, defaultDocumentType]);
 
@@ -445,6 +453,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
   };
 
   const handleOnClose = () => {
+    setFormReady(false);
     setTabIndex(0);
     setWasDiscontinued(false);
     setAttachments([]);
@@ -525,6 +534,11 @@ const AddEditVesselDrawer = ({ onClose }) => {
               the browser, a required field on the visible tab (e.g. Discontinue
               Remarks) cancelled the submit before react-hook-form ran, so the
               Joi message and toast never appeared. Joi owns all validation. */}
+          {vesselId && !formReady ? (
+            <Box display="flex" justifyContent="center" alignItems="center" py={10}>
+              <CircularProgress />
+            </Box>
+          ) : (
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
             {tabIndex === 0 && (
               <Box display="flex" flexDirection="column" gap={3} p={3}>
@@ -1394,6 +1408,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
               </Button>
             </Box>
           </form>
+          )}
         </Box>
       </Drawer>
     </OPPageContainer>
