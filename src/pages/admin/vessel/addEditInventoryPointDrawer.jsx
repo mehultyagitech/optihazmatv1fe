@@ -18,6 +18,10 @@ import {
   TableBody,
   Paper,
   IconButton,
+  FormControl,
+  FormLabel,
+  Radio,
+  RadioGroup,
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
@@ -37,6 +41,10 @@ import {
 import axiosInstance from "../../../api/axiosInstance";
 import { toast } from "react-toastify";
 import MasterDataAutocomplete from "../../../components/MasterDataAutocomplete";
+import { BATTERY_IMAGE_URL } from "../../../utils/batteryImage";
+
+// Object Source value meaning each hazmat row carries its own Object.
+const OBJECTS_IN_HAZMATS = "hazmats";
 
 const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const theme = useTheme();
@@ -60,11 +68,14 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   const [form, setForm] = useState({
     saveWithoutImage: false,
     useCommonImage: false,
+    useBatteryImage: false,
+    objectSource: "location",
   });
   const [formErrors, setFormErrors] = useState({});
   const [deletedImages, setDeletedImages] = useState([]);
   const [deletedAttachments, setDeletedAttachments] = useState([]);
   const [AttachmentLinks, setAttachmentLinks] = useState({});
+  const [AttachmentReports, setAttachmentReports] = useState({});
   const queryClient = useQueryClient();
 
   const [hazmats, setHazmats] = useState([]);
@@ -84,6 +95,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       resultType: "",
       remarks: "",
       hazInventMass: "",
+      objectId: "",
     };
     setHazmats((prev) => [...prev, newHazmat]);
   };
@@ -109,8 +121,14 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
 
   useEffect(() => {
     if (open && pinId && pinDataById.isSuccess && !!pinDataById?.data) {
-      const { PinAttachments, PinImages, PinAttachmentLink, PinHazmat, ...pinData } =
-        pinDataById?.data;
+      const {
+        PinAttachments,
+        PinImages,
+        PinAttachmentLink,
+        PinAttachmentReport,
+        PinHazmat,
+        ...pinData
+      } = pinDataById?.data;
       const formData = {
         subLocationId: pinData.subLocationId || "",
         equipmentId: pinData.equipmentId || "",
@@ -127,6 +145,8 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
           : "",
         saveWithoutImage: pinData.saveWithoutImage || false,
         useCommonImage: pinData.useCommonImage || false,
+        useBatteryImage: pinData.useBatteryImage || false,
+        objectSource: pinData.objectSource || "location",
         isRemovedFromIHM: pinData.isRemovedFromIHM || false,
         isReplaced: pinData.isReplaced || false,
         removedDate: pinData.removedDate
@@ -138,6 +158,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       if (!!PinAttachmentLink) {
         setAttachmentLinks(PinAttachmentLink);
       }
+      setAttachmentReports(PinAttachmentReport || {});
 
       if (PinHazmat && PinHazmat.length > 0) {
         const formattedHazmats = PinHazmat.map((hazmat) => ({
@@ -148,6 +169,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
           resultType: hazmat.resultTypeId,
           remarks: hazmat.remarks,
           hazInventMass: hazmat.hazInventMass || 0,
+          objectId: hazmat.objectId || "",
         }));
         setHazmats(formattedHazmats);
       }
@@ -188,6 +210,8 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     "Link Attachments",
     "Add Attachments",
   ];
+
+  const objectsInHazmats = form.objectSource === OBJECTS_IN_HAZMATS;
 
   const handleTabChange = (index) => {
     setTabIndex(index);
@@ -256,6 +280,14 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
         isReplaced: checked,
         isRemovedFromIHM: checked ? false : prev.isRemovedFromIHM,
       }));
+    } else if (name === "useBatteryImage" || name === "useCommonImage") {
+      // One stand-in picture per point: the battery image or the vessel's common image.
+      const other = name === "useBatteryImage" ? "useCommonImage" : "useBatteryImage";
+      setForm((prev) => ({
+        ...prev,
+        [name]: checked,
+        [other]: checked ? false : prev[other],
+      }));
     } else if (name === "removedDate" || name === "removedRemarks") {
       setForm((prev) => ({
         ...prev,
@@ -323,6 +355,18 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     });
     if (!error) {
       setFormErrors({});
+      if (objectsInHazmats) {
+        const message = !hazmats.length
+          ? "Add at least one hazmat with its Object in the Hazmats tab"
+          : hazmats.some((hazmat) => !hazmat.objectId)
+          ? "Select an Object for every hazmat in the Hazmats tab"
+          : "";
+        if (message) {
+          toast.error(message);
+          setTabIndex(1);
+          return false;
+        }
+      }
       return true;
     }
     const errors = {};
@@ -338,7 +382,11 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     setForm({
       saveWithoutImage: false,
       useCommonImage: false,
+      useBatteryImage: false,
+      objectSource: "location",
     });
+    setHazmats([]);
+    setAttachmentReports({});
     setDrawer((prev) => ({
       open: false,
       pinId: "",
@@ -355,16 +403,35 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     onClose();
   };
 
-  const handleAttachmentLinkChange = async (pinId, attachmentId, linked) => {
-    await axiosInstance.post(`/pins/link-attachments`, {
-      pinId,
-      attachmentId,
-      linked,
-    });
+  // Saved straight away. A document must be linked before it can be added to
+  // the report; unlinking takes it out of the report too.
+  const handleAttachmentLinkChange = async (
+    pinId,
+    attachmentId,
+    linked,
+    useInReport = false
+  ) => {
+    try {
+      await axiosInstance.post(`/pins/link-attachments`, {
+        pinId,
+        attachmentId,
+        linked,
+        useInReport: linked && useInReport,
+      });
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Could not update the linked document"
+      );
+      return;
+    }
 
     setAttachmentLinks((prev) => ({
       ...prev,
       [attachmentId]: linked,
+    }));
+    setAttachmentReports((prev) => ({
+      ...prev,
+      [attachmentId]: linked && useInReport,
     }));
   };
 
@@ -400,6 +467,8 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
             resultTypeId: hazmat.resultType,
             remarks: hazmat.remarks,
             hazInventMass: !!hazmat.hazInventMass ? hazmat.hazInventMass : 0,
+            objectId:
+              data.objectSource === OBJECTS_IN_HAZMATS ? hazmat.objectId : null,
           };
 
           if(!!pinId) {
@@ -412,13 +481,17 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       }
 
       form.append("manufacturerBrand", data.manufacturerBrand || "");
-      form.append("object", data.objectId);
+      form.append("objectSource", data.objectSource || "location");
+      if (data.objectSource !== OBJECTS_IN_HAZMATS) {
+        form.append("object", data.objectId);
+      }
       form.append("referenceNo", data.referenceNo || "");
       form.append("remarks", data.remarks || "");
       form.append("saveWithoutImage", data.saveWithoutImage);
       form.append("installationDate", data.installationDate || "");
       form.append("subLocation", data.subLocationId);
       form.append("useCommonImage", data.useCommonImage);
+      form.append("useBatteryImage", !!data.useBatteryImage);
 
       data?.attachments?.forEach((attachment, index) => {
         if (attachment.file && attachment.status == "New") {
@@ -577,16 +650,43 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                     error={!!formErrors.compartmentId}
                     helperText={formErrors.compartmentId || ""}
                   />
-                  <MasterDataAutocomplete
-                    label="Object"
-                    name="objectId"
-                    value={form.objectId}
-                    options={Objects}
-                    endpoint="/objects"
-                    onChange={handleFormChange}
-                    error={!!formErrors.objectId}
-                    helperText={formErrors.objectId || ""}
-                  />
+                  <FormControl sx={{ gridColumn: "1 / -1" }}>
+                    <FormLabel id="object-source-label">Object Source</FormLabel>
+                    <RadioGroup
+                      row
+                      aria-labelledby="object-source-label"
+                      name="objectSource"
+                      value={form.objectSource || "location"}
+                      onChange={handleFormChange}
+                    >
+                      <FormControlLabel
+                        value="location"
+                        control={<Radio />}
+                        label="Define Object here"
+                      />
+                      <FormControlLabel
+                        value={OBJECTS_IN_HAZMATS}
+                        control={<Radio />}
+                        label="Define Objects in Hazmats Tab"
+                      />
+                    </RadioGroup>
+                  </FormControl>
+                  {objectsInHazmats ? (
+                    <Typography color="text.secondary" sx={{ alignSelf: "center" }}>
+                      Select an Object for each hazmat in the Hazmats tab.
+                    </Typography>
+                  ) : (
+                    <MasterDataAutocomplete
+                      label="Object"
+                      name="objectId"
+                      value={form.objectId}
+                      options={Objects}
+                      endpoint="/objects"
+                      onChange={handleFormChange}
+                      error={!!formErrors.objectId}
+                      helperText={formErrors.objectId || ""}
+                    />
+                  )}
                   <TextField
                     label="Description"
                     fullWidth
@@ -707,6 +807,11 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                         <TableCell>
                           <b>Hazmat</b>
                         </TableCell>
+                        {objectsInHazmats && (
+                          <TableCell>
+                            <b>Object</b>
+                          </TableCell>
+                        )}
                         <TableCell>
                           <b>Total Mass</b>
                         </TableCell>
@@ -760,6 +865,28 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                             </Select>
                           </TableCell>
     
+                          {/* Object (Object Source: Define Objects in Hazmats Tab) */}
+                          {objectsInHazmats && (
+                            <TableCell>
+                              <MasterDataAutocomplete
+                                label="Object"
+                                name="objectId"
+                                size="small"
+                                sx={{ minWidth: 200 }}
+                                value={hazmat.objectId}
+                                options={Objects}
+                                endpoint="/objects"
+                                onChange={(e) =>
+                                  handleHazmatChange(
+                                    hazmat.id,
+                                    "objectId",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </TableCell>
+                          )}
+
                           {/* Total Mass */}
                           <TableCell>
                             <TextField
@@ -895,7 +1022,32 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                   gap: 2,
                 }}
               >
-                {images.length === 0 ? (
+                {images.length === 0 && form.useBatteryImage ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 0.5,
+                    }}
+                  >
+                    <img
+                      src={BATTERY_IMAGE_URL}
+                      alt="Battery"
+                      style={{
+                        width: 100,
+                        height: 100,
+                        objectFit: "cover",
+                        borderRadius: 8,
+                        border: "1px solid #ccc",
+                        display: "block",
+                      }}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      Standard battery image
+                    </Typography>
+                  </Box>
+                ) : images.length === 0 ? (
                   <Typography color="text.secondary">
                     No images uploaded
                   </Typography>
@@ -959,7 +1111,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                   ))
                 )}
               </Box>
-              <Box display="flex" alignItems="center" gap={2}>
+              <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
                 <Button
                   variant="contained"
                   color="primary"
@@ -995,6 +1147,16 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                     />
                   }
                   label="Use Common Image"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="useBatteryImage"
+                      checked={!!form.useBatteryImage}
+                      onChange={handleFormChange}
+                    />
+                  }
+                  label="Use Battery Image"
                 />
               </Box>
             </Box>
@@ -1185,13 +1347,16 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                       <TableCell sx={{ fontWeight: "bold", color: "#333" }}>
                         Link Document
                       </TableCell>
+                      <TableCell sx={{ fontWeight: "bold", color: "#333" }}>
+                        Add in Report
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {attachments.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={4}
+                          colSpan={5}
                           align="center"
                           sx={{ color: "#555" }}
                         >
@@ -1239,13 +1404,37 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                             </Button>
                           </TableCell>
                           <TableCell>
-                            {/* Checkbox Input */}
+                            {/* Links save immediately, so the point and the
+                                document must both be saved first. */}
                             <Checkbox
+                              disabled={!pinId || attachment.status === "New"}
                               checked={AttachmentLinks[attachment.id] || false}
                               onChange={(e) =>
                                 handleAttachmentLinkChange(
                                   pinId,
                                   attachment.id,
+                                  e.target.checked,
+                                  !!AttachmentReports[attachment.id]
+                                )
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Checkbox
+                              disabled={
+                                !pinId ||
+                                attachment.status === "New" ||
+                                !AttachmentLinks[attachment.id]
+                              }
+                              checked={
+                                !!AttachmentLinks[attachment.id] &&
+                                !!AttachmentReports[attachment.id]
+                              }
+                              onChange={(e) =>
+                                handleAttachmentLinkChange(
+                                  pinId,
+                                  attachment.id,
+                                  true,
                                   e.target.checked
                                 )
                               }

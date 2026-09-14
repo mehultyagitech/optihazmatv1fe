@@ -33,6 +33,8 @@ export default function MasterDataAutocomplete({
   onChange,
   error,
   helperText,
+  size,
+  sx,
 }) {
   const queryClient = useQueryClient();
   // Values added here, shown straight away while the master list refreshes.
@@ -97,6 +99,8 @@ export default function MasterDataAutocomplete({
     <>
       <Autocomplete
         fullWidth
+        size={size}
+        sx={sx}
         options={allOptions}
         value={selected}
         onChange={(_, option) => {

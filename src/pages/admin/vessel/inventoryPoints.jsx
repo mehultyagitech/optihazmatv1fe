@@ -25,6 +25,7 @@ import ReactPaginate from 'react-paginate';
 import './../../../components/pagination.css';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { BATTERY_IMAGE_URL } from "../../../utils/batteryImage";
 
 const InventoryPointCard = ({
   inventoryPointName,
@@ -319,6 +320,7 @@ const InventoryPoints = () => {
                 key={index}
                 inventoryPointName={inventoryPoint?.subLocation?.name}
                 avatarSrc={
+                  inventoryPoint?.useBatteryImage ? BATTERY_IMAGE_URL :
                   !!VesselInventoryImage && VesselInventoryImage.isMain ?
                   import.meta.env.VITE_API_URL +
                   "/uploads/" + VesselInventoryImage.url :

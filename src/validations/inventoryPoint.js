@@ -4,7 +4,13 @@ export const inventoryPointSchema = Joi.object({
   subLocationId: Joi.string().required().label("Sub Location"),
   equipmentId: Joi.string().required().label("Equipment"),
   compartmentId: Joi.string().allow("").label("Compartment"),
-  objectId: Joi.string().required().label("Object"),
+  objectSource: Joi.string().valid("location", "hazmats"),
+  // With "Define Objects in Hazmats Tab" each hazmat row carries the Object.
+  objectId: Joi.when("objectSource", {
+    is: "hazmats",
+    then: Joi.string().allow("").label("Object"),
+    otherwise: Joi.string().required().label("Object"),
+  }),
   description: Joi.string().allow("").label("Description"),
   inventoryId: Joi.string().required().label("Inventory Class"),
   isPCHM: Joi.boolean(),
@@ -13,6 +19,7 @@ export const inventoryPointSchema = Joi.object({
   remarks: Joi.string().allow("").label("Remarks"),
   saveWithoutImage: Joi.boolean(),
   useCommonImage: Joi.boolean(),
+  useBatteryImage: Joi.boolean(),
   installationDate: Joi.string().allow("").label("Installation Date"),
   isRemovedFromIHM: Joi.boolean(),
   isReplaced: Joi.boolean(),

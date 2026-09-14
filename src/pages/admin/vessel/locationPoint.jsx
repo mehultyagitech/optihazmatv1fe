@@ -147,7 +147,16 @@ export default function LocationPoint() {
               <DetailRow label="Sub Location">{selectedPin.subLocation?.name}</DetailRow>
               <DetailRow label="Equipment">{selectedPin.equipment?.name}</DetailRow>
               <DetailRow label="Compartment">{selectedPin.compartment?.name}</DetailRow>
-              <DetailRow label="Object">{selectedPin.object?.name}</DetailRow>
+              <DetailRow label="Object">
+                {selectedPin.object?.name ||
+                  [
+                    ...new Set(
+                      (selectedPin.PinHazmat ?? [])
+                        .map((h) => h.object?.name)
+                        .filter(Boolean)
+                    ),
+                  ].join(", ")}
+              </DetailRow>
               <DetailRow label="Hazmat [ Quantity - Unit ]">{hazmatText(selectedPin)}</DetailRow>
             </>
           ) : (
