@@ -74,8 +74,12 @@ export default function InfoCard({
               color: "#90a4ae",
               // Diagrams are line drawings: show all of it, not a crop.
               "& img": { objectFit: avatarVariant === "rounded" ? "contain" : "cover" },
+              fontWeight: 700,
             }}
-          />
+          >
+            {/* No picture (e.g. companies): show the initial, not a person icon. */}
+            {!avatarSrc && !isBlank(title) ? String(title).trim().charAt(0).toUpperCase() : undefined}
+          </Avatar>
           <Box sx={{ minWidth: 0 }}>
             <Typography
               variant="subtitle1"

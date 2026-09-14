@@ -1,238 +1,232 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
-  Drawer,
-  Typography,
-  TextField,
   Box,
   Button,
-  Checkbox,
+  Divider,
+  Drawer,
+  IconButton,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
-  useMediaQuery,
-  useTheme,
+  Typography,
 } from "@mui/material";
-import OPPageContainer from "../../../components/OPPageContainer";
-import { FormControlLabel } from "@mui/material";
-import OPDivider from "../../../components/OPDivider";
+import CloseIcon from "@mui/icons-material/Close";
+import ApartmentIcon from "@mui/icons-material/Apartment";
+import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
+import EngineeringIcon from "@mui/icons-material/Engineering";
+import { toast } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   createClientManagers,
   updateClientManager,
 } from "../../../api/services/clientManager";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { useQueryClient } from "@tanstack/react-query";
 
-const AddEditClientManagerDrawer = ({ open, onClose, clientData }) => {
-  const [role, setRole] = useState("manager");
-  const [formData, setFormData] = useState({
-    companyName: "",
-    address: "",
-    contactDetails: "",
-    verifaviaId: "",
-    isClient: false,
-  });
-  const [loading, setLoading] = useState(false);
-  const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  const [errors, setErrors] = useState({});
+const EMPTY = {
+  companyName: "",
+  verifaviaId: "",
+  address: "",
+  contactDetails: "",
+  isClient: true,
+};
+
+const REQUIRED = {
+  companyName: "Company Name is required",
+  verifaviaId: "OptiHazmat ID is required",
+  address: "Address is required",
+  contactDetails: "Contact Details are required",
+};
+
+/**
+ * Add or edit a client (vessel owner) or fleet manager. `company` is the one
+ * being edited, or null to add; `defaultIsClient` picks the type for a new one.
+ */
+const AddEditClientManagerDrawer = ({ open, onClose, company = null, defaultIsClient = true }) => {
   const queryClient = useQueryClient();
+  const [form, setForm] = useState(EMPTY);
+  const [touched, setTouched] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const isEdit = !!company?.id;
+  // A company that already has vessels keeps its type; changing it would
+  // leave those vessels pointing at the wrong kind of company.
+  const typeLocked = isEdit && (company?.vesselCount ?? 0) > 0;
 
-  // Use clientData to pre-fill the form when editing
+  // Start from the company being edited, or a blank form, on every open.
   useEffect(() => {
-    if (clientData) {
-      setFormData({
-        id: clientData.id || "",
-        companyName: clientData.companyName || "",
-        address: clientData.address || "",
-        contactDetails: clientData.contactDetails || "",
-        verifaviaId: clientData.verifaviaId || "",
-        isClient: clientData.isClient || false,
-      });
-      setRole(clientData.isClient ? "client" : "manager");
-    }
-  }, [clientData]);
+    if (!open) return;
+    setForm(
+      company
+        ? {
+            companyName: company.companyName ?? "",
+            verifaviaId: company.verifaviaId ?? "",
+            address: company.address ?? "",
+            contactDetails: company.contactDetails ?? "",
+            isClient: !!company.isClient,
+          }
+        : { ...EMPTY, isClient: defaultIsClient }
+    );
+    setTouched(false);
+  }, [open, company, defaultIsClient]);
 
-  const handleRoleChange = (event, newRole) => {
-    if (newRole !== null) {
-      setRole(newRole);
-      setFormData((prevData) => ({
-        ...prevData,
-        isClient: newRole === "client",
-      }));
-    }
-  };
+  const errors = Object.fromEntries(
+    Object.entries(REQUIRED).map(([key, message]) => [key, String(form[key] ?? "").trim() ? "" : message])
+  );
+  const hasErrors = Object.values(errors).some(Boolean);
+  const kind = form.isClient ? "Client" : "Fleet Manager";
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+  const setField = (name) => (e) => setForm((prev) => ({ ...prev, [name]: e.target.value }));
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.companyName)
-      newErrors.companyName = "Company Name is required";
-    if (!formData.address) newErrors.address = "Address is required";
-    if (!formData.contactDetails)
-      newErrors.contactDetails = "Contact Details are required";
-    if (!formData.verifaviaId)
-      newErrors.verifaviaId = "Verifavia ID is required";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      toast.error("Please fill all mandatory fields.");
-      return;
-    }
-    setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setTouched(true);
+    if (hasErrors) return;
+    setSaving(true);
+    const payload = {
+      companyName: form.companyName.trim(),
+      verifaviaId: form.verifaviaId.trim(),
+      address: form.address.trim(),
+      contactDetails: form.contactDetails.trim(),
+      isClient: form.isClient,
+    };
     try {
-      let response;
-      if (clientData && clientData.id) {
-        // Update existing client manager
-        response = await updateClientManager(clientData.id, formData);
-        if (clientData.isClient == true) {
-          toast.success("Client Updated Successfully!");
-        } else {
-          toast.success("Manager Updated Successfully!");
-        }
+      if (isEdit) {
+        await updateClientManager(company.id, { id: company.id, ...payload });
+        toast.success(`${kind} updated`);
       } else {
-        response = await createClientManagers(formData);
-        toast.success("New Manager Created Successfully!");
+        await createClientManagers(payload);
+        toast.success(`${kind} added`);
       }
-
-      // v5 takes a filters object. The old array form matched no key in
-      // particular, and skipped ["genericData"] entirely, so the client and
-      // manager lists used by the vessel screens stayed stale until reload.
+      // Vessel screens read clients/managers from the generic data.
       queryClient.invalidateQueries({ queryKey: ["genericData"] });
       queryClient.invalidateQueries({ queryKey: ["clientManagers"] });
       onClose();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong.");
+      toast.error(error?.response?.data?.message || "Something went wrong.");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
+  const fieldError = (name) => (touched && errors[name] ? errors[name] : " ");
+
   return (
-    <OPPageContainer>
-      <Drawer anchor="right" open={open} onClose={onClose}>
-        <Box sx={{ width: isSmallScreen ? "100vw" : 800, padding: 9 }}>
-          {/* Header */}
+    <Drawer anchor="right" open={open} onClose={onClose}>
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        noValidate
+        sx={{ width: { xs: "100vw", sm: 480 }, height: "100%", display: "flex", flexDirection: "column" }}
+      >
+        <Box sx={{ p: 3, display: "flex", alignItems: "center", gap: 2, bgcolor: "#1976d20f" }}>
           <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-            marginBottom={2}
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2,
+              bgcolor: "#1976d21f",
+              color: "#1565c0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-              {clientData ? "Edit Client/Manager" : "Add Client/Manager"}
+            <ApartmentIcon />
+          </Box>
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Typography variant="h6" fontWeight={700}>
+              {isEdit ? `Edit ${kind}` : `Add ${kind}`}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" noWrap>
+              {isEdit ? company.companyName : "Link it to vessels as client or manager."}
+            </Typography>
+          </Box>
+          <IconButton onClick={onClose} aria-label="close">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Divider />
+
+        <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, overflowY: "auto" }}>
+          <Box>
+            <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+              Company type
             </Typography>
             <ToggleButtonGroup
-              value={role}
               exclusive
-              onChange={handleRoleChange}
-              aria-label="role selection"
-              size="small"
-              sx={{ marginLeft: isSmallScreen ? 0 : 2 }}
+              fullWidth
               color="primary"
+              value={form.isClient ? "client" : "manager"}
+              disabled={typeLocked}
+              onChange={(_, value) => value && setForm((prev) => ({ ...prev, isClient: value === "client" }))}
             >
-              <ToggleButton value="client" aria-label="client">
-                Client
+              <ToggleButton value="client" sx={{ textTransform: "none", gap: 1, py: 1.25 }}>
+                <DirectionsBoatIcon fontSize="small" /> Client (vessel owner)
               </ToggleButton>
-              <ToggleButton value="manager" aria-label="manager">
-                Manager
+              <ToggleButton value="manager" sx={{ textTransform: "none", gap: 1, py: 1.25 }}>
+                <EngineeringIcon fontSize="small" /> Fleet Manager
               </ToggleButton>
             </ToggleButtonGroup>
-          </Box>
-          <OPDivider />
-
-          {/* Dynamic Fields */}
-          <Box
-            component="form"
-            display="flex"
-            flexDirection="column"
-            gap={2}
-            marginBottom={2}
-          >
-            <Typography sx={{ fontWeight: "bold" }} variant="subtitle1">
-              {role === "client" ? "Client Details" : "Fleet Manager Details"}
-            </Typography>
-            <TextField
-              required
-              label="Company Name"
-              variant="outlined"
-              fullWidth
-              name="companyName"
-              value={formData.companyName}
-              error={!!errors.companyName}
-              helperText={errors.companyName}
-              onChange={handleInputChange}
-            />
-            <TextField
-              label="Address"
-              variant="outlined"
-              fullWidth
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              error={!!errors.address}
-              helperText={errors.address}
-            />
-            <TextField
-              label="Contact Details"
-              variant="outlined"
-              fullWidth
-              name="contactDetails"
-              value={formData.contactDetails}
-              onChange={handleInputChange}
-              error={!!errors.contactDetails}
-              helperText={errors.contactDetails}
-            />
-            <TextField
-              required
-              label="OptihaMat ID"
-              variant="outlined"
-              fullWidth
-              error={!!errors.verifaviaId}
-              helperText={errors.verifaviaId}
-              name="verifaviaId"
-              value={formData.verifaviaId}
-              onChange={handleInputChange}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={role === "client"}
-                  disabled
-                  color="primary"
-                />
-              }
-              label="Is Client"
-            />
+            {typeLocked && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>
+                {`The type can't change while ${company.vesselCount} vessel${company.vesselCount === 1 ? " is" : "s are"} linked.`}
+              </Typography>
+            )}
           </Box>
 
-          {/* Footer */}
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Button variant="contained" color="primary" onClick={handleSubmit}>
-              {clientData ? "Update" : "Submit"}
-            </Button>
-            <Button variant="outlined" color="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-          </Box>
+          <TextField
+            autoFocus
+            required
+            fullWidth
+            label="Company Name"
+            value={form.companyName}
+            onChange={setField("companyName")}
+            error={touched && !!errors.companyName}
+            helperText={fieldError("companyName")}
+          />
+          <TextField
+            required
+            fullWidth
+            label="OptiHazmat ID (VID)"
+            value={form.verifaviaId}
+            onChange={setField("verifaviaId")}
+            error={touched && !!errors.verifaviaId}
+            helperText={fieldError("verifaviaId")}
+          />
+          <TextField
+            required
+            fullWidth
+            multiline
+            minRows={2}
+            label="Address"
+            value={form.address}
+            onChange={setField("address")}
+            error={touched && !!errors.address}
+            helperText={fieldError("address")}
+          />
+          <TextField
+            required
+            fullWidth
+            multiline
+            minRows={2}
+            label="Contact Details"
+            placeholder="Contact person, email, phone"
+            value={form.contactDetails}
+            onChange={setField("contactDetails")}
+            error={touched && !!errors.contactDetails}
+            helperText={fieldError("contactDetails")}
+          />
         </Box>
-      </Drawer>
-      <ToastContainer />
-    </OPPageContainer>
+
+        <Divider />
+        <Box sx={{ p: 2, display: "flex", justifyContent: "flex-end", gap: 1.5 }}>
+          <Button onClick={onClose} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="contained" disabled={saving} sx={{ textTransform: "none", px: 3 }}>
+            {saving ? "Saving..." : isEdit ? "Save Changes" : `Add ${kind}`}
+          </Button>
+        </Box>
+      </Box>
+    </Drawer>
   );
 };
 
