@@ -212,7 +212,10 @@ const LocationDiagramPage = () => {
   }, [flash, pageNavigate, routerLocation.pathname]);
 
   const locationDiagrams = useQuery({
-    queryKey: ["locationDiagrams", page, searchQuery],
+    // The vessel is part of the key: without it, switching vessels showed the
+    // previous vessel's diagrams from the cache (kept for 5 minutes).
+    queryKey: ["locationDiagrams", vessel?.id, page, searchQuery],
+    enabled: !!vessel?.id,
     queryFn: async () => {
       const response = await axiosInstance.get(
         `/location-diagrams/${vessel.id}`,
