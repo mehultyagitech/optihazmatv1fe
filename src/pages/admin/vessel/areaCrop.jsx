@@ -156,7 +156,7 @@ const CropLocationDiagram = () => {
       return;
     }
     if (!location) {
-      toast.error("Please select a location.");
+      toast.error("Please select an area.");
       return;
     }
     mutate();
@@ -345,13 +345,13 @@ const CropLocationDiagram = () => {
               </Select>
             </FormControl>
 
-            {/* Location Dropdown (both modes) */}
+            {/* Area Dropdown (both modes) */}
             <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel id="location-label">Location</InputLabel>
+              <InputLabel id="location-label">Area</InputLabel>
               <Select
                 labelId="location-label"
                 value={location}
-                label="Location"
+                label="Area"
                 onChange={(e) => setLocation(e.target.value)}
               >
                 {subLocationSelector.map((subLoc) => (
