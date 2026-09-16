@@ -56,21 +56,13 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     Compartments,
     Objects,
     Inventory,
-    DocumentTypes,
     Hazmats,
     Units,
     ResultTypes,
   } = useRecoilValue(genericState);
   const inventoryDocumentTypes = useRecoilValue(InventoryDocumentTypeSelector);
-  // Only the three inventory document types. An attachment saved earlier with
-  // another type keeps showing that type instead of a blank.
-  const documentTypeOptions = (currentTypeId) => {
-    const current =
-      currentTypeId && !inventoryDocumentTypes.some((t) => t.id === currentTypeId)
-        ? DocumentTypes.find((t) => t.id === currentTypeId)
-        : null;
-    return current ? [...inventoryDocumentTypes, current] : inventoryDocumentTypes;
-  };
+  // Inventory point attachments use only the three inventory document types.
+  const documentTypeOptions = () => inventoryDocumentTypes;
   const [{ x, y, pinId, open }, setDrawer] = useRecoilState(
     locationPointAddDrawerState
   );
@@ -191,6 +183,8 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
         id: att.id,
         name: att.fileName,
         type: att.documentTypeId, // Document type id will be set by user
+        // To send only the types the user actually changed.
+        originalType: att.documentTypeId,
         filename: att.url,
         status: "Uploaded",
         file: att,
@@ -538,6 +532,14 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       if (!!pinId) {
         form.append("deletedImages", JSON.stringify(deletedImages));
         form.append("deletedAttachments", JSON.stringify(deletedAttachments));
+        form.append(
+          "attachmentTypes",
+          JSON.stringify(
+            (data.attachments ?? [])
+              .filter((att) => att.status === "Uploaded" && att.type && att.type !== att.originalType)
+              .map((att) => ({ id: att.id, documentTypeId: att.type }))
+          )
+        );
 
         response = await axiosInstance.put(`/pins/${pinId}`, form, {
           headers: {
@@ -556,8 +558,10 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries(["pinData", pinId]);
-      queryClient.invalidateQueries(["pinsListing"]);
+      // Object form: React Query v5 ignores the old array form, so a reopened
+      // point used to show its values from before the save.
+      queryClient.invalidateQueries({ queryKey: ["pinData", pinId] });
+      queryClient.invalidateQueries({ queryKey: ["pinsListing"] });
       toast.success(pinId ? "Inventory point updated" : "Inventory point created");
       handleClose();
     },
@@ -1389,7 +1393,6 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                           <TableCell>{attachment.name}</TableCell>
                           <TableCell>
                             <Select
-                              disabled={attachment.status === "Uploaded"}
                               value={attachment.type || ""}
                               onChange={(e) =>
                                 handleAttachmentTypeChange(
