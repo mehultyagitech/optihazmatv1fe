@@ -33,11 +33,32 @@ const CompartmentSelector = selector({
   },
 });
 
+// Document types for inventory point attachments. They are offered only in
+// the inventory point drawer, and every other attachment list leaves them out.
+export const INVENTORY_DOCUMENT_TYPE_NAMES = [
+  "Inventory Creation Document",
+  "Inventory Removal Document",
+  "Inventory Replacement Document",
+];
+const isInventoryDocumentType = (doc) =>
+  INVENTORY_DOCUMENT_TYPE_NAMES.some((name) => name.toLowerCase() === String(doc?.name).trim().toLowerCase());
+
 const DocumentTypeSelector = selector({
   key: "DocumentTypeSelector",
   get: ({ get }) => {
     const state = get(genericState);
-    return state.DocumentTypes;
+    return (state.DocumentTypes ?? []).filter((doc) => !isInventoryDocumentType(doc));
+  },
+});
+
+// In the order listed above.
+const InventoryDocumentTypeSelector = selector({
+  key: "InventoryDocumentTypeSelector",
+  get: ({ get }) => {
+    const types = (get(genericState).DocumentTypes ?? []).filter(isInventoryDocumentType);
+    const rank = (doc) =>
+      INVENTORY_DOCUMENT_TYPE_NAMES.findIndex((name) => name.toLowerCase() === String(doc.name).trim().toLowerCase());
+    return [...types].sort((a, b) => rank(a) - rank(b));
   },
 });
 
@@ -134,6 +155,7 @@ export {
   defaultDocumentTypeSelector,
   CompartmentSelector,
   DocumentTypeSelector,
+  InventoryDocumentTypeSelector,
   EquipmentSelector,
   LocationSelector,
   SubLocationSelector,

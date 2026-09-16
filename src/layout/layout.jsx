@@ -157,7 +157,7 @@ function NavItem({ item, pathname, collapsed, nested, onNavigate }) {
         my: 0.25,
         minHeight: 42,
         borderRadius: 2,
-        px: collapsed ? 0 : nested ? 2 : 1.5,
+        px: collapsed ? 0 : 1.5,
         justifyContent: collapsed ? "center" : "flex-start",
         color: active ? "#fff" : "rgba(255,255,255,0.78)",
         "&:hover": { bgcolor: "rgba(255,255,255,0.08)", color: "#fff" },
@@ -177,10 +177,13 @@ function NavItem({ item, pathname, collapsed, nested, onNavigate }) {
     >
       <ListItemIcon
         sx={{
+          // Fixed icon column so every label starts at the same x.
           minWidth: 0,
+          width: 24,
+          justifyContent: "center",
           mr: collapsed ? 0 : 1.5,
           color: active ? ACCENT : "inherit",
-          "& svg": { fontSize: nested ? 19 : 21 },
+          "& svg": { fontSize: nested ? 20 : 22 },
         }}
       >
         <Icon />
@@ -247,8 +250,12 @@ function SidebarContent({ collapsed, pathname, user, vessel, onNavigate, onToggl
           overflowY: "auto",
           overflowX: "hidden",
           pb: 2,
+          // App.css paints every scrollbar track light grey; keep this one clear.
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(255,255,255,0.25) transparent",
           "&::-webkit-scrollbar": { width: 6 },
-          "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(255,255,255,0.2)", borderRadius: 3 },
+          "&::-webkit-scrollbar-track": { background: "transparent" },
+          "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(255,255,255,0.25)", borderRadius: 3 },
         }}
       >
         <SectionLabel collapsed={collapsed}>Main</SectionLabel>
@@ -276,7 +283,9 @@ function SidebarContent({ collapsed, pathname, user, vessel, onNavigate, onToggl
                   gap: 1.25,
                 }}
               >
-                <DirectionsBoatIcon sx={{ fontSize: 20, color: ACCENT }} />
+                <Box sx={{ width: 24, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                  <DirectionsBoatIcon sx={{ fontSize: 22, color: ACCENT }} />
+                </Box>
                 <Typography sx={{ fontSize: 14, fontWeight: 700, flexGrow: 1, minWidth: 0 }} noWrap title={vessel.name}>
                   {vessel.name}
                 </Typography>
@@ -328,7 +337,7 @@ function SidebarContent({ collapsed, pathname, user, vessel, onNavigate, onToggl
                 "&:hover": { bgcolor: "rgba(255,255,255,0.08)", color: "#fff" },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: editActive ? ACCENT : "inherit" }}>
+              <ListItemIcon sx={{ minWidth: 0, width: 24, justifyContent: "center", mr: 1.5, color: editActive ? ACCENT : "inherit", "& svg": { fontSize: 22 } }}>
                 <TuneIcon />
               </ListItemIcon>
               <ListItemText primary="Edit Items" primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }} />
@@ -363,7 +372,7 @@ function SidebarContent({ collapsed, pathname, user, vessel, onNavigate, onToggl
                 "&:hover": { bgcolor: "rgba(255,255,255,0.08)", color: "#fff" },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 0, mr: collapsed ? 0 : 1.5, color: "inherit" }}>
+              <ListItemIcon sx={{ minWidth: 0, width: 24, justifyContent: "center", mr: collapsed ? 0 : 1.5, color: "inherit" }}>
                 {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
               </ListItemIcon>
               {!collapsed && <ListItemText primary="Collapse" primaryTypographyProps={{ fontSize: 14 }} />}
@@ -382,7 +391,7 @@ function SidebarContent({ collapsed, pathname, user, vessel, onNavigate, onToggl
               "&:hover": { bgcolor: "rgba(229,57,53,0.18)", color: "#fff" },
             }}
           >
-            <ListItemIcon sx={{ minWidth: 0, mr: collapsed ? 0 : 1.5, color: "inherit" }}>
+            <ListItemIcon sx={{ minWidth: 0, width: 24, justifyContent: "center", mr: collapsed ? 0 : 1.5, color: "inherit" }}>
               <LogoutIcon />
             </ListItemIcon>
             {!collapsed && <ListItemText primary="Log out" primaryTypographyProps={{ fontSize: 14 }} />}

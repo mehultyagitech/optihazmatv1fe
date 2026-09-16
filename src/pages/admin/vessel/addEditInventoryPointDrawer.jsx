@@ -30,7 +30,9 @@ import OPDivider from "../../../components/OPDivider";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
-import genericState from "../../../utils/States/Generic";
+import genericState, {
+  InventoryDocumentTypeSelector,
+} from "../../../utils/States/Generic";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { inventoryPointSchema } from "../../../validations/inventoryPoint";
@@ -59,6 +61,16 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     Units,
     ResultTypes,
   } = useRecoilValue(genericState);
+  const inventoryDocumentTypes = useRecoilValue(InventoryDocumentTypeSelector);
+  // Only the three inventory document types. An attachment saved earlier with
+  // another type keeps showing that type instead of a blank.
+  const documentTypeOptions = (currentTypeId) => {
+    const current =
+      currentTypeId && !inventoryDocumentTypes.some((t) => t.id === currentTypeId)
+        ? DocumentTypes.find((t) => t.id === currentTypeId)
+        : null;
+    return current ? [...inventoryDocumentTypes, current] : inventoryDocumentTypes;
+  };
   const [{ x, y, pinId, open }, setDrawer] = useRecoilState(
     locationPointAddDrawerState
   );
@@ -350,6 +362,13 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
   };
 
   const validateForm = () => {
+    // Saving a new attachment without a type used to fail on the server.
+    const untyped = attachments.find((att) => att.status === "New" && !att.type);
+    if (untyped) {
+      toast.error(`Select a document type for "${untyped.name}" in Add Attachments`);
+      setTabIndex(6);
+      return false;
+    }
     const { error } = inventoryPointSchema.validate(form, {
       abortEarly: false,
     });
@@ -1384,7 +1403,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                               <MenuItem value="" disabled>
                                 Select Type
                               </MenuItem>
-                              {DocumentTypes.map((type) => (
+                              {documentTypeOptions(attachment.type).map((type) => (
                                 <MenuItem key={type.id} value={type.id}>
                                   {type.name}
                                 </MenuItem>
@@ -1514,7 +1533,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                                 Select Type
                               </MenuItem>
 
-                              {DocumentTypes.map((type) => (
+                              {documentTypeOptions(att.type).map((type) => (
                                 <MenuItem key={type.id} value={type.id}>
                                   {type.name}
                                 </MenuItem>
