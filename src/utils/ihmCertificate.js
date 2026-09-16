@@ -22,19 +22,15 @@ const buildCertificateNo = (imo, periodDate) => {
   return `VS/HCS/${imo}/${mmYY}${mmYY}/M${monthNo}`;
 };
 
-// Appendix reference: {ddmmyy}_{hhmmss}_{uuid}
-const buildAppendixRef = (issueDate) => {
+// Appendix reference: {ddmmyy}_{hhmmss}_{imo}
+const buildAppendixRef = (issueDate, imo) => {
   const dd = pad2(issueDate.getDate());
   const mm = pad2(issueDate.getMonth() + 1);
   const yy = String(issueDate.getFullYear()).slice(-2);
   const hh = pad2(issueDate.getHours());
   const mi = pad2(issueDate.getMinutes());
   const ss = pad2(issueDate.getSeconds());
-  const uuid =
-    typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : `${Math.random().toString(16).slice(2, 10)}-xxxx`;
-  return `${dd}${mm}${yy}_${hh}${mi}${ss}_${uuid}`;
+  return `${dd}${mm}${yy}_${hh}${mi}${ss}_${imo}`;
 };
 
 // ---- public API ----------------------------------------------------------
@@ -61,7 +57,7 @@ export function buildCertificateData(vessel, opts = {}) {
     periodTill: fmtDate(till),
     issuedOn: fmtDate(issueDate),
     certificateNo: opts.certificateNo || buildCertificateNo(vessel?.imoNumber || "-", periodBase),
-    appendixRef: buildAppendixRef(issueDate),
+    appendixRef: buildAppendixRef(issueDate, vessel?.imoNumber || "-"),
   };
 }
 
@@ -104,248 +100,140 @@ const drawBrandMark = (doc, x, y, size, hull, point) => {
 
 /**
  * Build the IHM Maintenance Certificate as a jsPDF document (no download).
+ * Landscape A4, laid out like the client's existing certificates.
  * Returns { doc, data }.
  */
 export function buildCertificatePdf(vessel, opts = {}) {
   const d = buildCertificateData(vessel, opts);
 
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const W = doc.internal.pageSize.getWidth(); // 210
-  const H = doc.internal.pageSize.getHeight(); // 297
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const W = doc.internal.pageSize.getWidth(); // 297
+  const H = doc.internal.pageSize.getHeight(); // 210
 
-  const navy = [13, 71, 161];
-  const ink = [33, 43, 54];
-  const muted = [110, 120, 132];
-  const orange = [245, 124, 0];
-  const pale = [240, 245, 252];
-  const line = [205, 214, 226];
+  const navy = [36, 52, 94];
+  const ink = [40, 40, 40];
+  const teal = [38, 110, 140];
+  const frame = [176, 190, 214];
 
-  const M = 22; // content margin
-  const CW = W - M * 2; // content width
+  const M = 18; // content margin
   const cx = W / 2;
 
-  // --- Frame: navy outer rule, thin inner rule, orange corner accents ---
-  doc.setDrawColor(...navy);
-  doc.setLineWidth(1.2);
-  doc.rect(8, 8, W - 16, H - 16);
-  doc.setLineWidth(0.25);
-  doc.rect(11, 11, W - 22, H - 22);
-  doc.setDrawColor(...orange);
-  doc.setLineWidth(1.2);
-  [
-    [11, 11, 1, 1],
-    [W - 11, 11, -1, 1],
-    [11, H - 11, 1, -1],
-    [W - 11, H - 11, -1, -1],
-  ].forEach(([x, y, sx, sy]) => {
-    doc.line(x, y, x + 14 * sx, y);
-    doc.line(x, y, x, y + 14 * sy);
-  });
+  // --- Thin double frame ---
+  doc.setDrawColor(...frame);
+  doc.setLineWidth(0.35);
+  doc.rect(4, 4, W - 8, H - 8);
+  doc.setLineWidth(0.2);
+  doc.rect(5.5, 5.5, W - 11, H - 11);
 
-  // --- Header: mark + company (left), contact (right) ---
-  let y = 20;
-  drawBrandMark(doc, M, y, 15, navy, orange);
+  // --- Header: logo (left), company block (right) ---
+  drawBrandMark(doc, M - 4, 11, 20, [13, 71, 161], [245, 124, 0]);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.setTextColor(...navy);
-  doc.text("OPTIHAZMAT PTE LTD", M + 19, y + 7);
+  doc.setFontSize(22);
+  doc.setTextColor(13, 71, 161);
+  doc.text("OptiHazmat", M + 18, 22);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...muted);
-  doc.text("Inventory of Hazardous Materials Services", M + 19, y + 12);
+  doc.setFontSize(11);
+  doc.setTextColor(...teal);
+  doc.text("shipping IHM services", M + 18.5, 28);
 
-  doc.setFontSize(8.5);
-  doc.setTextColor(...ink);
   const rx = W - M;
-  doc.text("16 Raffles Quay, #33-03 Hong Leong Building", rx, y + 3.5, { align: "right" });
-  doc.text("Singapore 048581", rx, y + 7.5, { align: "right" });
+  doc.setFontSize(8);
+  doc.setTextColor(...ink);
+  doc.text("OPTIHAZMAT PTE LTD", rx, 15, { align: "right" });
+  doc.text("16 Raffles Quay, #33-03 Hong Leong Building Singapore 048581", rx, 18.5, { align: "right" });
+  doc.text("contact@optihazmat.com", rx, 24, { align: "right" });
+  doc.setFont("helvetica", "bolditalic");
+  doc.setTextColor(...teal);
+  doc.text("www.optihazmat.com", rx, 29.5, { align: "right" });
+
+  // --- Double rule ---
+  doc.setDrawColor(...frame);
+  doc.setLineWidth(0.3);
+  doc.line(5.5, 40, W - 5.5, 40);
+  doc.line(5.5, 41.2, W - 5.5, 41.2);
+
+  // --- Certificate no. (left) and appendix reference (right) ---
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
   doc.setTextColor(...navy);
-  doc.text("contact@optihazmat.com  |  www.optihazmat.com", rx, y + 11.5, { align: "right" });
-
-  y += 19;
-  doc.setDrawColor(...navy);
-  doc.setLineWidth(0.5);
-  doc.line(M, y, W - M, y);
-
-  // --- Reference boxes: certificate no. and appendix reference ---
-  y += 6;
-  const gap = 5;
-  const boxW = (CW - gap) / 2;
-  const boxH = 16;
-  const refBox = (x, label, value, valueSize) => {
-    doc.setFillColor(...pale);
-    doc.setDrawColor(...line);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(x, y, boxW, boxH, 1.5, 1.5, "FD");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(...muted);
-    doc.text(label.toUpperCase(), x + 4, y + 5.5);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(valueSize);
-    doc.setTextColor(...navy);
-    // Keep references on one line: shrink rather than wrap mid-code.
-    let size = valueSize;
-    while (doc.getTextWidth(value) > boxW - 8 && size > 5.5) {
-      size -= 0.25;
-      doc.setFontSize(size);
-    }
-    doc.text(value, x + 4, y + 11.8);
-  };
-  refBox(M, "Certificate No.", d.certificateNo, 11);
-  refBox(M + boxW + gap, "Appendix 1 Reference", d.appendixRef, 8);
+  doc.text(`Certificate No: ${d.certificateNo}`, M - 4, 49.5);
+  doc.setFontSize(9.5);
+  doc.text(`Please refer to appendix 1 (${d.appendixRef})`, W - M - 8, 49.5, { align: "right" });
 
   // --- Title ---
-  y += boxH + 20;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(27);
-  doc.setTextColor(...navy);
-  doc.text("IHM Maintenance Certificate", cx, y, { align: "center" });
-  y += 5;
-  doc.setDrawColor(...orange);
-  doc.setLineWidth(1);
-  doc.line(cx - 22, y, cx + 22, y);
+  doc.setFontSize(19);
+  doc.text("IHM Maintenance Certificate", cx, 60, { align: "center" });
 
-  y += 9;
-  doc.setFontSize(10.5);
-  doc.setTextColor(...ink);
+  // --- Issued by ---
+  doc.setFontSize(13);
+  doc.setTextColor(...navy);
   {
     const a = "Issued by ";
-    const b = "OPTIHAZMAT PTE LTD";
+    const b = "OPTIHAZMAT PTE LTD.";
+    const c = "  to";
     doc.setFont("helvetica", "normal");
     const wa = doc.getTextWidth(a);
-    doc.setFont("helvetica", "bold");
+    const wc = doc.getTextWidth(c);
+    doc.setFont("helvetica", "italic");
     const wb = doc.getTextWidth(b);
-    const startX = cx - (wa + wb) / 2;
+    const startX = cx - (wa + wb + wc) / 2;
     doc.setFont("helvetica", "normal");
-    doc.text(a, startX, y);
-    doc.setFont("helvetica", "bold");
-    doc.text(b, startX + wa, y);
+    doc.text(a, startX, 72);
+    doc.setFont("helvetica", "italic");
+    doc.text(b, startX + wa, 72);
+    doc.setFont("helvetica", "normal");
+    doc.text(c, startX + wa + wb, 72);
   }
 
-  // --- Vessel particulars grid ---
-  y += 10;
-  const cells = [
-    ["Name of Ship", d.vesselName],
-    ["IMO Number", d.imoNumber],
-    ["Type of Ship", d.vesselType],
-    ["Gross Tonnage (GRT)", String(d.grt)],
-  ];
-  const cellW = CW / 2;
-  const cellH = 15;
-  doc.setDrawColor(...line);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(M, y, CW, cellH * 2, 1.5, 1.5, "S");
-  doc.line(M + cellW, y, M + cellW, y + cellH * 2);
-  doc.line(M, y + cellH, W - M, y + cellH);
-  cells.forEach(([label, value], i) => {
-    const cx0 = M + (i % 2) * cellW + 5;
-    const cy0 = y + Math.floor(i / 2) * cellH;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(...muted);
-    doc.text(label.toUpperCase(), cx0, cy0 + 5.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...ink);
-    // Shrink long values (ship names) to fit the cell instead of cutting them.
-    const text = String(value ?? "-");
-    let size = 11;
-    doc.setFontSize(size);
-    while (doc.getTextWidth(text) > cellW - 10 && size > 7) {
-      size -= 0.25;
-      doc.setFontSize(size);
-    }
-    doc.text(doc.splitTextToSize(text, cellW - 10)[0], cx0, cy0 + 11.5);
-  });
-
-  // --- Certification statement with the period highlighted ---
-  y += cellH * 2 + 13;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...ink);
-  doc.text("This is to certify that the maintenance of IHM Part 1 of this vessel for the period", cx, y, {
-    align: "center",
-  });
-  y += 5;
-  const periodText = `${d.periodFrom}   to   ${d.periodTill}`;
+  // --- Vessel ---
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  const pw = doc.getTextWidth(periodText) + 20;
-  doc.setFillColor(...navy);
-  doc.roundedRect(cx - pw / 2, y, pw, 11, 2, 2, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.text(periodText, cx, y + 7.6, { align: "center" });
-  y += 18;
+  const vesselLine = `${d.vesselName} - IMO Number ${d.imoNumber}`;
+  let vSize = 14;
+  while (doc.getTextWidth(vesselLine) > W - 2 * M && vSize > 9) {
+    vSize -= 0.5;
+    doc.setFontSize(vSize);
+  }
+  doc.text(vesselLine, cx, 82, { align: "center" });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...ink);
-  doc.text("is in conformity with the following regulations and guidelines:", cx, y, { align: "center" });
+  doc.setFontSize(13);
+  doc.text(`Type of Ship: ${d.vesselType}, GRT: ${d.grt}`, cx, 89, { align: "center" });
 
-  // --- Regulations: numbered, text aligned on a common indent ---
-  y += 10;
-  const regulations = [
-    "Regulation (EU) No 1257/2013 of the European Parliament and of the Council of 20 November 2013 on ship recycling and amending Regulation (EC) No 1013/2006 and Directive 2009/16/EC",
-    "IMO MEPC.379(80) - 2023 Guidelines for the development of the Inventory of Hazardous Materials",
-    "EMSA's Best Practice Guidance on the Inventory of Hazardous Materials",
-  ];
-  const numX = M + 4;
-  const textX = M + 13;
-  doc.setFontSize(10);
-  regulations.forEach((text, i) => {
-    const lines = doc.splitTextToSize(text, W - M - 4 - textX);
-    const blockH = lines.length * 4.8 + 4;
-    doc.setFillColor(...pale);
-    doc.roundedRect(M, y - 4.5, CW, blockH, 1.5, 1.5, "F");
+  // --- Certification statement ---
+  doc.setFontSize(13);
+  doc.text("This is to certify that the maintenance of IHM Part 1 of this vessel from", cx, 103, { align: "center" });
+  doc.text(`${d.periodFrom} till ${d.periodTill}`, cx, 110, { align: "center" });
+  doc.text("is in conformity with the following regulations and guidelines:", cx, 117, { align: "center" });
+
+  // --- Regulations (bullets, full width, wrapped lines share an indent) ---
+  const bulletX = M - 1;
+  const textX = M + 5;
+  let y = 131;
+  doc.setFontSize(12);
+  [
+    "Regulation (EU) No 1257/2013 of the European Parliament and of the council of 20 November 2013 on ship recycling and amending regulation (EC) No 1013/2006 and Directive 2009/16/EC",
+    "IMO MEPC.379(80) - 2023 Guidelines for the development of the inventory of hazardous materials",
+    "EMSA's Best Practice Guidance on the Inventory of Hazardous Materials.",
+  ].forEach((text) => {
+    const lines = doc.splitTextToSize(text, W - M - 6 - textX);
     doc.setFillColor(...navy);
-    doc.circle(numX + 1.5, y - 1.2, 2.6, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(255, 255, 255);
-    doc.text(String(i + 1), numX + 1.5, y + 0.1, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(...ink);
+    doc.circle(bulletX, y - 1.3, 0.8, "F");
     doc.text(lines, textX, y);
-    y += blockH + 3;
+    y += lines.length * 6 + 1;
   });
 
-  // --- Signature (left) and issue date (right), anchored to the bottom ---
-  const sigY = H - 58;
-  doc.setDrawColor(...ink);
+  // --- Signature (left) and issue date (right) ---
+  doc.setDrawColor(...frame);
   doc.setLineWidth(0.3);
-  doc.line(M, sigY, M + 70, sigY);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
+  doc.line(M - 4, 177, M + 70, 177);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(12);
   doc.setTextColor(...navy);
-  doc.text("Julien Dufour", M, sigY + 6);
+  doc.text("Julien Dufour", M - 4, 183);
+  doc.text("CHAIRMAN, OPTIHAZMAT PTE LTD.", M - 4, 191);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...muted);
-  doc.text("Chairman, OPTIHAZMAT PTE LTD", M, sigY + 11);
-
-  // Issue date on the same baselines as the signature name and title.
-  doc.setFontSize(7.5);
-  doc.text("ISSUED ON", W - M, sigY - 1.5, { align: "right" });
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(...ink);
-  doc.text(d.issuedOn, W - M, sigY + 6, { align: "right" });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...muted);
-  doc.text("Singapore", W - M, sigY + 11, { align: "right" });
-
-  // --- Footer ---
-  doc.setDrawColor(...line);
-  doc.setLineWidth(0.3);
-  doc.line(M, H - 32, W - M, H - 32);
-  doc.setFontSize(7.5);
-  doc.setTextColor(...muted);
-  const footer = doc.splitTextToSize(
-    `This certificate refers to Appendix 1 (${d.appendixRef}) and is valid only for the vessel and period stated above. Issued electronically by OPTIHAZMAT PTE LTD.`,
-    CW
-  );
-  doc.text(footer, cx, H - 26.5, { align: "center" });
+  doc.setFontSize(12.5);
+  doc.text(`Issued on: ${d.issuedOn}`, W - M - 10, 191, { align: "right" });
 
   return { doc, data: d };
 }
