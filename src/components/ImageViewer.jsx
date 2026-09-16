@@ -59,7 +59,9 @@ const ImageViewer = ({ imageUrl }) => {
         position: "relative",
         margin: "20px",
         overflow: "hidden",
-        border: "1px solid #ccc",
+        border: "1px solid #cfd8dc",
+        borderRadius: 8,
+        background: "#fff",
         width: "800px",
         height: "800px",
         maxWidth: "100%",
@@ -78,14 +80,48 @@ const ImageViewer = ({ imageUrl }) => {
       >
         {({ zoomIn, zoomOut }) => (
           <>
+            {/* Zoom controls (look only; the viewer box and point maths are unchanged) */}
             <div
-              style={{ position: "absolute", top: 10, left: 10, zIndex: 1000 }}
+              style={{
+                position: "absolute",
+                top: 10,
+                left: 10,
+                zIndex: 1000,
+                display: "flex",
+                flexDirection: "column",
+                background: "#fff",
+                borderRadius: 8,
+                boxShadow: "0 2px 8px rgba(15,23,42,0.18)",
+                overflow: "hidden",
+              }}
             >
-              <button onClick={() => zoomIn()} style={{ marginRight: 5 }}>
-                +
-              </button>
-              <button onClick={() => zoomOut()}>-</button>
-            </div>{" "}
+              {[
+                ["+", "Zoom in", () => zoomIn()],
+                ["−", "Zoom out", () => zoomOut()],
+              ].map(([label, title, onClick], i) => (
+                <button
+                  key={title}
+                  type="button"
+                  title={title}
+                  aria-label={title}
+                  onClick={onClick}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    border: 0,
+                    borderTop: i ? "1px solid #e2e8f0" : 0,
+                    background: "#fff",
+                    color: "#0d47a1",
+                    fontSize: 20,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    cursor: "pointer",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <TransformComponent
               wrapperStyle={{
                 width: "100%",

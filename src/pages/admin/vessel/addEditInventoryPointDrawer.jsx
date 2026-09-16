@@ -45,6 +45,16 @@ import { toast } from "react-toastify";
 import MasterDataAutocomplete from "../../../components/MasterDataAutocomplete";
 import { BATTERY_IMAGE_URL } from "../../../utils/batteryImage";
 
+// "25-Nov-2020", same as the vessel drawer's audit footer.
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const formatAuditDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${String(date.getDate()).padStart(2, "0")}-${MONTHS[date.getMonth()]}-${date.getFullYear()}`;
+};
+const auditUserName = (user) => user?.name || user?.email || null;
+
 // Object Source value meaning each hazmat row carries its own Object.
 const OBJECTS_IN_HAZMATS = "hazmats";
 
@@ -562,6 +572,9 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       // point used to show its values from before the save.
       queryClient.invalidateQueries({ queryKey: ["pinData", pinId] });
       queryClient.invalidateQueries({ queryKey: ["pinsListing"] });
+      // The diagram page draws its points from this query; without a refetch a
+      // new point only appeared after a page refresh.
+      queryClient.invalidateQueries({ queryKey: ["locationDiagram"] });
       toast.success(pinId ? "Inventory point updated" : "Inventory point created");
       handleClose();
     },
@@ -1582,6 +1595,21 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                   <input type="file" hidden onChange={handleAttachmentUpload} />
                 </Button>
               </Box>
+            </Box>
+          )}
+
+          {/* Audit trail, like the vessel drawer */}
+          {pinId && pinDataById.data && (
+            <Box mt={3}>
+              <Typography variant="body2" color="text.secondary">
+                Created By: {auditUserName(pinDataById.data.user) || "—"}{" "}
+                [{formatAuditDate(pinDataById.data.createdAt)}]
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Last Updated By:{" "}
+                {auditUserName(pinDataById.data.updatedByUser || pinDataById.data.user) || "—"}{" "}
+                [{formatAuditDate(pinDataById.data.updatedAt)}]
+              </Typography>
             </Box>
           )}
 

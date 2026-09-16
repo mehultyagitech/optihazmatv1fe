@@ -84,14 +84,39 @@ const CropLocationDiagram = () => {
     enabled: mode === "update" && !!vesselView?.id,
   });
 
-  // Picking a diagram fills in its current Location Category and Location.
+  // The diagram's current image, loaded into the cropper in Update Existing
+  // mode. Served from this site's own address so the cropper can read it
+  // (www and the bare domain both serve /uploads).
+  const [autoImage, setAutoImage] = useState(null);
+  const uploadsUrl = (file) => {
+    const api = import.meta.env.VITE_API_URL;
+    const bare = (host) => host.replace(/^www\./, "");
+    try {
+      if (bare(new URL(api).hostname) === bare(window.location.hostname)) {
+        return `${window.location.origin}/uploads/${file}`;
+      }
+    } catch {
+      // Not a full URL: fall back to the API address below.
+    }
+    return `${api}/uploads/${file}`;
+  };
+
+  // Picking a diagram fills in its current Location Category and Location,
+  // and shows its image unless the user already picked another one.
   useEffect(() => {
     const diagram = existingDiagrams.data?.find((d) => d.id === existingDiagramId);
     if (diagram) {
       setLocationCategory(diagram.locationId);
       setLocation(diagram.subLocationId);
+      const file = diagram.LocationDiagramImage?.[0]?.url;
+      if (mode === "update" && file && (!selectedImage || selectedImage === autoImage)) {
+        const imageUrl = uploadsUrl(file);
+        setSelectedImage(imageUrl);
+        setAutoImage(imageUrl);
+      }
     }
-  }, [existingDiagramId, existingDiagrams.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingDiagramId, existingDiagrams.data, mode]);
 
   // mutation for saving the cropped image
   const { isPending, mutate, reset } = useMutation({
