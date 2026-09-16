@@ -458,7 +458,8 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     mutationFn: async (data) => {
       const form = new FormData();
 
-      form.append("compartment", data.compartmentId);
+      // Optional: send nothing when blank rather than the text "undefined".
+      if (data.compartmentId) form.append("compartment", data.compartmentId);
       form.append("description", data.description || "");
       form.append("equipment", data.equipmentId);
       form.append("inventory", data.inventoryId);
