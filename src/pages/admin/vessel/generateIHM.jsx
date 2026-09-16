@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import {
   Box,
@@ -82,20 +82,33 @@ export default function GenerateIHM() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [busyId, setBusyId] = useState(null);
 
+  // The vessel whose reports should be on screen. A slow answer for a vessel
+  // the user has already switched away from must not replace the list.
+  const currentVesselId = useRef(vessel?.id);
+  currentVesselId.current = vessel?.id;
+
   const loadReports = useCallback(async () => {
-    if (!vessel?.id) {
+    const requestedId = vessel?.id;
+    if (!requestedId) {
       setReports([]);
       return;
     }
     setLoading(true);
     try {
-      const res = await getIHMReports(vessel.id);
+      const res = await getIHMReports(requestedId);
+      if (currentVesselId.current !== requestedId) return;
       setReports(res?.data?.reports ?? []);
     } catch (err) {
+      if (currentVesselId.current !== requestedId) return;
       toast.error(err?.message || "Failed to load reports");
     } finally {
-      setLoading(false);
+      if (currentVesselId.current === requestedId) setLoading(false);
     }
+  }, [vessel?.id]);
+
+  // Don't show the previous vessel's reports while the new list loads.
+  useEffect(() => {
+    setReports([]);
   }, [vessel?.id]);
 
   useEffect(() => {
