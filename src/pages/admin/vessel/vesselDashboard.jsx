@@ -48,7 +48,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { commonVesselViewState, vesselState } from "../../../utils/States/Vessel";
 import { getIHMReports } from "../../../api/services/ihmReport";
 import { getPurchaseOrders } from "../../../api/services/poService";
-import { downloadIHMMaintenanceCertificate } from "../../../utils/ihmCertificate";
+import CertificatesDialog from "../../../components/CertificatesDialog";
 import DiagramCard from "./vesselDasboardCard";
 import AddEditVesselDrawer from "./addEditVesselDrawer";
 
@@ -127,6 +127,7 @@ const VesselDashboard = () => {
   const vessel = useRecoilValue(commonVesselViewState);
   const setVesselDrawer = useSetRecoilState(vesselState);
   const [poOpen, setPoOpen] = useState(false);
+  const [certificatesOpen, setCertificatesOpen] = useState(false);
   const [poSearch, setPoSearch] = useState("");
   const [expandedPo, setExpandedPo] = useState(null);
 
@@ -134,16 +135,6 @@ const VesselDashboard = () => {
     queryKey: ["vesselInfo", vessel.id],
     queryFn: async () => (await axiosInstance.get(`/vessels/${vessel.id}`)).data.data,
     enabled: !!vessel.id,
-  });
-
-  // IHM Maintenance Certificate PDF from the full vessel record.
-  const certificateMutation = useMutation({
-    mutationFn: async () => (await axiosInstance.get(`/vessels/${vessel.id}`)).data.data,
-    onSuccess: (vesselData) => downloadIHMMaintenanceCertificate(vesselData),
-    onError: (error) => {
-      console.error("Failed to generate IHM Maintenance Certificate:", error);
-      toast.error("Could not generate the certificate. Please try again.");
-    },
   });
 
   // IHM Report: download the latest approved report. The tab is opened on the
@@ -212,7 +203,8 @@ const VesselDashboard = () => {
       );
       return [...byId.values()];
     },
-    enabled: poOpen && !!vessel.id,
+    // Also for the certificates: each month's Appendix lists that month's POs.
+    enabled: (poOpen || certificatesOpen) && !!vessel.id,
   });
 
   const filteredPos = useMemo(() => {
@@ -303,10 +295,10 @@ const VesselDashboard = () => {
                 variant="outlined"
                 startIcon={<WorkspacePremiumIcon />}
                 sx={heroButtonSx}
-                onClick={() => certificateMutation.mutate()}
-                disabled={!vessel.id || certificateMutation.isPending}
+                onClick={() => setCertificatesOpen(true)}
+                disabled={!vessel.id}
               >
-                {certificateMutation.isPending ? "Generating..." : "IHM Maintenance Certificate"}
+                IHM Maintenance Certificates
               </Button>
               <Button
                 variant="outlined"
@@ -483,6 +475,15 @@ const VesselDashboard = () => {
           </Section>
         </Box>
       </Box>
+
+      <CertificatesDialog
+        open={certificatesOpen}
+        onClose={() => setCertificatesOpen(false)}
+        vessel={vesselInfo.data}
+        vesselId={vessel.id}
+        purchaseOrders={purchaseOrders.data}
+        poLoading={purchaseOrders.isPending && purchaseOrders.fetchStatus !== "idle"}
+      />
 
       {/* Search PO */}
       <Dialog open={poOpen} onClose={() => setPoOpen(false)} maxWidth="lg" fullWidth>

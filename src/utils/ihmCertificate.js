@@ -47,8 +47,10 @@ export function buildCertificateData(vessel, opts = {}) {
   const issueDate = opts.issueDate ? new Date(opts.issueDate) : new Date();
   // The certificate covers a single calendar month. Default = current month.
   const periodBase = opts.periodDate ? new Date(opts.periodDate) : issueDate;
-  const from = firstOfMonth(periodBase);
-  const till = lastOfMonth(periodBase);
+  // A trail entry can pass its own range and number (the ANNUAL certificate
+  // spans several months).
+  const from = opts.periodFrom ? new Date(opts.periodFrom) : firstOfMonth(periodBase);
+  const till = opts.periodTill ? new Date(opts.periodTill) : lastOfMonth(periodBase);
 
   return {
     vesselName: vessel?.vesselName || "-",
@@ -58,7 +60,7 @@ export function buildCertificateData(vessel, opts = {}) {
     periodFrom: fmtDate(from),
     periodTill: fmtDate(till),
     issuedOn: fmtDate(issueDate),
-    certificateNo: buildCertificateNo(vessel?.imoNumber || "-", periodBase),
+    certificateNo: opts.certificateNo || buildCertificateNo(vessel?.imoNumber || "-", periodBase),
     appendixRef: buildAppendixRef(issueDate),
   };
 }
@@ -231,6 +233,165 @@ export function buildCertificatePdf(vessel, opts = {}) {
 export function downloadIHMMaintenanceCertificate(vessel, opts = {}) {
   const { doc, data } = buildCertificatePdf(vessel, opts);
   const safeName = String(data.vesselName).replace(/[^\w]+/g, "_");
-  doc.save(`IHM_Maintenance_Certificate_${safeName}_${data.imoNumber}.pdf`);
+  const suffix = opts.fileSuffix ? `_${opts.fileSuffix}` : "";
+  doc.save(`IHM_Maintenance_Certificate_${safeName}_${data.imoNumber}${suffix}.pdf`);
   return data;
+}
+
+// ---- certificate trail ---------------------------------------------------
+
+// "01-Jul-2026", as in the certificate list.
+export const fmtListDate = (d) => `${pad2(d.getDate())}-${MONTHS[d.getMonth()]}-${d.getFullYear()}`;
+
+const mmyy = (d) => `${pad2(d.getMonth() + 1)}${String(d.getFullYear()).slice(-2)}`;
+
+/**
+ * Every maintenance certificate a vessel has, newest first:
+ * - one per calendar month from the Maintenance Start Date to the current month
+ *   (number VS/HCS/{imo}/{MMYY}{MMYY}/M{month});
+ * - an ANNUAL one for the initial IHM, from the IHM Survey Start Date to the end
+ *   of the month before maintenance started (VS/HCS/{imo}/{MMYY}{MMYY}/ANNUAL).
+ * `period` ("2026-07" / "ANNUAL") keys the saved active state.
+ */
+export function buildCertificateTrail(vessel, now = new Date()) {
+  const imo = vessel?.imoNumber || "-";
+  const trail = [];
+  const maintStart = vessel?.maintenanceStartDate ? firstOfMonth(new Date(vessel.maintenanceStartDate)) : null;
+
+  if (maintStart && !Number.isNaN(maintStart.getTime())) {
+    const lastMonth = firstOfMonth(now);
+    for (let d = new Date(maintStart); d <= lastMonth; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+      trail.push({
+        period: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`,
+        kind: "monthly",
+        certificateNo: buildCertificateNo(imo, d),
+        from: firstOfMonth(d),
+        till: lastOfMonth(d),
+      });
+    }
+    trail.reverse();
+  }
+
+  const surveyStart = vessel?.ihmSurveyStartDate ? new Date(vessel.ihmSurveyStartDate) : null;
+  if (surveyStart && maintStart && surveyStart < maintStart) {
+    const till = new Date(maintStart.getFullYear(), maintStart.getMonth(), 0);
+    if (surveyStart <= till) {
+      trail.push({
+        period: "ANNUAL",
+        kind: "annual",
+        certificateNo: `VS/HCS/${imo}/${mmyy(surveyStart)}${mmyy(till)}/ANNUAL`,
+        from: surveyStart,
+        till,
+      });
+    }
+  }
+  return trail;
+}
+
+/** Certificate PDF for one trail entry. */
+export function downloadTrailCertificate(vessel, entry) {
+  return downloadIHMMaintenanceCertificate(vessel, {
+    periodDate: entry.from,
+    periodFrom: entry.from,
+    periodTill: entry.till,
+    certificateNo: entry.certificateNo,
+    fileSuffix: entry.period,
+  });
+}
+
+// PO dates are stored as text, "DD/MM/YYYY" from the PO upload.
+export const parsePoDate = (value) => {
+  if (!value) return null;
+  const m = String(value).trim().match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  const d = m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+// The month a PO was reviewed in: received date, else order date, else upload.
+export const poReviewDate = (po) =>
+  parsePoDate(po.orderRcvDate) || parsePoDate(po.orderDate) || (po.createdAt ? new Date(po.createdAt) : null);
+
+/** POs reviewed within a trail entry's period. */
+export const posForEntry = (pos, entry) =>
+  (pos ?? []).filter((po) => {
+    const d = poReviewDate(po);
+    return d && d >= entry.from && d <= new Date(entry.till.getFullYear(), entry.till.getMonth(), entry.till.getDate(), 23, 59, 59);
+  });
+
+/** Appendix 1: the purchase orders reviewed in the certificate's period. */
+export function downloadTrailAppendix(vessel, entry, pos) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 14;
+  const navy = [31, 55, 99];
+  const black = [33, 33, 33];
+  const grey = [110, 110, 110];
+
+  const header = () => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...navy);
+    doc.text("Appendix 1 - Purchase Orders Reviewed", margin, margin + 2);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...black);
+    doc.text(
+      `${vessel?.vesselName || "-"} - IMO ${vessel?.imoNumber || "-"}   |   Certificate ${entry.certificateNo}   |   Period ${fmtListDate(entry.from)} to ${fmtListDate(entry.till)}`,
+      margin,
+      margin + 8
+    );
+    doc.setDrawColor(150);
+    doc.line(margin, margin + 11, pageW - margin, margin + 11);
+  };
+
+  const cols = [
+    ["PO No", 30], ["Supplier", 52], ["Order Date", 24], ["Received", 24], ["Reference No", 32],
+    ["Items", 14], ["Hazmat Items", 22], ["MD/SDoC Status", 32], ["Items that may contain hazmat", 39],
+  ];
+  const drawRow = (cells, y, bold) => {
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    let x = margin;
+    let height = 6;
+    const wrapped = cells.map((text, i) => doc.splitTextToSize(String(text ?? "-"), cols[i][1] - 2));
+    wrapped.forEach((lines) => { height = Math.max(height, lines.length * 4 + 2); });
+    wrapped.forEach((lines, i) => {
+      doc.text(lines, x + 1, y + 4);
+      x += cols[i][1];
+    });
+    doc.setDrawColor(215);
+    doc.line(margin, y + height, pageW - margin, y + height);
+    return y + height;
+  };
+
+  header();
+  let y = margin + 15;
+  doc.setFontSize(9);
+  doc.setTextColor(...black);
+  y = drawRow(cols.map((c) => c[0]), y, true);
+
+  const isYes = (v) => String(v ?? "").toUpperCase() === "YES";
+  pos.forEach((po) => {
+    const items = po.items || [];
+    const hazmatItems = items.filter((i) => isYes(i.canContainHazmat));
+    const cells = [
+      po.poNumber, po.supplier, po.orderDate, po.orderRcvDate, po.referenceNumber,
+      items.length, hazmatItems.length,
+      String(po.docStatus || "not_started").replace(/_/g, " "),
+      hazmatItems.map((i) => i.product || i.partDescription).filter(Boolean).join(", ") || "-",
+    ];
+    if (y > pageH - margin - 14) {
+      doc.addPage();
+      header();
+      y = drawRow(cols.map((c) => c[0]), margin + 15, true);
+    }
+    y = drawRow(cells, y, false);
+  });
+
+  doc.setFontSize(8.5);
+  doc.setTextColor(...grey);
+  doc.text(`${pos.length} purchase order${pos.length === 1 ? "" : "s"} reviewed. Generated ${fmtListDate(new Date())}.`, margin, pageH - 8);
+
+  const safeName = String(vessel?.vesselName || "Vessel").replace(/[^\w]+/g, "_");
+  doc.save(`IHM_Certificate_Appendix_${safeName}_${vessel?.imoNumber || ""}_${entry.period}.pdf`);
 }
