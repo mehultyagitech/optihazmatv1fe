@@ -1,10 +1,15 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Typography,
   Button,
-  TextField,
+  Card,
+  CardActionArea,
+  Checkbox,
+  Chip,
+  Divider,
   IconButton,
+  Skeleton,
   Tooltip,
   Dialog,
   DialogTitle,
@@ -12,13 +17,18 @@ import {
   DialogContentText,
   DialogActions,
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import SearchIcon from "@mui/icons-material/Search";
-import LocationDiagramTopBar from "../../../components/locationDiagramTopBar";
-import OPDivider from "../../../components/OPDivider";
+import MapIcon from "@mui/icons-material/Map";
+import CropIcon from "@mui/icons-material/Crop";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import SelectAllIcon from "@mui/icons-material/SelectAll";
+import DeselectIcon from "@mui/icons-material/Deselect";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import SearchOffIcon from "@mui/icons-material/SearchOff";
+import ListPageHeader, { headerButtonSx } from "../../../components/ListPageHeader";
 import OPPageContainer from "../../../components/OPPageContainer";
-import InfoCard from "../../../components/InfoCard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../../../api/axiosInstance";
 import { useRecoilValue } from "recoil";
@@ -39,52 +49,141 @@ const COUNT_LABELS = [
   ["active", "Active"],
 ];
 
+const COUNT_COLORS = {
+  survey: { color: "#1565c0", bg: "#e3f2fd" },
+  maintenance: { color: "#00695c", bg: "#e0f2f1" },
+  removedReplaced: { color: "#c62828", bg: "#ffebee" },
+  active: { color: "#2e7d32", bg: "#e8f5e9" },
+};
+
 const DiagramCard = ({ diagram, avatarSrc, selected, onToggle, onDelete }) => {
   const navigate = useNavigate();
   const counts = diagram.pinCounts ?? {};
   const openPoints = () => navigate(`/vessels/inventory-points/${diagram.id}`);
 
   return (
-    <InfoCard
-      selectable
-      selected={selected}
-      onToggle={() => onToggle(diagram.id)}
-      avatarSrc={avatarSrc}
-      avatarVariant="rounded"
-      title={diagram.locationName}
-      subtitle={diagram.subLocationName}
-      onOpen={openPoints}
-      fields={COUNT_LABELS.map(([key, label]) => ({ label, value: counts[key] ?? 0 }))}
-      actions={
-        <>
-          <Button size="small" sx={{ textTransform: "none", mr: "auto" }} onClick={openPoints}>
-            Open points
-          </Button>
-          <Tooltip title="Update this diagram">
-            <IconButton
-              size="small"
-              color="primary"
-              aria-label="Update diagram"
-              onClick={() =>
-                navigate(`/vessels/new-area?mode=update&diagram=${diagram.id}`)
-              }
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete this diagram">
-            <IconButton
-              size="small"
-              color="error"
-              aria-label="Delete diagram"
-              onClick={() => onDelete(diagram)}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </>
-      }
-    />
+    <Card
+      elevation={0}
+      sx={{
+        height: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: 3,
+        overflow: "hidden",
+        border: "1px solid",
+        borderColor: selected ? "primary.main" : "divider",
+        boxShadow: selected ? "0 0 0 1px #1976d2" : "0 1px 3px rgba(15, 23, 42, 0.08)",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        "&:hover": { transform: "translateY(-3px)", boxShadow: "0 10px 24px rgba(13, 71, 161, 0.16)" },
+      }}
+    >
+      {/* Diagram image */}
+      <Box sx={{ position: "relative" }}>
+        <CardActionArea onClick={openPoints} aria-label={`Open ${diagram.locationName} / ${diagram.subLocationName}`}>
+          <Box
+            sx={{
+              height: 150,
+              bgcolor: "#f1f5f9",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderBottom: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            {diagram.imageUrl ? (
+              <Box
+                component="img"
+                src={avatarSrc}
+                alt={`${diagram.locationName} / ${diagram.subLocationName}`}
+                sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1, boxSizing: "border-box" }}
+              />
+            ) : (
+              <PlaceOutlinedIcon sx={{ fontSize: 48, color: "#b0bec5" }} />
+            )}
+          </Box>
+        </CardActionArea>
+        <Checkbox
+          checked={selected}
+          onChange={() => onToggle(diagram.id)}
+          inputProps={{
+            "aria-label": `Select ${diagram.locationName} / ${diagram.subLocationName}`,
+          }}
+          sx={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            p: 0.5,
+            bgcolor: "rgba(255,255,255,0.92)",
+            borderRadius: 1,
+            "&:hover": { bgcolor: "#fff" },
+          }}
+        />
+        <Chip
+          size="small"
+          label={`${counts.total ?? 0} point${counts.total === 1 ? "" : "s"}`}
+          sx={{ position: "absolute", top: 10, right: 10, bgcolor: "rgba(13, 71, 161, 0.9)", color: "#fff", fontWeight: 600 }}
+        />
+      </Box>
+
+      {/* Category / area */}
+      <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
+        <Typography variant="caption" color="text.secondary">
+          Location Category
+        </Typography>
+        <Typography variant="subtitle1" fontWeight={700} color="primary" noWrap title={diagram.locationName} sx={{ lineHeight: 1.3 }}>
+          {diagram.locationName || "-"}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
+          Location
+        </Typography>
+        <Typography variant="body2" fontWeight={600} noWrap title={diagram.subLocationName}>
+          {diagram.subLocationName || "-"}
+        </Typography>
+      </Box>
+
+      {/* Counts */}
+      <Box sx={{ px: 2, pb: 1.5, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0.75, flexGrow: 1, alignContent: "start" }}>
+        {COUNT_LABELS.map(([key, label]) => (
+          <Box key={key} sx={{ bgcolor: COUNT_COLORS[key].bg, borderRadius: 1.5, py: 0.75, textAlign: "center" }}>
+            <Typography variant="body2" fontWeight={700} color={COUNT_COLORS[key].color}>
+              {counts[key] ?? 0}
+            </Typography>
+            <Typography sx={{ fontSize: 10.5, color: "text.secondary", whiteSpace: "nowrap" }}>{label}</Typography>
+          </Box>
+        ))}
+      </Box>
+
+      <Divider />
+      <Box sx={{ px: 1.5, py: 1, display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Button size="small" endIcon={<ChevronRightIcon />} sx={{ textTransform: "none", fontWeight: 600, mr: "auto" }} onClick={openPoints}>
+          Open points
+        </Button>
+        <Tooltip title="Update this diagram">
+          <IconButton
+            size="small"
+            color="primary"
+            aria-label="Update diagram"
+            onClick={() =>
+              navigate(`/vessels/new-area?mode=update&diagram=${diagram.id}`)
+            }
+          >
+            <EditOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete this diagram">
+          <IconButton
+            size="small"
+            color="error"
+            aria-label="Delete diagram"
+            onClick={() => onDelete(diagram)}
+          >
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Card>
   );
 };
 
@@ -151,10 +250,6 @@ const LocationDiagramPage = () => {
     setSelectedFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSearch = () => {
-    locationDiagrams.refetch();
-  };
-
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
   };
@@ -174,18 +269,24 @@ const LocationDiagramPage = () => {
         name: "location",
         value: selectedFilters.location,
         placeholder: "Location Category",
+        label: "Location Category",
+        allLabel: "All Categories",
         options: optionsFrom((locationCategories ?? []).map((l) => l?.name)),
       },
       {
         name: "subLocation",
         value: selectedFilters.subLocation,
         placeholder: "Location",
+        label: "Location",
+        allLabel: "All Locations",
         options: optionsFrom((locations ?? []).map((l) => l?.name)),
       },
       {
         name: "vesselType",
         value: selectedFilters.vesselType,
         placeholder: "Vessel Type",
+        label: "Vessel Type",
+        allLabel: "All Types",
         options: optionsFrom(items.map((i) => i?.vesselType)),
       },
     ],
@@ -256,124 +357,119 @@ const LocationDiagramPage = () => {
     },
   });
 
+  const totalPoints = items.reduce((sum, d) => sum + (d.pinCounts?.total ?? 0), 0);
+
   return (
-    <OPPageContainer sx={{ px: 2, pt: 2 }}>
-      <Box>
-        <LocationDiagramTopBar
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onSearch={handleSearch}
-        />
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          p={2}
-          flexWrap={{ xs: "wrap", sm: "nowrap" }}
-        >
-          <Typography
-            variant="h5"
-            fontWeight="bold"
-            mb={{ xs: 2, sm: 0 }}
-            flexGrow={{ xs: 1, sm: 0 }}
-          >
-            Location Diagram
-          </Typography>
-          <Box
-            display="flex"
-            alignItems="center"
-            gap={2}
-            flexWrap="wrap"
-            justifyContent={{ xs: "center", sm: "flex-end" }}
-          >
-            <TextField
-              variant="outlined"
-              label="Location Name"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              size="small"
-              sx={{ width: { xs: "100%", sm: "auto" } }}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <IconButton type="button" aria-label="search" size="small">
-                      <SearchIcon />
-                    </IconButton>
-                  ),
-                  sx: { pr: 0.5 },
-                },
-              }}
-            />
-          </Box>
-        </Box>
-
-        <Box
-          display="flex"
-          alignItems="center"
-          gap={1}
-          px={2}
-          pb={1}
-          flexWrap="wrap"
-        >
+    <OPPageContainer sx={{ px: { xs: 2, md: 3 }, py: 2, bgcolor: "#f4f6fa", minHeight: "calc(100vh - 64px)", boxSizing: "border-box" }}>
+      <ListPageHeader
+        icon={MapIcon}
+        title="Location Diagram"
+        subtitle={`${vessel?.name ? `${vessel.name} · ` : ""}${items.length} diagram${items.length === 1 ? "" : "s"} · ${totalPoints} inventory point${totalPoints === 1 ? "" : "s"}`}
+        actions={
           <Button
-            size="small"
-            variant="outlined"
-            onClick={() => setSelectedIds(visibleIds)}
-            disabled={visibleIds.length === 0}
-          >
-            Select All
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={() => setSelectedIds([])}
-            disabled={selectedIds.length === 0}
-          >
-            Unselect All
-          </Button>
-          <Button
-            size="small"
             variant="contained"
-            color="error"
-            startIcon={<DeleteIcon />}
-            disabled={selectedIds.length === 0}
-            onClick={() =>
-              askDelete(filteredDiagrams.filter((d) => selectedIds.includes(d.id)))
-            }
+            startIcon={<CropIcon />}
+            onClick={() => pageNavigate("/vessels/new-area")}
+            sx={headerButtonSx}
           >
-            Delete Selected
+            Mark New Area
           </Button>
-          <Typography variant="body2" color="text.secondary">
-            {selectedIds.length} selected
-          </Typography>
-        </Box>
+        }
+        search={{ placeholder: "Location name", value: searchQuery, onChange: handleSearchChange }}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+      />
 
-        <OPDivider />
-        {!locationDiagrams.isPending && filteredDiagrams.length === 0 && (
-          <Typography color="text.secondary" p={3}>
-            No location diagrams to show.
-          </Typography>
-        )}
-        <Box
-          p={3}
-          display="grid"
-          gridTemplateColumns="repeat(auto-fill, minmax(min(100%, 280px), 1fr))"
-          gap={3}
+      {/* Selection toolbar */}
+      <Box
+        sx={{
+          mb: 2.5,
+          px: 2,
+          py: 1.25,
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: selectedIds.length ? "error.light" : "divider",
+          bgcolor: selectedIds.length ? "#fff5f5" : "#fff",
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          flexWrap: "wrap",
+        }}
+      >
+        <Typography variant="body2" fontWeight={600} sx={{ mr: 1 }}>
+          {selectedIds.length
+            ? `${selectedIds.length} selected`
+            : `${filteredDiagrams.length} diagram${filteredDiagrams.length === 1 ? "" : "s"} shown`}
+        </Typography>
+        <Button
+          size="small"
+          startIcon={<SelectAllIcon />}
+          onClick={() => setSelectedIds(visibleIds)}
+          disabled={visibleIds.length === 0}
+          sx={{ textTransform: "none" }}
         >
-          {filteredDiagrams.map((diagram) => (
-            <DiagramCard
-              key={diagram.id}
-              diagram={diagram}
-              avatarSrc={
-                import.meta.env.VITE_API_URL + "/uploads/" + diagram.imageUrl
-              }
-              selected={selectedIds.includes(diagram.id)}
-              onToggle={toggleSelected}
-              onDelete={(d) => askDelete([d])}
-            />
-          ))}
-        </Box>
+          Select All
+        </Button>
+        <Button
+          size="small"
+          startIcon={<DeselectIcon />}
+          onClick={() => setSelectedIds([])}
+          disabled={selectedIds.length === 0}
+          sx={{ textTransform: "none" }}
+        >
+          Unselect All
+        </Button>
+        <Box sx={{ flexGrow: 1 }} />
+        <Button
+          size="small"
+          variant="contained"
+          color="error"
+          startIcon={<DeleteIcon />}
+          disabled={selectedIds.length === 0}
+          onClick={() =>
+            askDelete(filteredDiagrams.filter((d) => selectedIds.includes(d.id)))
+          }
+          sx={{ textTransform: "none" }}
+        >
+          Delete Selected
+        </Button>
       </Box>
+
+      <Box
+        display="grid"
+        gridTemplateColumns="repeat(auto-fill, minmax(min(100%, 280px), 1fr))"
+        gap={2.5}
+      >
+        {locationDiagrams.isPending &&
+          [0, 1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={320} sx={{ borderRadius: 3 }} />)}
+        {filteredDiagrams.map((diagram) => (
+          <DiagramCard
+            key={diagram.id}
+            diagram={diagram}
+            avatarSrc={
+              import.meta.env.VITE_API_URL + "/uploads/" + diagram.imageUrl
+            }
+            selected={selectedIds.includes(diagram.id)}
+            onToggle={toggleSelected}
+            onDelete={(d) => askDelete([d])}
+          />
+        ))}
+      </Box>
+
+      {!locationDiagrams.isPending && filteredDiagrams.length === 0 && (
+        <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>
+          <SearchOffIcon sx={{ fontSize: 48, opacity: 0.5 }} />
+          <Typography variant="h6" sx={{ mt: 1 }}>No location diagrams to show.</Typography>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            {items.length ? "Try a different search or clear the filters." : "Mark a new area to create the first one."}
+          </Typography>
+          {!items.length && (
+            <Button variant="contained" startIcon={<CropIcon />} onClick={() => pageNavigate("/vessels/new-area")} sx={{ textTransform: "none" }}>
+              Mark New Area
+            </Button>
+          )}
+        </Box>
+      )}
 
       <Dialog
         open={!!pendingDelete}

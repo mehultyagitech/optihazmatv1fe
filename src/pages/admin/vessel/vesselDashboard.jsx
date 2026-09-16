@@ -90,14 +90,24 @@ const SectionHeader = ({ title, subtitle, color }) => (
   </Box>
 );
 
+// Fills its grid cell so panels side by side are the same height.
 const Section = ({ children, ...header }) => (
   <Paper
     elevation={0}
-    sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", overflow: "hidden" }}
+    sx={{
+      height: "100%",
+      boxSizing: "border-box",
+      display: "flex",
+      flexDirection: "column",
+      borderRadius: 3,
+      border: "1px solid",
+      borderColor: "divider",
+      overflow: "hidden",
+    }}
   >
     <SectionHeader {...header} />
     <Divider />
-    <Box sx={{ p: { xs: 2, md: 3 } }}>{children}</Box>
+    <Box sx={{ p: { xs: 2, md: 3 }, flexGrow: 1, display: "flex", flexDirection: "column" }}>{children}</Box>
   </Paper>
 );
 
@@ -328,33 +338,38 @@ const VesselDashboard = () => {
 
         <Box display="flex" flexDirection="column" gap={3}>
           {/* PO summaries */}
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={5}>
-              <Section title="PO's Review Summary" color="#2196F3">
-                <PieChart
-                  skipAnimation
-                  series={[{ data: pieData, innerRadius: 50, outerRadius: 90 }]}
-                  height={210}
-                />
-                <Typography variant="caption" display="block" align="right" color="text.secondary">
-                  (Click to view details)
-                </Typography>
-              </Section>
-            </Grid>
-            <Grid item xs={12} md={7}>
-              <Section title="Items from 1 POs containing Hazmat" color="#2196F3">
-                <BarChart
-                  skipAnimation
-                  xAxis={[{ scaleType: "band", data: barData.map((item) => item.label) }]}
-                  series={[{ data: barData.map((item) => item.value), color: "#2979FF" }]}
-                  height={230}
-                />
-                <Typography variant="caption" display="block" align="right" color="primary">
-                  (Click <span style={{ textDecoration: "underline" }}>Blue colored text</span> to view item details)
-                </Typography>
-              </Section>
-            </Grid>
-          </Grid>
+          {/* CSS grid rather than MUI Grid: both cells stretch to the same
+              height, and the captions line up at the bottom. */}
+          <Box
+            sx={{
+              display: "grid",
+              gap: 3,
+              gridTemplateColumns: { xs: "1fr", md: "minmax(0, 5fr) minmax(0, 7fr)" },
+              alignItems: "stretch",
+            }}
+          >
+            <Section title="PO's Review Summary" color="#2196F3">
+              <PieChart
+                skipAnimation
+                series={[{ data: pieData, innerRadius: 50, outerRadius: 90 }]}
+                height={240}
+              />
+              <Typography variant="caption" display="block" align="right" color="text.secondary" sx={{ mt: "auto", pt: 1 }}>
+                (Click to view details)
+              </Typography>
+            </Section>
+            <Section title="Items from 1 POs containing Hazmat" color="#2196F3">
+              <BarChart
+                skipAnimation
+                xAxis={[{ scaleType: "band", data: barData.map((item) => item.label) }]}
+                series={[{ data: barData.map((item) => item.value), color: "#2979FF" }]}
+                height={240}
+              />
+              <Typography variant="caption" display="block" align="right" color="primary" sx={{ mt: "auto", pt: 1 }}>
+                (Click <span style={{ textDecoration: "underline" }}>Blue colored text</span> to view item details)
+              </Typography>
+            </Section>
+          </Box>
 
           {/* IHM Part 1 */}
           <Section

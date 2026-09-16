@@ -1,11 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import OPPageContainer from "../../../components/OPPageContainer";
 import {
   Box,
   Typography,
   Button,
   Chip,
-  Divider,
   IconButton,
   List,
   ListItemButton,
@@ -13,9 +12,10 @@ import {
   Skeleton,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import RoomIcon from "@mui/icons-material/Room";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer";
 import ImageViewer from "../../../components/ImageViewer";
 import { useNavigate, useParams } from "react-router-dom";
@@ -30,14 +30,22 @@ import axiosInstance from "../../../api/axiosInstance";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Label left, value right, as in the Check Point Details panel.
 const DetailRow = ({ label, children }) => (
-  <Box sx={{ py: 1, "&:not(:last-of-type)": { borderBottom: "1px dashed", borderColor: "divider" } }}>
-    <Typography variant="caption" color="text.secondary" component="div">
-      {label}
+  <Box sx={{ display: "grid", gridTemplateColumns: "110px minmax(0, 1fr)", columnGap: 2, py: 0.6 }}>
+    <Typography sx={{ fontSize: 14, color: "#9e9e9e" }}>{label}</Typography>
+    <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#333", wordBreak: "break-word" }}>
+      {children || ""}
     </Typography>
-    <Typography variant="body2" fontWeight={600} sx={{ wordBreak: "break-word" }}>
-      {children || "-"}
+  </Box>
+);
+
+const PanelSection = ({ title, children }) => (
+  <Box sx={{ px: 2.5, py: 1.75, borderBottom: "1px solid #e8e8e8" }}>
+    <Typography sx={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, color: "#2f80c9", textTransform: "uppercase", mb: 0.75 }}>
+      {title}
     </Typography>
+    {children}
   </Box>
 );
 
@@ -103,6 +111,8 @@ export default function LocationPoint() {
 
   const statusOf = (pin) => (pin.isRemovedFromIHM ? "Removed" : pin.isReplaced ? "Replaced" : "Active");
 
+  const [panelOpen, setPanelOpen] = useState(true);
+
   const openDetails = () =>
     setDrawer({
       open: true,
@@ -162,9 +172,9 @@ export default function LocationPoint() {
       </Paper>
 
       <Box sx={{ display: "grid", gap: 3,
-      // Side by side only when the plan still gets its full 800px viewer:
-      // points are stored as a share of that box.
-      gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 1fr) 340px" }, alignItems: "start" }}>
+      // Plan and the Check Point Details panel side by side (the panel can be
+      // collapsed to give the plan more room).
+      gridTemplateColumns: { xs: "1fr", md: `minmax(0, 1fr) ${panelOpen ? "340px" : "52px"}` }, alignItems: "start" }}>
         {/* Plan with points */}
         <Box sx={cardSx}>
           <Box sx={{ px: 2, py: 1.25, display: "flex", alignItems: "center", gap: 1, borderBottom: "1px solid", borderColor: "divider", flexWrap: "wrap" }}>
@@ -190,99 +200,163 @@ export default function LocationPoint() {
           </Box>
         </Box>
 
-        {/* Side panel */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <Box sx={cardSx}>
-            <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Typography fontWeight={700} fontSize={15}>
-                {selectedPin ? `Check Point ${selectedIndex + 1}` : "Point Details"}
+        {/* Check Point Details panel */}
+        {panelOpen ? (
+          <Box
+            sx={{
+              bgcolor: "#fff",
+              borderLeft: "4px solid #4fa3e0",
+              borderRadius: "0 12px 12px 0",
+              boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12)",
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                px: 2.5,
+                py: 1.75,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "linear-gradient(90deg, #4fb3e8 0%, #3a85c9 100%)",
+                color: "#fff",
+              }}
+            >
+              <Typography sx={{ fontSize: 15, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>
+                Check Point Details
               </Typography>
+              <IconButton
+                size="small"
+                onClick={() => setPanelOpen(false)}
+                aria-label="Collapse details panel"
+                sx={{ color: "#fff", border: "2px solid rgba(255,255,255,0.7)", width: 32, height: 32, "&:hover": { bgcolor: "rgba(255,255,255,0.15)" } }}
+              >
+                <ChevronRightIcon fontSize="small" />
+              </IconButton>
+            </Box>
+
+            <PanelSection title="Location">
+              <DetailRow label="Category">{locationDiagram.isSuccess ? locationDiagram.data.location?.name : ""}</DetailRow>
+              <DetailRow label="Area">{locationDiagram.isSuccess ? locationDiagram.data.subLocation?.name : ""}</DetailRow>
+            </PanelSection>
+
+            <PanelSection title="Inventory Point">
+              <DetailRow label="Number">{selectedPin ? String(selectedIndex + 1) : ""}</DetailRow>
+              <DetailRow label="Sub Location">{selectedPin?.subLocation?.name}</DetailRow>
+              <DetailRow label="Equipment">{selectedPin?.equipment?.name}</DetailRow>
+              <DetailRow label="Compartment">{selectedPin?.compartment?.name}</DetailRow>
+              <DetailRow label="Object">{selectedPin ? objectText(selectedPin) : ""}</DetailRow>
               {selectedPin && (
-                <Chip size="small" label={statusOf(selectedPin)} color={statusOf(selectedPin) === "Active" ? "success" : "warning"} variant="outlined" />
-              )}
-            </Box>
-            <Box sx={{ px: 2, py: 1 }}>
-              {selectedPin ? (
                 <>
-                  <DetailRow label="Check Point Number">{String(selectedIndex + 1)}</DetailRow>
-                  <DetailRow label="Sub Location">{selectedPin.subLocation?.name}</DetailRow>
-                  <DetailRow label="Equipment">{selectedPin.equipment?.name}</DetailRow>
-                  <DetailRow label="Compartment">{selectedPin.compartment?.name}</DetailRow>
-                  <DetailRow label="Object">{objectText(selectedPin)}</DetailRow>
-                  <DetailRow label="Hazmat [ Quantity - Unit ]">{hazmatText(selectedPin)}</DetailRow>
+                  <DetailRow label="Hazmat">{hazmatText(selectedPin)}</DetailRow>
+                  <DetailRow label="Status">{statusOf(selectedPin)}</DetailRow>
                 </>
-              ) : (
-                <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-                  <RoomIcon sx={{ fontSize: 40, color: "#b0bec5" }} />
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    {pins.length
-                      ? "Click an inventory point on the diagram to see its details."
-                      : "No inventory points yet. Double-click the diagram to add one."}
-                  </Typography>
-                </Box>
               )}
-            </Box>
-            <Divider />
+              {!selectedPin && (
+                <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>
+                  {pins.length
+                    ? "Click an inventory point on the diagram to see its details."
+                    : "No inventory points yet. Double-click the diagram to add one."}
+                </Typography>
+              )}
+            </PanelSection>
+
             <Box sx={{ p: 2 }}>
               <Button
-                variant="contained"
+                variant="outlined"
                 fullWidth
                 startIcon={<OpenInNewIcon />}
                 disabled={!selectedPin}
                 onClick={openDetails}
-                sx={{ textTransform: "none", fontWeight: 600 }}
+                sx={{ textTransform: "none", fontWeight: 600, borderColor: "#4fa3e0", color: "#2f80c9" }}
               >
                 Open Details
               </Button>
             </Box>
-          </Box>
 
-          {pins.length > 0 && (
-            <Box sx={cardSx}>
-              <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
-                <Typography fontWeight={700} fontSize={15}>
-                  All Check Points
-                </Typography>
-              </Box>
-              <List dense disablePadding sx={{ maxHeight: 320, overflowY: "auto" }}>
-                {pins.map((pin, index) => (
-                  <ListItemButton
-                    key={pin.id}
-                    selected={pin.id === selectedPinId}
-                    onClick={() => setSelectedPinId(pin.id)}
-                    sx={{ gap: 1.5, py: 1 }}
-                  >
-                    <Box
-                      sx={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: "50%",
-                        flexShrink: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: "#fff",
-                        bgcolor: pin.id === selectedPinId ? "#e53935" : "#31a640",
-                      }}
+            {pins.length > 0 && (
+              <>
+                <Box sx={{ px: 2.5, pt: 1, pb: 0.5, borderTop: "1px solid #e8e8e8" }}>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, color: "#2f80c9", textTransform: "uppercase" }}>
+                    All Check Points ({pins.length})
+                  </Typography>
+                </Box>
+                <List dense disablePadding sx={{ maxHeight: 280, overflowY: "auto", pb: 1 }}>
+                  {pins.map((pin, index) => (
+                    <ListItemButton
+                      key={pin.id}
+                      selected={pin.id === selectedPinId}
+                      onClick={() => setSelectedPinId(pin.id)}
+                      sx={{ gap: 1.5, py: 0.75, px: 2.5 }}
                     >
-                      {index + 1}
-                    </Box>
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="body2" fontWeight={600} noWrap>
-                        {pin.subLocation?.name || "-"}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" noWrap component="div">
-                        {pin.equipment?.name || "-"}
-                      </Typography>
-                    </Box>
-                  </ListItemButton>
-                ))}
-              </List>
-            </Box>
-          )}
-        </Box>
+                      <Box
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: "50%",
+                          flexShrink: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: "#fff",
+                          bgcolor: pin.id === selectedPinId ? "#e53935" : "#31a640",
+                        }}
+                      >
+                        {index + 1}
+                      </Box>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight={600} noWrap>
+                          {pin.subLocation?.name || "-"}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap component="div">
+                          {pin.equipment?.name || "-"}
+                        </Typography>
+                      </Box>
+                    </ListItemButton>
+                  ))}
+                </List>
+              </>
+            )}
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              bgcolor: "#fff",
+              borderLeft: "4px solid #4fa3e0",
+              borderRadius: "0 12px 12px 0",
+              boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12)",
+              display: "flex",
+              flexDirection: { xs: "row", md: "column" },
+              alignItems: "center",
+              gap: 1.5,
+              py: 1.5,
+              px: { xs: 2, md: 0 },
+            }}
+          >
+            <IconButton
+              size="small"
+              onClick={() => setPanelOpen(true)}
+              aria-label="Show check point details"
+              sx={{ bgcolor: "#3a85c9", color: "#fff", width: 32, height: 32, "&:hover": { bgcolor: "#2f80c9" } }}
+            >
+              <ChevronLeftIcon fontSize="small" />
+            </IconButton>
+            <Typography
+              sx={{
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1.5,
+                color: "#2f80c9",
+                textTransform: "uppercase",
+                writingMode: { md: "vertical-rl" },
+              }}
+            >
+              Check Point Details
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* Inventory Point Drawer */}

@@ -1,29 +1,34 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Box,
   Typography,
   Button,
-  TextField,
-  IconButton,
+  Card,
   Checkbox,
+  Chip,
+  Divider,
   FormControlLabel,
+  IconButton,
   Menu,
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Skeleton,
+  Tooltip,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import SearchIcon from "@mui/icons-material/Search";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import StorageIcon from "@mui/icons-material/Storage";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ImageIcon from "@mui/icons-material/Image";
 import BatteryChargingFullIcon from "@mui/icons-material/BatteryChargingFull";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import InventoryPointTopBar from "../../../components/inventoryPointTopBar";
-import OPDivider from "../../../components/OPDivider";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import SearchOffIcon from "@mui/icons-material/SearchOff";
+import ListPageHeader, { headerButtonSx, headerOutlinedButtonSx } from "../../../components/ListPageHeader";
 import OPPageContainer from "../../../components/OPPageContainer";
-import InfoCard from "../../../components/InfoCard";
-import DeleteIcon from "@mui/icons-material/Delete";
 import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import locationPointState, { locationPointAddDrawerState } from "../../../utils/States/LocationDiagram";
@@ -82,7 +87,14 @@ const toExcelRow = (point) => ({
   "Removed Remarks": point.removedRemarks ?? "",
 });
 
+const STATUS_STYLE = {
+  Active: { color: "success" },
+  Removed: { color: "error" },
+  Replaced: { color: "warning" },
+};
+
 const InventoryPointCard = ({
+  point,
   inventoryPointName,
   avatarSrc,
   inventoryPointNumber,
@@ -93,36 +105,104 @@ const InventoryPointCard = ({
   onToggle,
   onEdit,
   onDelete,
-}) => (
-  <InfoCard
-    selectable
-    selected={selected}
-    onToggle={onToggle}
-    avatarSrc={avatarSrc}
-    title={inventoryPointName}
-    subtitle="Inventory Point"
-    fields={[
-      { label: "Inventory Point", value: inventoryPointNumber },
-      { label: "Hazmats", value: hazmats },
-      { label: "Inventory Type", value: inventoryType },
-      {
-        label: "Status",
-        value: status,
-        color: status && status !== "Active" ? "error.main" : undefined,
-      },
-    ]}
-    actions={
-      <>
-        <Button variant="outlined" size="small" startIcon={<EditIcon />} sx={{ textTransform: "none" }} onClick={onEdit}>
+}) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const hazmatNames = (point?.PinHazmat ?? []).map((h) => h.hazmat?.name).filter(Boolean);
+  const hasImage = avatarSrc && !String(avatarSrc).endsWith("/undefined") && !imageFailed;
+  const where = [point?.locationDiagram?.location?.name, point?.locationDiagram?.subLocation?.name].filter(Boolean).join(" / ");
+
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        height: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: 3,
+        overflow: "hidden",
+        border: "1px solid",
+        borderColor: selected ? "primary.main" : "divider",
+        boxShadow: selected ? "0 0 0 1px #1976d2" : "0 1px 3px rgba(15, 23, 42, 0.08)",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        "&:hover": { transform: "translateY(-3px)", boxShadow: "0 10px 24px rgba(13, 71, 161, 0.16)" },
+      }}
+    >
+      {/* Image */}
+      <Box sx={{ position: "relative", height: 130, bgcolor: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid", borderColor: "divider" }}>
+        {hasImage ? (
+          <Box component="img" src={avatarSrc} alt={inventoryPointName} onError={() => setImageFailed(true)} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <Inventory2Icon sx={{ fontSize: 48, color: "#b0bec5" }} />
+        )}
+        <Checkbox
+          checked={selected}
+          onChange={onToggle}
+          inputProps={{ "aria-label": `Select ${inventoryPointName}` }}
+          sx={{ position: "absolute", top: 8, left: 8, p: 0.5, bgcolor: "rgba(255,255,255,0.92)", borderRadius: 1, "&:hover": { bgcolor: "#fff" } }}
+        />
+        <Chip
+          size="small"
+          label={`#${inventoryPointNumber ?? "-"}`}
+          sx={{ position: "absolute", top: 10, right: 10, bgcolor: "rgba(13, 71, 161, 0.9)", color: "#fff", fontWeight: 700 }}
+        />
+      </Box>
+
+      {/* Name */}
+      <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+          <Typography variant="subtitle1" fontWeight={700} color="primary" noWrap title={inventoryPointName} sx={{ lineHeight: 1.3 }}>
+            {inventoryPointName || "-"}
+          </Typography>
+          <Chip size="small" variant="outlined" label={status || "-"} color={STATUS_STYLE[status]?.color ?? "default"} sx={{ fontWeight: 600, flexShrink: 0 }} />
+        </Box>
+        {where && (
+          <Typography variant="caption" color="text.secondary" noWrap component="div" title={where} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <PlaceOutlinedIcon sx={{ fontSize: 14 }} /> {where}
+          </Typography>
+        )}
+      </Box>
+
+      {/* Details */}
+      <Box sx={{ px: 2, pb: 1.5, display: "flex", flexDirection: "column", gap: 1.25, flexGrow: 1 }}>
+        <Box>
+          <Typography variant="caption" color="text.secondary">Hazmats</Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.25 }}>
+            {hazmatNames.length ? (
+              hazmatNames.map((name, i) => (
+                <Chip key={`${name}-${i}`} size="small" label={name} sx={{ bgcolor: "#fff3e0", color: "#e65100", fontWeight: 600, maxWidth: "100%" }} />
+              ))
+            ) : (
+              <Typography variant="body2" fontWeight={600}>{hazmats && hazmats !== "-" ? hazmats : "-"}</Typography>
+            )}
+          </Box>
+        </Box>
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 1 }}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="caption" color="text.secondary" component="div">Inventory Point</Typography>
+            <Typography variant="body2" fontWeight={600}>{inventoryPointNumber ?? "-"}</Typography>
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="caption" color="text.secondary" component="div">Inventory Type</Typography>
+            <Typography variant="body2" fontWeight={600} noWrap title={inventoryType}>{inventoryType || "-"}</Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      <Divider />
+      <Box sx={{ p: 1.5, display: "flex", gap: 1 }}>
+        <Button fullWidth variant="contained" disableElevation size="small" startIcon={<EditOutlinedIcon />} sx={{ textTransform: "none", fontWeight: 600 }} onClick={onEdit}>
           Edit
         </Button>
-        <Button variant="outlined" size="small" color="error" startIcon={<DeleteIcon />} sx={{ textTransform: "none" }} onClick={onDelete}>
-          Delete
-        </Button>
-      </>
-    }
-  />
-);
+        <Tooltip title="Delete inventory point">
+          <IconButton size="small" color="error" onClick={onDelete} aria-label="Delete inventory point" sx={{ border: "1px solid", borderColor: "error.light", borderRadius: 1.5 }}>
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Card>
+  );
+};
 
 const InventoryPoints = () => {
   const [page, setPage] = useState(1);
@@ -194,10 +274,6 @@ const InventoryPoints = () => {
     }
   };
 
-  const handleSearch = () => {
-    pinsListing.refetch();
-  };
-
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
     setPage(1);
@@ -217,6 +293,8 @@ const InventoryPoints = () => {
         name: "inventoryType",
         value: selectedFilters.inventoryType,
         placeholder: "Inventory Type",
+        label: "Inventory Type",
+        allLabel: "All Types",
         options: optionsFrom([
           ...(Inventory ?? []).map((i) => i?.name),
           selectedFilters.inventoryType,
@@ -226,12 +304,16 @@ const InventoryPoints = () => {
         name: "status",
         value: selectedFilters.status,
         placeholder: "Status",
+        label: "Status",
+        allLabel: "All Statuses",
         options: STATUSES.map((s) => ({ label: s, value: s })),
       },
       {
         name: "subLocation",
         value: selectedFilters.subLocation,
         placeholder: "Sub-Location",
+        label: "Sub-Location",
+        allLabel: "All Sub-Locations",
         options: optionsFrom(items.map((i) => i?.subLocation?.name)),
       },
     ],
@@ -330,115 +412,103 @@ const InventoryPoints = () => {
   };
 
   return (
-    <OPPageContainer sx={{ px: 2, pt: 2 }}>
+    <OPPageContainer sx={{ px: { xs: 2, md: 3 }, py: 2, bgcolor: "#f4f6fa", minHeight: "calc(100vh - 64px)", boxSizing: "border-box" }}>
       <Box>
-        <InventoryPointTopBar
+        <ListPageHeader
+          icon={Inventory2Icon}
+          title="Inventory Points"
+          subtitle={`${vesselView?.name ? `${vesselView.name} · ` : ""}${meta.total?.items ?? items.length} inventory point${(meta.total?.items ?? items.length) === 1 ? "" : "s"}`}
+          actions={
+            <>
+              <Button
+                variant="contained"
+                startIcon={<StorageIcon />}
+                endIcon={<ArrowDropDownIcon />}
+                disabled={applying}
+                onClick={(e) => setCommonMenuAnchor(e.currentTarget)}
+                sx={headerButtonSx}
+              >
+                {applying ? "Updating..." : "Update Common Data"}
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<FileDownloadIcon />}
+                disabled={exporting || !vesselView?.id}
+                onClick={exportToExcel}
+                sx={headerOutlinedButtonSx}
+              >
+                {exporting ? "Exporting..." : "Export to Excel"}
+              </Button>
+            </>
+          }
+          search={{ placeholder: "Inventory points", value: searchQuery, onChange: handleSearchChange }}
           filters={filters}
           onFilterChange={handleFilterChange}
-          onSearch={handleSearch}
         />
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          p={2}
-          gap={2}
-          flexWrap="wrap"
+        <Menu
+          anchorEl={commonMenuAnchor}
+          open={!!commonMenuAnchor}
+          onClose={() => setCommonMenuAnchor(null)}
         >
-          <Typography variant="h5" fontWeight="bold">
-            Inventory Points
-          </Typography>
-          <Box
-            display="flex"
-            alignItems="center"
-            gap={2}
-            flexWrap="wrap"
-            justifyContent={{ xs: "flex-start", sm: "flex-end" }}
-          >
-            <Button
-              variant="contained"
-              startIcon={<StorageIcon />}
-              endIcon={<ArrowDropDownIcon />}
-              disabled={applying}
-              onClick={(e) => setCommonMenuAnchor(e.currentTarget)}
-              sx={{ textTransform: "none" }}
-            >
-              {applying ? "Updating..." : "Update Common Data"}
-            </Button>
-            <Menu
-              anchorEl={commonMenuAnchor}
-              open={!!commonMenuAnchor}
-              onClose={() => setCommonMenuAnchor(null)}
-            >
-              {COMMON_DATA_ACTIONS.map(({ action, label, icon }) => (
-                <MenuItem key={action} onClick={() => applyCommonData(action)}>
-                  <ListItemIcon>{icon}</ListItemIcon>
-                  <ListItemText>{label}</ListItemText>
-                </MenuItem>
-              ))}
-            </Menu>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={allVisibleSelected}
-                  indeterminate={!allVisibleSelected && someVisibleSelected}
-                  onChange={(e) => toggleSelectAll(e.target.checked)}
-                  disabled={!filteredClients.length}
-                />
-              }
-              label={selectedIds.size ? `Select All (${selectedIds.size} selected)` : "Select All"}
-            />
-            <Button
-              variant="outlined"
-              color="success"
-              startIcon={<FileDownloadIcon />}
-              disabled={exporting || !vesselView?.id}
-              onClick={exportToExcel}
-              sx={{ textTransform: "none" }}
-            >
-              {exporting ? "Exporting..." : "Export to Excel"}
-            </Button>
-            <TextField
-              variant="outlined"
-              label="Inventory Points"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              size="small"
-              sx={{ width: { xs: "100%", sm: "auto" } }}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <IconButton type="button" aria-label="search" size="small">
-                      <SearchIcon />
-                    </IconButton>
-                  ),
-                  sx: { pr: 0.5 },
-                },
-              }}
-            />
-          </Box>
-        </Box>
-        <OPDivider />
+          {COMMON_DATA_ACTIONS.map(({ action, label, icon }) => (
+            <MenuItem key={action} onClick={() => applyCommonData(action)}>
+              <ListItemIcon>{icon}</ListItemIcon>
+              <ListItemText>{label}</ListItemText>
+            </MenuItem>
+          ))}
+        </Menu>
+
+        {/* Selection toolbar */}
         <Box
-          p={3}
+          sx={{
+            mb: 2.5,
+            px: 2,
+            py: 0.75,
+            borderRadius: 3,
+            border: "1px solid",
+            borderColor: selectedIds.size ? "primary.light" : "divider",
+            bgcolor: selectedIds.size ? "#f0f7ff" : "#fff",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            flexWrap: "wrap",
+          }}
+        >
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={allVisibleSelected}
+                indeterminate={!allVisibleSelected && someVisibleSelected}
+                onChange={(e) => toggleSelectAll(e.target.checked)}
+                disabled={!filteredClients.length}
+              />
+            }
+            label={selectedIds.size ? `Select All (${selectedIds.size} selected)` : "Select All"}
+          />
+          <Box sx={{ flexGrow: 1 }} />
+          <Typography variant="body2" color="text.secondary">
+            {selectedIds.size
+              ? "Use Update Common Data to apply shared values to the selected points."
+              : `${filteredClients.length} shown on this page`}
+          </Typography>
+        </Box>
+
+        <Box
           display="grid"
           // As many 280px+ columns as fit, so cards never get squeezed.
           gridTemplateColumns="repeat(auto-fill, minmax(min(100%, 280px), 1fr))"
-          gap={3}
+          gap={2.5}
         >
-          {pinsListing.isSuccess && filteredClients.length === 0 && (
-            <Typography color="text.secondary" sx={{ gridColumn: "1 / -1", textAlign: "center", py: 4 }}>
-              No inventory points match these filters.
-            </Typography>
-          )}
+          {pinsListing.isPending &&
+            [0, 1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={340} sx={{ borderRadius: 3 }} />)}
           {pinsListing.isSuccess &&
             filteredClients?.map((inventoryPoint) => (
               <InventoryPointCard
                 key={inventoryPoint.id}
+                point={inventoryPoint}
                 inventoryPointName={inventoryPoint?.subLocation?.name}
                 avatarSrc={avatarFor(inventoryPoint)}
                 inventoryPointNumber={inventoryPoint?.inventoryPointNumber}
-                location={inventoryPoint?.location}
                 hazmats={inventoryPoint?.hazmats}
                 inventoryType={inventoryPoint?.inventoryType}
                 status={inventoryPoint.status}
@@ -458,10 +528,16 @@ const InventoryPoints = () => {
                   })
                 }}
                 onDelete={() => handleDelete(inventoryPoint.id)}
-
               />
             ))}
         </Box>
+        {pinsListing.isSuccess && filteredClients.length === 0 && (
+          <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>
+            <SearchOffIcon sx={{ fontSize: 48, opacity: 0.5 }} />
+            <Typography variant="h6" sx={{ mt: 1 }}>No inventory points match these filters.</Typography>
+            <Typography variant="body2">Try a different search or clear the filters.</Typography>
+          </Box>
+        )}
         {/* Pagination */}
         {meta.total.pages > 1 && (
           <Box display="flex" justifyContent="center" mt={3}>
