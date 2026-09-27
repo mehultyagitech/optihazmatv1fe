@@ -33,7 +33,7 @@ import AddEditInventoryPointDrawer from "./addEditInventoryPointDrawer";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import locationPointState, { locationPointAddDrawerState } from "../../../utils/States/LocationDiagram";
 import { commonVesselViewState } from "../../../utils/States/Vessel";
-import genericState from "../../../utils/States/Generic";
+import { InventorySelector } from "../../../utils/States/Generic";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
@@ -211,7 +211,7 @@ const InventoryPoints = () => {
   const [drawer, setDrawer] = useRecoilState(locationPointAddDrawerState);
   const vesselView = useRecoilValue(commonVesselViewState);
   const setLocationPoint = useSetRecoilState(locationPointState);
-  const { Inventory } = useRecoilValue(genericState);
+  const Inventory = useRecoilValue(InventorySelector);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [commonMenuAnchor, setCommonMenuAnchor] = useState(null);

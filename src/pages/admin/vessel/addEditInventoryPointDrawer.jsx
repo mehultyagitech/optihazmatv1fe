@@ -32,6 +32,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import genericState, {
   InventoryDocumentTypeSelector,
+  InventorySelector,
 } from "../../../utils/States/Generic";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -65,11 +66,20 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     Equipments,
     Compartments,
     Objects,
-    Inventory,
+    Inventory: allInventory,
     Hazmats,
     Units,
     ResultTypes,
   } = useRecoilValue(genericState);
+  const inventoryClasses = useRecoilValue(InventorySelector);
+  // Only i1/i2/i3 are offered, but a point saved earlier under some other
+  // class keeps showing it so editing it does not clear the field.
+  const inventoryOptions = () => {
+    const saved = (allInventory ?? []).find((item) => item.id === form.inventoryId);
+    return saved && !inventoryClasses.some((item) => item.id === saved.id)
+      ? [...inventoryClasses, saved]
+      : inventoryClasses;
+  };
   const inventoryDocumentTypes = useRecoilValue(InventoryDocumentTypeSelector);
   // Inventory point attachments use only the three inventory document types.
   const documentTypeOptions = () => inventoryDocumentTypes;
@@ -746,7 +756,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                     error={!!formErrors.inventoryId}
                     helperText={formErrors.inventoryId}
                   >
-                    {Inventory?.map((item) => (
+                    {inventoryOptions().map((item) => (
                       <MenuItem key={item.id} value={item.id}>
                         {item.name}
                       </MenuItem>

@@ -102,11 +102,17 @@ const ObjectSelector = selector({
   },
 });
 
+// The inventory class of a point is the IHM Part I table it belongs to, so
+// only these three are ever offered, in this order.
+export const INVENTORY_CLASS_NAMES = ["i1", "i2", "i3"];
+const inventoryClassRank = (item) =>
+  INVENTORY_CLASS_NAMES.indexOf(String(item?.name).trim().toLowerCase());
+
 const InventorySelector = selector({
   key: "InventorySelector",
   get: ({ get }) => {
-    const state = get(genericState);
-    return state.Inventory;
+    const classes = (get(genericState).Inventory ?? []).filter((item) => inventoryClassRank(item) !== -1);
+    return [...classes].sort((a, b) => inventoryClassRank(a) - inventoryClassRank(b));
   },
 });
 
