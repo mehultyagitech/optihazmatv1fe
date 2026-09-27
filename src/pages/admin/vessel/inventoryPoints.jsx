@@ -143,7 +143,7 @@ const InventoryPointCard = ({
         />
         <Chip
           size="small"
-          label={`#${inventoryPointNumber ?? "-"}`}
+          label={inventoryPointNumber ?? "-"}
           sx={{ position: "absolute", top: 10, right: 10, bgcolor: "rgba(13, 71, 161, 0.9)", color: "#fff", fontWeight: 700 }}
         />
       </Box>

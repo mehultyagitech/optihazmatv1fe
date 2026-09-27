@@ -22,6 +22,7 @@ import {
   InputLabel,
   FormHelperText,
   CircularProgress,
+  Autocomplete,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -41,6 +42,7 @@ import {
   ManagerSelector,
 } from "../../../utils/States/Generic";
 import { useQueryClient } from "@tanstack/react-query";
+import { COUNTRY_NAMES } from "../../../utils/countries";
 
 const AddEditVesselDrawer = ({ onClose }) => {
   const [vessel, setVessel] = useRecoilState(vesselState);
@@ -567,7 +569,8 @@ const AddEditVesselDrawer = ({ onClose }) => {
                         label: "Call Sign/Distinctive Number",
                         required: true,
                       },
-                      { name: "flag", label: "Flag", required: true },
+                      // The flag state is picked from the ISO country list.
+                      { name: "flag", label: "Flag", required: true, options: COUNTRY_NAMES },
                       { name: "classSociety", label: "Class Society", required: true },
                       { name: "portOfRegistry", label: "Port of Registry", required: true },
                       {
@@ -580,22 +583,48 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       { name: "registeredOwner", label: "Registered Owner", required: true },
                       // { name: "vesselManager", label: "Vessel Manager" },
                       // { name: "clientName", label: "Client Name" },
-                    ].map(({ name, label, required, type = "text" }) => (
+                    ].map(({ name, label, required, type = "text", options }) => (
                       <Controller
                         key={name}
                         name={name}
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            label={label}
-                            type={type}
-                            required={required}
-                            fullWidth
-                            error={!!errors[name]}
-                            helperText={errors[name]?.message}
-                          />
-                        )}
+                        render={({ field }) =>
+                          options ? (
+                            <Autocomplete
+                              {...field}
+                              options={
+                                // A value saved before the list existed stays
+                                // selectable instead of being cleared.
+                                field.value && !options.includes(field.value)
+                                  ? [...options, field.value]
+                                  : options
+                              }
+                              value={field.value || null}
+                              onChange={(_, value) => field.onChange(value ?? "")}
+                              autoHighlight
+                              fullWidth
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label={label}
+                                  required={required}
+                                  error={!!errors[name]}
+                                  helperText={errors[name]?.message}
+                                />
+                              )}
+                            />
+                          ) : (
+                            <TextField
+                              {...field}
+                              label={label}
+                              type={type}
+                              required={required}
+                              fullWidth
+                              error={!!errors[name]}
+                              helperText={errors[name]?.message}
+                            />
+                          )
+                        }
                       />
                     ))}
                     {/* A Select's `label` only reserves the notch; the text

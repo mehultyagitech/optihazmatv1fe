@@ -65,6 +65,16 @@ const CropLocationDiagram = () => {
   const subLocationSelector = useRecoilValue(SubLocationSelector);
 
   const [locationCategory, setLocationCategory] = useState("");
+  // A diagram cropped under a category that is no longer offered keeps showing
+  // it, so updating such a diagram does not silently clear the field.
+  const categoryOptions = () => {
+    const picked = existingDiagrams.data
+      ?.find((d) => d.id === existingDiagramId)
+      ?.location;
+    return picked && !locationSelector.some((loc) => loc.id === picked.id)
+      ? [...locationSelector, picked]
+      : locationSelector;
+  };
   const [location, setLocation] = useState("");
   const [selectedAttachmentType, setSelectedAttachmentType] = useState("");
   const [selectedImage, setSelectedImage] = useState(null); // The image to be cropped
@@ -475,7 +485,7 @@ const CropLocationDiagram = () => {
                   label="Location Category"
                   onChange={(e) => setLocationCategory(e.target.value)}
                 >
-                  {locationSelector.map((loc) => (
+                  {categoryOptions().map((loc) => (
                     <MenuItem key={loc.id} value={loc.id}>
                       {loc.name}
                     </MenuItem>

@@ -78,11 +78,26 @@ const EquipmentSelector = selector({
   },
 });
 
+// The location category a diagram is cropped under. Inventory point numbers
+// take their prefix from it, so only these six are offered, in this order.
+export const LOCATION_CATEGORY_NAMES = [
+  "Cargo Spaces",
+  "Engine Room",
+  "Hull",
+  "Main Deck",
+  "Superstructure",
+  "Others",
+];
+const locationCategoryRank = (item) =>
+  LOCATION_CATEGORY_NAMES.findIndex(
+    (name) => name.toLowerCase() === String(item?.name).trim().toLowerCase()
+  );
+
 const LocationSelector = selector({
   key: "LocationSelector",
   get: ({ get }) => {
-    const state = get(genericState);
-    return state.Locations;
+    const categories = (get(genericState).Locations ?? []).filter((item) => locationCategoryRank(item) !== -1);
+    return [...categories].sort((a, b) => locationCategoryRank(a) - locationCategoryRank(b));
   },
 });
 
