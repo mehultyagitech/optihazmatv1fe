@@ -12,7 +12,14 @@ const REQUIRED = {
 
 const vesselSchema = Joi.object({
   vesselName: Joi.string().required().label("Vessel Name"),
-  imoNumber: Joi.string().required().label("IMO Number"),
+  imoNumber: Joi.string()
+    .pattern(/^[0-9]{7}$/)
+    .required()
+    .label("IMO Number")
+    .messages({
+      ...REQUIRED,
+      "string.pattern.base": "IMO Number must be a 7 digit number",
+    }),
   callSign: Joi.string()
     .pattern(/^[A-Za-z0-9]+$/)
     .required()
@@ -55,9 +62,9 @@ const vesselSchema = Joi.object({
     .email({ tlds: { allow: false } }) // Disable TLD validation
     .label("Vessel Email ID")
     .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/).label("Vessel Email ID"),
-  headerFreeTextCaption: Joi.string().max(20).optional().label("Header FreeText Caption"),
-  headerFreeTextValue: Joi.string().max(40).optional().label("Header FreeText Value"),
-  poDataGapDisclaimer: Joi.string().max(500).optional().label("PO Data Gap FreeText Disclaimer"),
+  headerFreeTextCaption: Joi.string().max(20).allow("", null).optional().label("Header FreeText Caption"),
+  headerFreeTextValue: Joi.string().max(40).allow("", null).optional().label("Header FreeText Value"),
+  poDataGapDisclaimer: Joi.string().max(500).allow("", null).optional().label("PO Data Gap FreeText Disclaimer"),
   // Optional: blank (typed then cleared) and null (vessels saved without one)
   // are both fine.
   commonReferenceNo: Joi.string().allow("", null).optional().label("Common Reference No/ Drawing No"),

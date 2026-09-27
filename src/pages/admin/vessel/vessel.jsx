@@ -24,6 +24,7 @@ import { searchState } from "../../../utils/States/Search";
 import debounce from "lodash.debounce";
 import { useSetRecoilState } from "recoil";
 import { vesselState, commonVesselViewState } from "../../../utils/States/Vessel";
+import { useNavigate } from "react-router-dom";
 
 // useVessel falls back to a generic avatar service when a vessel has no photo;
 // a ship icon reads better than a random person.
@@ -49,6 +50,13 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
     const setVesselState = useSetRecoilState(vesselState);
     const [commonVesselView, setCommonVesselViewState] = useRecoilState(commonVesselViewState);
     const isSelected = commonVesselView?.id === clientId;
+    const navigate = useNavigate();
+
+    // View picks the vessel and opens its dashboard.
+    const handleView = () => {
+        setCommonVesselViewState({ id: clientId, name: vessel });
+        navigate("/vessels/vesselDashboard");
+    };
 
     const handleEdit = () => {
         setVesselState({
@@ -164,7 +172,7 @@ const ClientCard = ({ avatarSrc, vessel, imoNumber, clientName, managerName, ves
                     startIcon={<VisibilityOutlinedIcon />}
                     disableElevation
                     sx={{ textTransform: "none", fontWeight: 600 }}
-                    onClick={() => setCommonVesselViewState({ id: clientId, name: vessel })}
+                    onClick={handleView}
                 >
                     {isSelected ? "Viewing" : "View"}
                 </Button>
