@@ -22,6 +22,11 @@ import {
   FormLabel,
   Radio,
   RadioGroup,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Tooltip,
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
@@ -33,6 +38,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import genericState, {
   InventoryDocumentTypeSelector,
   InventorySelector,
+  ResultTypeSelector,
 } from "../../../utils/States/Generic";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,8 +75,9 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     Inventory: allInventory,
     Hazmats,
     Units,
-    ResultTypes,
+    ResultTypes: allResultTypes,
   } = useRecoilValue(genericState);
+  const resultTypes = useRecoilValue(ResultTypeSelector);
   const inventoryClasses = useRecoilValue(InventorySelector);
   // Only i1/i2/i3 are offered, but a point saved earlier under some other
   // class keeps showing it so editing it does not clear the field.
@@ -128,9 +135,17 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
     setHazmats((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const handleViewHazmat = (hazmat) => {
-    console.log("Download/View hazmat", hazmat);
+  const resultTypeOptions = (hazmat) => {
+    const saved = (allResultTypes ?? []).find((type) => type.id === hazmat.resultType);
+    return saved && !resultTypes.some((type) => type.id === saved.id)
+      ? [...resultTypes, saved]
+      : resultTypes;
   };
+
+  // The remarks cell is a narrow input, so the eye button shows the whole text.
+  const [remarksView, setRemarksView] = useState(null);
+  const handleViewHazmat = (hazmat) => setRemarksView(hazmat);
+  const nameById = (list, id) => (list ?? []).find((item) => item.id === id)?.name || "-";
 
   const pinDataById = useQuery({
     queryKey: ["pinData", pinId],
@@ -993,7 +1008,7 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                               size="small"
                               sx={{ minWidth: 150 }}
                             >
-                              {ResultTypes.map((type) => (
+                              {resultTypeOptions(hazmat).map((type) => (
                                 <MenuItem key={type.id} value={type.id}>
                                   {type.name}
                                 </MenuItem>
@@ -1019,13 +1034,16 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
                             />
                           </TableCell>
 
-                          {/* View/Download */}
+                          {/* Read the remarks in full */}
                           <TableCell>
-                            <IconButton
-                              onClick={() => handleViewHazmat(hazmat)}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
+                            <Tooltip title="View remarks">
+                              <IconButton
+                                onClick={() => handleViewHazmat(hazmat)}
+                                aria-label="View remarks"
+                              >
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                           </TableCell>
 
                           {/* Delete */}
@@ -1669,6 +1687,39 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
           </Box>
         </Box>
       </Drawer>
+
+      {/* The remarks of one hazmat row, in full */}
+      <Dialog
+        open={!!remarksView}
+        onClose={() => setRemarksView(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          Remarks
+          <Typography variant="body2" color="text.secondary">
+            {nameById(Hazmats, remarksView?.name)}
+            {" · "}
+            {remarksView?.totalMass || 0} {nameById(Units, remarksView?.unit)}
+            {" · "}
+            {nameById(allResultTypes, remarksView?.resultType)}
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          {remarksView?.remarks ? (
+            <Typography sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {remarksView.remarks}
+            </Typography>
+          ) : (
+            <Typography color="text.secondary">No remarks on this row.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button variant="outlined" onClick={() => setRemarksView(null)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </OPPageContainer>
   );
 };

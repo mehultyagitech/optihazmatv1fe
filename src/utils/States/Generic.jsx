@@ -163,11 +163,17 @@ const UnitSelector = selector({
   }
 });
 
+// A hazmat row records how the material was established, and only these two
+// are offered, in this order.
+export const RESULT_TYPE_NAMES = ["Contained", "PCHM"];
+const resultTypeRank = (item) =>
+  RESULT_TYPE_NAMES.findIndex((name) => name.toLowerCase() === String(item?.name).trim().toLowerCase());
+
 const ResultTypeSelector = selector({
   key: "ResultTypeSelector",
   get: ({ get }) => {
-    const state = get(genericState);
-    return state.ResultTypes;
+    const types = (get(genericState).ResultTypes ?? []).filter((item) => resultTypeRank(item) !== -1);
+    return [...types].sort((a, b) => resultTypeRank(a) - resultTypeRank(b));
   }
 });
 
