@@ -11,6 +11,7 @@ import Users from './pages/admin/users.jsx';
 import NotFound from './pages/admin/notFound.jsx';
 import EditLocations from './pages/admin/editLocations.jsx';
 import EditObjectName from './pages/admin/editObjects.jsx';
+import EditDPDetails from './pages/admin/editDPDetails.jsx';
 import EditSubLocations from './pages/admin/editSubLocations.jsx';
 import EditEquipmentName from './pages/admin/editEquipmentName.jsx';
 import AllPoItems from './pages/admin/allPoItems.jsx';
@@ -68,6 +69,10 @@ const router = createBrowserRouter([
           {
             path: "/edit-objects",
             element: <EditObjectName />,
+          },
+          {
+            path: "/dp-details",
+            element: <EditDPDetails />,
           },
           {
             path: "*",

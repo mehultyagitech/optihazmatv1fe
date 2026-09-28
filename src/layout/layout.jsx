@@ -33,6 +33,7 @@ import PrecisionManufacturingIcon from "@mui/icons-material/PrecisionManufacturi
 import DescriptionIcon from "@mui/icons-material/Description";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import CategoryIcon from "@mui/icons-material/Category";
+import BadgeIcon from "@mui/icons-material/Badge";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -84,6 +85,7 @@ const EDIT_ITEMS = [
   { title: "Document Types", path: "/edit-document-type", icon: DescriptionIcon },
   { title: "Compartments", path: "/edit-compartment", icon: ViewInArIcon },
   { title: "Objects", path: "/edit-objects", icon: CategoryIcon },
+  { title: "DP Details", path: "/dp-details", icon: BadgeIcon },
 ];
 
 // Page titles for routes that are not sidebar items.
