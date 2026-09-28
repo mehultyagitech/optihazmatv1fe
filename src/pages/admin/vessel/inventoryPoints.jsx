@@ -34,7 +34,7 @@ import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import locationPointState, { locationPointAddDrawerState } from "../../../utils/States/LocationDiagram";
 import { commonVesselViewState } from "../../../utils/States/Vessel";
 import { InventorySelector } from "../../../utils/States/Generic";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import ReactPaginate from 'react-paginate';
@@ -205,6 +205,7 @@ const InventoryPointCard = ({
 };
 
 const InventoryPoints = () => {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const limit = 10;
@@ -256,6 +257,10 @@ const InventoryPoints = () => {
 
       // Refetch the data after deletion
       pinsListing.refetch();
+      // The diagram's markers and the Location Diagram cards' point counts
+      // come from these, so they would otherwise still count the deleted point.
+      queryClient.invalidateQueries({ queryKey: ["locationDiagram"] });
+      queryClient.invalidateQueries({ queryKey: ["locationDiagrams"] });
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Failed to delete inventory point");

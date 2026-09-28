@@ -585,6 +585,9 @@ const AddEditInventoryPointDrawer = ({ onClose = () => {} }) => {
       // The diagram page draws its points from this query; without a refetch a
       // new point only appeared after a page refresh.
       queryClient.invalidateQueries({ queryKey: ["locationDiagram"] });
+      // The Location Diagram cards carry the point counts, so they need the
+      // same treatment or the card keeps the count it was drawn with.
+      queryClient.invalidateQueries({ queryKey: ["locationDiagrams"] });
       toast.success(pinId ? "Inventory point updated" : "Inventory point created");
       handleClose();
     },
