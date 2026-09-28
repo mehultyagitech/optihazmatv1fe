@@ -6,10 +6,13 @@ import { dataUrlToFile } from "../utils/helpers";
 export default function useImageCropper({ url, ...props }) {
   const [image, setImage] = useState(url);
   const [cropData, setCropData] = useState(null);
+  const [rotationPending, setRotationPending] = useState(false);
   const cropperRef = useRef(null);
 
   useEffect(() => {
     setImage(url);
+    // A different source image carries no rotation of its own yet.
+    setRotationPending(false);
   }, [url]);
 
   const getCroppedImage = () => {
@@ -19,6 +22,8 @@ export default function useImageCropper({ url, ...props }) {
         const dataURL = canvas.toDataURL();
         setCropData(dataUrlToFile(dataURL, crypto.randomUUID() + ".png"));
         setImage(dataURL);
+        // The crop now holds whatever rotation is on screen.
+        setRotationPending(false);
         return dataURL;
       }
     }
@@ -26,13 +31,19 @@ export default function useImageCropper({ url, ...props }) {
   };
 
   // 🌀 Rotation function
-  const rotateLeft = () => {
-    cropperRef.current?.cropper.rotate(-90);
+  // Only the crop is uploaded, so a rotation reaches the saved image through
+  // the next crop. Until then it is pending, and the page says so rather than
+  // saving the picture the user no longer sees.
+  const rotate = (degrees) => {
+    const cropper = cropperRef.current?.cropper;
+    if (!cropper) return;
+    cropper.rotate(degrees);
+    setRotationPending(true);
   };
 
-  const rotateRight = () => {
-    cropperRef.current?.cropper.rotate(90);
-  };
+  const rotateLeft = () => rotate(-90);
+
+  const rotateRight = () => rotate(90);
 
   const cropper = (
     <Cropper
@@ -56,6 +67,7 @@ export default function useImageCropper({ url, ...props }) {
     cropperRef.current = null;
     setImage('#'); 
     setCropData(null);
+    setRotationPending(false);
   }
 
   return {
@@ -65,6 +77,7 @@ export default function useImageCropper({ url, ...props }) {
     getCroppedImage,
     rotateLeft,
     rotateRight,
+    rotationPending,
     resetCrop
   };
 }

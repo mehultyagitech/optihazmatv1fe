@@ -198,6 +198,10 @@ const CropLocationDiagram = () => {
       toast.error("Please crop the image before saving the area.");
       return;
     }
+    if (imageCropper.rotationPending) {
+      toast.error("Press Crop Image to keep the rotation, then save.");
+      return;
+    }
     if (!locationCategory) {
       toast.error("Please select a location category.");
       return;
@@ -229,7 +233,7 @@ const CropLocationDiagram = () => {
   const [openModal, setOpenModal] = useState(false);
 
   const isUpdate = mode === "update";
-  const isCropped = !!imageCropper.cropData;
+  const isCropped = !!imageCropper.cropData && !imageCropper.rotationPending;
   const images = (docTypeDetails ?? []).flatMap((docType) =>
     (docType.VesselAttachments ?? []).flatMap((attachment) => attachment.AttachmentImages ?? [])
   );
@@ -323,19 +327,23 @@ const CropLocationDiagram = () => {
         <Box sx={cardSx}>
           <SectionTitle
             action={
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+                <Tooltip title={selectedImage ? "Rotate left" : "Select an image to rotate it"}>
+                  <span>
+                    <IconButton size="small" onClick={imageCropper.rotateLeft} disabled={!selectedImage} aria-label="Rotate left">
+                      <RotateLeftIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title={selectedImage ? "Rotate right" : "Select an image to rotate it"}>
+                  <span>
+                    <IconButton size="small" onClick={imageCropper.rotateRight} disabled={!selectedImage} aria-label="Rotate right">
+                      <RotateRightIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
                 {selectedImage ? (
                   <>
-                    <Tooltip title="Rotate left">
-                      <IconButton size="small" onClick={imageCropper.rotateLeft} aria-label="Rotate left">
-                        <RotateLeftIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Rotate right">
-                      <IconButton size="small" onClick={imageCropper.rotateRight} aria-label="Rotate right">
-                        <RotateRightIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
                     <Button
                       size="small"
                       startIcon={<ImageSearchIcon />}
