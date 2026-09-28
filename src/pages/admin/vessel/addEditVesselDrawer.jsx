@@ -23,6 +23,10 @@ import {
   FormHelperText,
   CircularProgress,
   Autocomplete,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
@@ -41,8 +45,10 @@ import {
   ClientSelector,
   ManagerSelector,
 } from "../../../utils/States/Generic";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { COUNTRY_NAMES } from "../../../utils/countries";
+
+const DP_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const AddEditVesselDrawer = ({ onClose }) => {
   const [vessel, setVessel] = useRecoilState(vesselState);
@@ -59,6 +65,12 @@ const AddEditVesselDrawer = ({ onClose }) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [surveySameAsStart, setSurveySameAsStart] = useState(false);
   const [attachments, setAttachments] = useState([]);
+  // The vessel's DP spells, saved with the vessel rather than on their own.
+  const [dpRows, setDpRows] = useState([]);
+  // null = form closed; {} = assigning; a row = editing it.
+  const [dpEditing, setDpEditing] = useState(null);
+  const [dpForm, setDpForm] = useState({ designatedPersonId: "", effectiveFrom: "", effectiveTo: "" });
+  const [dpTouched, setDpTouched] = useState(false);
   const [image, setImage] = useState();
   const [commonInventoryImage, setCommonInventoryImage] = useState();
   const vesselMutation = vesselId ? updateVessel() : createVessel();
@@ -135,6 +147,7 @@ const AddEditVesselDrawer = ({ onClose }) => {
         VesselAttachments,
         VesselHistory,
         VesselInventoryImages,
+        DesignatedPersons,
         // Display-only audit fields: kept out of the form so neither Joi nor
         // the save payload ever sees them.
         createdAt,
@@ -145,6 +158,14 @@ const AddEditVesselDrawer = ({ onClose }) => {
       } = vesselData;
 
       setAudit({ createdAt, updatedAt, createdByUser, updatedByUser });
+      setDpRows(
+        (DesignatedPersons ?? []).map((row) => ({
+          key: row.id,
+          designatedPersonId: row.designatedPersonId,
+          effectiveFrom: row.effectiveFrom ? row.effectiveFrom.slice(0, 10) : "",
+          effectiveTo: row.effectiveTo ? row.effectiveTo.slice(0, 10) : "",
+        }))
+      );
       setWasDiscontinued(!!restVesselData.discontinued);
 
       Object.keys(restVesselData).forEach((key) => {
@@ -400,6 +421,13 @@ const AddEditVesselDrawer = ({ onClose }) => {
       docType: att.docType,
     }));
 
+    // The vessel's DP spells, as the tab shows them.
+    data.designatedPersons = dpRows.map(({ designatedPersonId, effectiveFrom, effectiveTo }) => ({
+      designatedPersonId,
+      effectiveFrom,
+      effectiveTo: effectiveTo || null,
+    }));
+
     console.log("Submitting data:", data);
 
     // Close only once the save succeeds. onSettled also closed on a rejected
@@ -454,11 +482,62 @@ const AddEditVesselDrawer = ({ onClose }) => {
     );
   };
 
+  // The people who can be assigned, from the DP Details master list.
+  const designatedPeople = useQuery({
+    queryKey: ["designatedPersons"],
+    queryFn: async () =>
+      (await axiosInstance.get("/designated-persons", { params: { limit: 1000 } })).data.data ?? [],
+  });
+  const dpById = (id) => (designatedPeople.data ?? []).find((person) => person.id === id);
+
+  const fmtDpDate = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return `${String(date.getUTCDate()).padStart(2, "0")}-${DP_MONTHS[date.getUTCMonth()]}-${date.getUTCFullYear()}`;
+  };
+
+  const openDpForm = (row) => {
+    setDpEditing(row ?? {});
+    setDpForm(
+      row
+        ? {
+            designatedPersonId: row.designatedPersonId,
+            effectiveFrom: row.effectiveFrom ?? "",
+            effectiveTo: row.effectiveTo ?? "",
+          }
+        : { designatedPersonId: "", effectiveFrom: "", effectiveTo: "" }
+    );
+    setDpTouched(false);
+  };
+
+  const dpErrors = {
+    designatedPersonId: dpForm.designatedPersonId ? "" : "Pick a DP",
+    effectiveFrom: dpForm.effectiveFrom ? "" : "Effective From Date is required",
+    effectiveTo:
+      dpForm.effectiveTo && dpForm.effectiveFrom && dpForm.effectiveTo < dpForm.effectiveFrom
+        ? "Effective To Date cannot be before the Effective From Date"
+        : "",
+  };
+
+  const submitDpForm = () => {
+    setDpTouched(true);
+    if (Object.values(dpErrors).some(Boolean)) return;
+    setDpRows((prev) =>
+      dpEditing?.key
+        ? prev.map((row) => (row.key === dpEditing.key ? { ...row, ...dpForm } : row))
+        : [...prev, { key: `new-${Date.now()}`, ...dpForm }]
+    );
+    setDpEditing(null);
+  };
+
   const handleOnClose = () => {
     setFormReady(false);
     setTabIndex(0);
     setWasDiscontinued(false);
     setAttachments([]);
+    setDpRows([]);
+    setDpEditing(null);
     setImage(null);
     setCommonInventoryImage(null);
     setSurveySameAsStart(false);
@@ -1105,10 +1184,12 @@ const AddEditVesselDrawer = ({ onClose }) => {
             {tabIndex === 2 && (
               <Box display="flex" flexDirection="column" gap={2} p={2}>
                 <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-                  <Button variant="outlined">Assign New DP</Button>
+                  <Button variant="outlined" onClick={() => openDpForm(null)}>
+                    Assign New DP
+                  </Button>
                   <Typography variant="body2" color="text.secondary">
-                    #Note: This data will not save here, but used to update all
-                    the Inventory Pts using the button next to this.
+                    Who is responsible for this vessel's IHM, and for how long. The
+                    people themselves are kept under Settings &gt; DP Details.
                   </Typography>
                 </Box>
                 <Paper sx={{ overflow: "auto" }}>
@@ -1122,14 +1203,66 @@ const AddEditVesselDrawer = ({ onClose }) => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      <TableRow>
-                        <TableCell colSpan={4} align="center">
-                          No records to display
-                        </TableCell>
-                      </TableRow>
+                      {dpRows.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} align="center">
+                            No records to display
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {dpRows.map((row) => {
+                        const person = dpById(row.designatedPersonId);
+                        return (
+                          <TableRow key={row.key}>
+                            <TableCell>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                {person?.signatureUrl && (
+                                  <Box
+                                    component="img"
+                                    src={`${import.meta.env.VITE_API_URL}/uploads/${person.signatureUrl}`}
+                                    alt={`${person.name} signature`}
+                                    sx={{ height: 34, maxWidth: 110, objectFit: "contain" }}
+                                  />
+                                )}
+                                <Box>
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {person?.name ?? "(removed DP)"}
+                                  </Typography>
+                                  {person?.initials && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {person.initials}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Box>
+                            </TableCell>
+                            <TableCell>{person?.position ?? "-"}</TableCell>
+                            <TableCell>
+                              {fmtDpDate(row.effectiveFrom)} to{" "}
+                              {row.effectiveTo ? fmtDpDate(row.effectiveTo) : "present"}
+                            </TableCell>
+                            <TableCell>
+                              <Button size="small" onClick={() => openDpForm(row)} sx={{ textTransform: "none" }}>
+                                Edit
+                              </Button>
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() => setDpRows((prev) => prev.filter((r) => r.key !== row.key))}
+                                sx={{ textTransform: "none" }}
+                              >
+                                Remove
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </Paper>
+                <Typography variant="caption" color="text.secondary">
+                  DP changes are stored when the vessel is saved.
+                </Typography>
               </Box>
             )}
 
@@ -1440,6 +1573,67 @@ const AddEditVesselDrawer = ({ onClose }) => {
           )}
         </Box>
       </Drawer>
+
+      {/* Assign a DP to this vessel for a period */}
+      <Dialog open={!!dpEditing} onClose={() => setDpEditing(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {dpEditing?.key ? "Edit DP" : "Assign New DP"}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            <FormControl fullWidth error={dpTouched && !!dpErrors.designatedPersonId}>
+              <InputLabel id="dp-person-label">DP</InputLabel>
+              <Select
+                labelId="dp-person-label"
+                label="DP"
+                value={dpForm.designatedPersonId}
+                onChange={(e) => setDpForm((prev) => ({ ...prev, designatedPersonId: e.target.value }))}
+              >
+                {(designatedPeople.data ?? []).map((person) => (
+                  <MenuItem key={person.id} value={person.id}>
+                    {person.name} — {person.position}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>
+                {(dpTouched && dpErrors.designatedPersonId) ||
+                  (designatedPeople.data?.length === 0
+                    ? "No DPs yet. Add them under Settings > DP Details."
+                    : " ")}
+              </FormHelperText>
+            </FormControl>
+            <TextField
+              label="Effective From Date"
+              type="date"
+              required
+              value={dpForm.effectiveFrom}
+              onChange={(e) => setDpForm((prev) => ({ ...prev, effectiveFrom: e.target.value }))}
+              error={dpTouched && !!dpErrors.effectiveFrom}
+              helperText={dpTouched ? dpErrors.effectiveFrom : ""}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+            />
+            <TextField
+              label="Effective To Date"
+              type="date"
+              value={dpForm.effectiveTo}
+              onChange={(e) => setDpForm((prev) => ({ ...prev, effectiveTo: e.target.value }))}
+              error={dpTouched && !!dpErrors.effectiveTo}
+              helperText={(dpTouched && dpErrors.effectiveTo) || "Leave empty while this DP is in charge"}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button variant="contained" onClick={submitDpForm} sx={{ minWidth: 110 }}>
+            {dpEditing?.key ? "Save" : "Add"}
+          </Button>
+          <Button variant="outlined" onClick={() => setDpEditing(null)} sx={{ minWidth: 110 }}>
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
     </OPPageContainer>
   );
 };

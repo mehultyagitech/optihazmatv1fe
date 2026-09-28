@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Card,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -32,17 +31,6 @@ import axiosInstance from "../../api/axiosInstance";
 const COLOR = "#00897b";
 const apiMessage = (error, fallback) => error?.response?.data?.message || fallback;
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-// The report writes dates this way, so the list does too.
-const fmtDate = (value) => {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return `${String(date.getUTCDate()).padStart(2, "0")}-${MONTHS[date.getUTCMonth()]}-${date.getUTCFullYear()}`;
-};
-// What a date input wants: yyyy-mm-dd.
-const forInput = (value) => (value ? new Date(value).toISOString().slice(0, 10) : "");
-
 const uploadsUrl = (fileName) => `${import.meta.env.VITE_API_URL}/uploads/${fileName}`;
 
 const StatCard = ({ label, value, color, loading }) => (
@@ -70,11 +58,12 @@ const FormRow = ({ label, required, children }) => (
   </Box>
 );
 
-const EMPTY = { name: "", position: "", initials: "", effectiveFrom: "", effectiveTo: "" };
+const EMPTY = { name: "", position: "", initials: "" };
 
 /**
- * Designated Persons: who is responsible for keeping the IHM up to date. Each
- * one has a period and a signature, and the IHM report lists them.
+ * Designated Persons: who can be made responsible for keeping an IHM up to
+ * date. Who holds the role on a vessel, and for how long, is set on that
+ * vessel's DP Details tab.
  */
 export default function EditDPDetails() {
   const queryClient = useQueryClient();
@@ -93,11 +82,7 @@ export default function EditDPDetails() {
   });
 
   const rows = useMemo(() => list.data ?? [], [list.data]);
-  const isCurrent = (row) => {
-    const today = new Date();
-    return new Date(row.effectiveFrom) <= today && (!row.effectiveTo || new Date(row.effectiveTo) >= today);
-  };
-  const currentCount = rows.filter(isCurrent).length;
+  const withSignature = rows.filter((row) => !!row.signatureUrl).length;
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -117,13 +102,7 @@ export default function EditDPDetails() {
     setEditing(row ?? {});
     setForm(
       row
-        ? {
-            name: row.name ?? "",
-            position: row.position ?? "",
-            initials: row.initials ?? "",
-            effectiveFrom: forInput(row.effectiveFrom),
-            effectiveTo: forInput(row.effectiveTo),
-          }
+        ? { name: row.name ?? "", position: row.position ?? "", initials: row.initials ?? "" }
         : EMPTY
     );
     setTouched(false);
@@ -162,11 +141,6 @@ export default function EditDPDetails() {
     name: form.name.trim() ? "" : "DP Name is required",
     position: form.position.trim() ? "" : "Position is required",
     initials: form.initials.trim() ? "" : "Initials are required",
-    effectiveFrom: form.effectiveFrom ? "" : "Effective From Date is required",
-    effectiveTo:
-      form.effectiveTo && form.effectiveFrom && form.effectiveTo < form.effectiveFrom
-        ? "Effective To Date cannot be before the Effective From Date"
-        : "",
   };
   const hasErrors = Object.values(errors).some(Boolean);
   const showError = (field) => (touched ? errors[field] : "");
@@ -180,8 +154,6 @@ export default function EditDPDetails() {
       name: form.name.trim(),
       position: form.position.trim(),
       initials: form.initials.trim(),
-      effectiveFrom: form.effectiveFrom,
-      effectiveTo: form.effectiveTo,
     });
   };
 
@@ -222,28 +194,6 @@ export default function EditDPDetails() {
             —
           </Typography>
         ),
-    },
-    {
-      field: "effectiveFrom",
-      headerName: "Effective From",
-      width: 150,
-      renderCell: ({ value }) => fmtDate(value),
-    },
-    {
-      field: "effectiveTo",
-      headerName: "Effective To",
-      width: 150,
-      renderCell: ({ value }) => (value ? fmtDate(value) : "—"),
-    },
-    {
-      field: "status",
-      headerName: "Status",
-      width: 120,
-      sortable: false,
-      filterable: false,
-      renderCell: ({ row }) => (
-        <Chip size="small" label={isCurrent(row) ? "Current" : "Past"} color={isCurrent(row) ? "success" : "default"} variant={isCurrent(row) ? "outlined" : "filled"} />
-      ),
     },
     {
       field: "actions",
@@ -299,7 +249,7 @@ export default function EditDPDetails() {
               DP Details
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.85 }}>
-              The Designated Persons the IHM report lists, with their signature and period.
+              The people who can be made a vessel's Designated Person. Their period is set on the vessel.
             </Typography>
           </Box>
         </Box>
@@ -316,8 +266,8 @@ export default function EditDPDetails() {
       {/* Counts */}
       <Box sx={{ display: "grid", gap: 2, mb: 3, gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 180px), 1fr))" }}>
         <StatCard label="Total DPs" value={rows.length} color={COLOR} loading={list.isPending} />
-        <StatCard label="Current" value={currentCount} color="#43a047" loading={list.isPending} />
-        <StatCard label="Past" value={rows.length - currentCount} color="#90a4ae" loading={list.isPending} />
+        <StatCard label="With a signature" value={withSignature} color="#43a047" loading={list.isPending} />
+        <StatCard label="Without" value={rows.length - withSignature} color="#90a4ae" loading={list.isPending} />
       </Box>
 
       {/* List */}
@@ -444,30 +394,6 @@ export default function EditDPDetails() {
                       />
                     </Box>
                   </Box>
-                </FormRow>
-                <FormRow label="Effective From Date" required>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    type="date"
-                    value={form.effectiveFrom}
-                    onChange={(e) => setForm((prev) => ({ ...prev, effectiveFrom: e.target.value }))}
-                    error={!!showError("effectiveFrom")}
-                    helperText={showError("effectiveFrom")}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </FormRow>
-                <FormRow label="Effective To Date">
-                  <TextField
-                    size="small"
-                    fullWidth
-                    type="date"
-                    value={form.effectiveTo}
-                    onChange={(e) => setForm((prev) => ({ ...prev, effectiveTo: e.target.value }))}
-                    error={!!showError("effectiveTo")}
-                    helperText={showError("effectiveTo") || "Leave empty while this DP is in charge"}
-                    InputLabelProps={{ shrink: true }}
-                  />
                 </FormRow>
               </Box>
             </Box>
